@@ -1,0 +1,133 @@
+<!DOCTYPE HTML>
+<head>
+	<!-- Load Font Awesome -->
+	<link rel="stylesheet" href="fa/css/all.css">
+	<!-- Load Site CSS -->
+	<link rel="stylesheet" href="css/site.css?v=1.0">
+	<!-- Load JQuery -->
+	<script type="application/javascript" src="js/jquery-3.5.1.min.js"></script>
+	<!-- Load Site JS -->
+	<script type="application/javascript" src="js/site.js?v=1.0"></script>
+
+	<link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png">
+	<link rel="manifest" href="img/site.webmanifest">
+	<title>ProPresenter Web Remote</title>
+</head>
+<body>
+	<div class="container">
+		<div class="main">
+			<div class="left">
+				<div class="library segment">
+					<div class="top light">
+						<div class="libraries">
+							<div class="header padded">
+								<h5 class="segment-header">Library</h5>
+								<a onclick="refreshLibrary();"><i class="fas fa-redo-alt"></i></a>
+							</div>
+							<div class="content">
+								<a onclick="displayLibrary(this);"><div class="item lib selected"><img src="img/library.png" /><div class="name">Library</div></div></a>
+							</div>
+						</div>
+						<div class="playlists">
+							<div class="header padded">
+								<h5 class="segment-header">Playlist</h5>
+							</div>
+							<div id="playlist-content" class="content">
+							</div>
+						</div>
+					</div>
+					<div class="bottom dark">
+						<div class="header padded segment">
+							<h5 id="left-count" class="segment-header count"></h5>
+
+						</div>
+						<div id="library-items" class="content">
+
+						</div>
+						<div id="playlist-items" class="content">
+
+						</div>
+					</div>
+				</div>
+				<div class="media segment light padded">
+					<div class="header">
+						<h5 class="segment-header">Media</h5>
+					</div>
+					<div class="content">
+
+					</div>
+				</div>
+			</div>
+			<div id="presentations" class="middle">
+			</div>
+			<div class="right">
+				<div class="screens">
+					<div class="preview">
+						<div class="top">
+
+						</div>
+						<div class="content">
+							<div id="live" class="live">
+
+							</div>
+							<div class="clear">
+								<a onclick="clearAll();"><div class="all">Clear All</div></a>
+								<div class="icons">
+									<a onclick="clearAudio();"><div><img src="img/clearaudio.png"/></div></a>
+									<a onclick="clearProps();"><div class="bordered"><img src="img/clearprops.png"/></div></a>
+									<a onclick="clearSlide();"><div class="bordered"><img src="img/clearslide.png"/></div></a>
+									<a onclick="clearMedia();"><div class="bordered"><img src="img/clearmedia.png"/></div></a>
+								</div>
+							</div>
+						</div>
+						<div class="bottom">
+
+						</div>
+					</div>
+					<div class="playback">
+
+					</div>
+				</div>
+				<div class="audio segment">
+					<div class="top light">
+						<div class="audio">
+							<div class="header padded">
+								<h5 class="segment-header">Audio</h5>
+							</div>
+							<div class="content">
+								<div class="item lib selected">
+									<img src="img/library.png" />
+									Songs
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="bottom dark">
+						<div class="header padded segment">
+							<h5 class="segment-header count">4 Items</h5>
+						</div>
+						<div class="content">
+							<div class="item con">
+								<img src="img/audio.png" />
+								Christ is Enough
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="controls">
+			<div class="logo">
+				<a onclick="connect()"><img src="img/logo.png"/></a>
+			</div>
+			<div class="status">
+				<div class="text">Connecting</div>
+				<div class="loader">
+					<div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
