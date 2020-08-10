@@ -103,14 +103,17 @@ body {
 
 .controls {
     background-color: #404344;
+    color: #c1c1c1;
     width: 100%;
     height: 65px;
     position: absolute;
     top: 0px;
+    text-align: center;
 }
 
 .logo {
     padding: 10px;
+    position: absolute;
 }
 
 .logo img {
@@ -259,6 +262,7 @@ h5 {
     background-color: #303234;
 }
 
+
 .icons img {
     width: 16px;
 }
@@ -276,6 +280,18 @@ h5 {
     font-size: 12px;
     color: #939393;
     background-color: black;
+}
+
+.clear div.activated {
+    background-color: #561c1c;
+}
+
+.clear div.activated:hover {
+    background-color: #8b2b2d;
+}
+
+#clear-all:hover ~ div.activated {
+    background-color: #8b2b2d;
 }
 
 .all:active {
@@ -427,12 +443,154 @@ h5 {
 }
 
 .current {
-    height: 35px;
+    height: 24px;
+    color: #e0e0e0;
+    font-size: 11px;
+    padding-top: 10px;
 }
 
 .disabled {
     color: #636363;
 }
+
+.window-title {
+    font-size: 12px;
+    margin-top: 3px;
+}
+
+.producer {
+    width: 300px;
+    margin-top: 5px;
+    display: inline-block;
+}
+
+.control-container {
+    width: 52px;
+    display: inline-block;
+}
+
+.control-button {
+    padding: 3px 16px 0px 16px;
+    display: inline-block;
+    background-color: #707070;
+    border-radius: 4px;
+}
+
+.control-button img {
+    height: 18px;
+}
+
+.control-text {
+    margin-top: 2px;
+    margin-bottom: 4px;
+    font-size: 11px;
+}
+
+.options-container {
+    display: none;
+    margin: auto;
+    border: 1px solid black;
+}
+
+.timers div.options-content {
+    height: 280px;
+}
+
+.messages div.options-content {
+    height: 200px;
+}
+
+.stage div.options-content {
+    /* height: 180px; */
+}
+
+.options-header {
+    background-color: #3a3a3a;
+    position: relative;
+    height: 32px;
+    border-bottom: 1px solid #4d4d4d;
+}
+
+.options-close {
+    display: inline-block;
+    padding: 8px;
+    position: absolute;
+    left: 0px;
+}
+
+.options-name {
+    display: inline-block;
+    padding: 8px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.options-content {
+    background-color: #1a1a1a;
+}
+
+.options-footer {
+    background-color: #262626;
+    border-top: 1px solid #323232;
+    height: 32px;
+    position: relative;
+}
+
+.timers {
+    width: 600px;
+}
+
+.messages {
+    width: 600px;
+}
+
+.stage {
+    width: 450px;
+}
+
+.option-button {
+    background-color: #5c5c5c;
+    display: inline-block;
+    padding: 2px 13px;
+    font-size: 14px;
+    border-radius: 4px;
+    color: #e4e4e4;
+    margin: 6px 6px;
+    min-width: 35px;
+}
+
+.option-button:active {
+    background-color: #2a7bec;
+}
+
+div.stage-message-title {
+    text-align: left;
+    display: inline-block;
+    width: 408px;
+    font-size: 14px;
+    margin-top: 10px;
+    color: #e4e4e4;
+}
+
+input.stage-message-input {
+    background-color: #262626;
+    border: 1px solid #363636;
+    width: 404px;
+    height: 35px;
+    margin: 4px 0px 8px 0px;
+    color: #e4e4e4;
+}
+
+.clear-stage {
+    position: absolute;
+    left: 14px;
+}
+
+.options-stage-hideshow {
+    position: absolute;
+    right: 14px;
+}
+
 
 .lds-spinner {
   color: official;

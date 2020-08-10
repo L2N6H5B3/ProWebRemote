@@ -1,18 +1,25 @@
 // Variables
 
+var host = "127.0.0.1";
+var port = "50000";
+var pass = "control";
+
 var playlistList = [];
 var audioPlaylistList = [];
 var libraryPresentationList = [];
 var playlistPresentationList = [];
 var slideSizeEm = 17;
 var authenticated = false;
+var wsUri = "ws://"+host+":"+port+"/remote";
+var refreshTimeout;
+var refresh = true;
+var inputTyping = false;
 
 // End Variables
 
 // Websocket Functions
 
 function connect() {
-    var wsUri = "ws://127.0.0.1:50000/remote";
     websocket = new WebSocket(wsUri);
     websocket.onopen = function(evt) { onOpen(evt) };
     websocket.onclose = function(evt) { onClose(evt) };
@@ -22,23 +29,21 @@ function connect() {
 
 function onOpen(evt) {
     if (!authenticated) {
-        websocket.send('{"action":"authenticate","protocol":"700","password":"control"}');
+        websocket.send('{"action":"authenticate","protocol":"700","password":"'+pass+'"}');
         console.log('Connected');
     }
 }
 
-function onClose(evt) {
-    console.log('Closed');
-    authenticated = false;
-}
-
 function onMessage(evt) {
     var obj = JSON.parse(evt.data);
-    // console.log("Message: "+evt.data);
+    console.log("Message: "+evt.data);
 
     if (obj.action == "authenticate" && obj.authenticated == "1" && authenticated == false) {
-        getLibrary();
-        getAudioPlaylists();
+        if (refresh) {
+            getLibrary();
+            getAudioPlaylists();
+            refresh = false;
+        }
         authenticated = true;
     } else if (obj.action == "presentationCurrent") {
         createPresentation(obj);
@@ -49,7 +54,6 @@ function onMessage(evt) {
             }
         );
         getPlaylists();
-
     } else if (obj.action == "playlistRequestAll") {
         // Empty the playlist area
         $("#playlist-content").empty();
@@ -78,16 +82,40 @@ function onMessage(evt) {
             }
         );
         $("#audio-content").append(data);
+        getAudioStatus();
     } else if (obj.action == "audioPlayPause") {
         setAudioStatus(obj.audioPlayPause);
+        getCurrentAudio();
+    } else if (obj.action == "audioCurrentSong") {
+        setAudioSong(obj);
+    } else if (obj.action == "audioIsPlaying") {
+        setAudioStatus(obj.audioIsPlaying);
     } else if (obj.action == "presentationTriggerIndex") {
         displayPresentation(obj);
+        $("#clear-slide").addClass("activated");
+        $("#clear-media").addClass("activated");
+        $("#clear-all").addClass("activated");
     }
 }
 
 function onError(evt) {
-    console.log('Error');
     authenticated = false;
+    console.error('Socket encountered error: ', evt.message, 'Closing socket');
+    websocket.close();
+}
+
+function onClose(evt) {
+    authenticated = false;
+    console.log('Socket is closed. Reconnect will be attempted in 1 second.', evt.reason);
+    // Retry connection every second
+    setTimeout(function() {
+      connect();
+    }, 1000);
+
+    // Refresh library after 5 minutes of disconnection
+    resetTimeout = setTimeout(function() {
+        refresh = true;
+    }, 300000);
 }
 
 //  End Websocket Functions
@@ -114,7 +142,7 @@ function createPlaylistGroup(obj) {
 }
 
 function createPlaylist(obj) {
-    var playlistData = '<a onclick="displayPlaylist(this);"><div class="item lib playlist"><img src="img/playlist.png"/><div class="name">'+obj.playlistName+'</div></div></a>';
+    var playlistData = '<a onclick="displayPlaylist(this);"><div class="item lib playlist presentation"><img src="img/playlist.png"/><div class="name">'+obj.playlistName+'</div></div></a>';
     playlistList.push(obj);
     $(obj.playlist).each (
         function () {
@@ -143,7 +171,7 @@ function createAudioPlaylistGroup(obj) {
 }
 
 function createAudioPlaylist(obj) {
-    var playlistData = '<a onclick="displayAudioPlaylist(this);"><div class="item lib playlist"><img src="img/audio.png"/><div class="name">'+obj.playlistName+'</div></div></a>';
+    var playlistData = '<a onclick="displayAudioPlaylist(this);"><div class="item lib playlist audio"><img src="img/audio.png"/><div class="name">'+obj.playlistName+'</div></div></a>';
     audioPlaylistList.push(obj);
     $(obj.playlist).each (
         function () {
@@ -161,6 +189,8 @@ function createAudioPlaylist(obj) {
 function createPresentation(obj) {
     // Variable to hold the correct index
     var count = 0;
+    // Variable to hold the unique status of the presentation
+    var unique = true;
     // Set the correct index for grouped slides
     $(obj.presentation.presentationSlideGroups).each(
         function () {
@@ -175,9 +205,29 @@ function createPresentation(obj) {
     );
     // Add this presentation to either the playlist or library presentation list
     if (obj.presentationPath.charAt(0) == '0') {
-        playlistPresentationList.push(obj);
+        // Check if the presentation is unique and can be added in the array
+        $(playlistPresentationList).each(
+            function () {
+                if (this.presentationPath == obj.presentationPath) {
+                    unique = false;
+                }
+            }
+        );
+        if (unique) {
+            playlistPresentationList.push(obj);
+        }
     } else {
-        libraryPresentationList.push(obj);
+        // Check if the presentation is unique and can be added in the array
+        $(libraryPresentationList).each(
+            function () {
+                if (this.presentationPath == obj.presentationPath) {
+                    unique = false;
+                }
+            }
+        );
+        if (unique) {
+            libraryPresentationList.push(obj);
+        }
     }
 }
 
@@ -188,23 +238,52 @@ function createPresentation(obj) {
 
 function clearAll() {
     $('#live').empty();
+    $(".presentation-content").children(".selected").removeClass("selected");
     websocket.send('{"action":"clearAll"}');
+    $("#clear-all").removeClass("activated");
+    $("#clear-slide").removeClass("activated");
+    $("#clear-media").removeClass("activated");
+    $("#clear-audio").removeClass("activated");
+    $("#clear-props").removeClass("activated");
+    $(".playing-audio").empty();
+    $("#audio-status").addClass("disabled");
+    $("#audio-items").children("a").children("div").removeClass("highlighted");
 }
 
 function clearSlide() {
+    $('#live').empty();
     websocket.send('{"action":"clearText"}');
+    $("#clear-slide").removeClass("activated");
+    if ($(".icons div.activated").length < 1) {
+        $("#clear-all").removeClass("activated");
+    }
 }
 
 function clearMedia() {
     websocket.send('{"action":"clearVideo"}');
+    $("#clear-media").removeClass("activated");
+    if ($(".icons div.activated").length < 1) {
+        $("#clear-all").removeClass("activated");
+    }
 }
 
 function clearAudio() {
     websocket.send('{"action":"clearAudio"}');
+    $("#clear-audio").removeClass("activated");
+    $(".playing-audio").empty();
+    $("#audio-status").addClass("disabled");
+    $("#audio-items").children("a").children("div").removeClass("highlighted");
+    if ($(".icons div.activated").length < 1) {
+        $("#clear-all").removeClass("activated");
+    }
 }
 
 function clearProps() {
     websocket.send('{"action":"clearProps"}');
+    $("#clear-props").removeClass("activated");
+    if ($(".icons div.activated").length < 1) {
+        $("#clear-all").removeClass("activated");
+    }
 }
 
 // End Clear Functions
@@ -280,6 +359,14 @@ function getCurrentPresentation() {
     websocket.send('{"action":"presentationCurrent", "presentationSlideQuality": 25}');
 }
 
+function getCurrentAudio() {
+    websocket.send('{"action":"audioCurrentSong"}');
+}
+
+function getAudioStatus() {
+    websocket.send('{"action":"audioIsPlaying"}');
+}
+
 function getPresentation(obj) {
     // Create the location variable
     var location = "";
@@ -298,17 +385,23 @@ function getPresentation(obj) {
 function getLibrary() {
     websocket.send('{"action":"libraryRequest"}');
     libraryPresentationList = [];
+    $("#library-items").empty();
+    $("#left-count").empty();
+    $("#presentations").empty();
 }
 
 function getPlaylists() {
     websocket.send('{"action":"playlistRequestAll"}');
     playlistPresentationList = [];
     playlistList = [];
+    $("#playlist-items").empty();
 }
 
 function getAudioPlaylists() {
     websocket.send('{"action":"audioRequest"}');
     audioPlaylistList = [];
+    $("#audio-items").empty();
+    $("#right-count").empty();
 }
 
 // End Get Data Functions
@@ -316,37 +409,12 @@ function getAudioPlaylists() {
 
 // Toggle Data Functions
 
-function toggleAudioPlayPause(this) {
+function toggleAudioPlayPause() {
     websocket.send('{"action":"audioPlayPause"}');
 }
 
-// End Toggle Data Functions
-
-
-// Page Actions Functions
-
-function focusTimelineControls() {
-    $("#audio-controls").hide();
-    $("#timeline-controls").show();
-    $("#control-slide").attr("src", "img/slideblue.png");
-    $("#control-audio").attr("src", "img/clearaudio.png");
-}
-
-function focusAudioControls() {
-    $("#timeline-controls").hide();
-    $("#audio-controls").show();
-    $("#control-audio").attr("src", "img/audioblue.png");
-    $("#control-slide").attr("src", "img/clearslide.png");
-}
-
-function setAudioStatus(obj) {
-    if (obj == "Playing") {
-        $("#audio-status").removeClass("fa-play");
-        $("#audio-status").addClass("fa-pause");
-    } else {
-        $("#audio-status").removeClass("fa-pause");
-        $("#audio-status").addClass("fa-play");
-    }
+function toggleTimelinePlayPause() {
+    websocket.send('{"action":"timelinePlayPause","presentationPath":""}');
 }
 
 function togglePlaylistVisibility(obj) {
@@ -371,6 +439,69 @@ function togglePlaylistVisibility(obj) {
     }
 }
 
+// End Toggle Data Functions
+
+
+// Page Actions Functions
+
+function focusTimelineControls() {
+    $("#audio-controls").hide();
+    $("#timeline-controls").show();
+    $("#control-slide").attr("src", "img/slideblue.png");
+    $("#control-audio").attr("src", "img/clearaudio.png");
+}
+
+function focusAudioControls() {
+    $("#timeline-controls").hide();
+    $("#audio-controls").show();
+    $("#control-audio").attr("src", "img/audioblue.png");
+    $("#control-slide").attr("src", "img/clearslide.png");
+}
+
+function setAudioStatus(obj) {
+    if (obj == "Playing") {
+        $("#audio-status").removeClass("fa-play").removeClass("disabled");
+        $("#audio-status").addClass("fa-pause");
+        $("#clear-audio").addClass("activated");
+        $("#clear-all").addClass("activated");
+    } else if (obj == "Pause") {
+        $("#audio-status").removeClass("fa-pause").removeClass("disabled");
+        $("#audio-status").addClass("fa-play");
+        $("#clear-audio").addClass("activated");
+        $("#clear-all").addClass("activated");
+        getAudioStatus();
+    } else if (obj) {
+        getCurrentAudio();
+        $("#audio-status").removeClass("disabled");
+        $("#clear-audio").addClass("activated");
+        $("#clear-all").addClass("activated");
+    } else {
+        $("#audio-status").removeClass("fa-pause");
+        $("#audio-status").addClass("fa-play").addClass("disabled");
+        $("#clear-audio").removeClass("activated");
+        $("#clear-all").removeClass("activated");
+    }
+
+}
+
+function setAudioSong(obj) {
+    $(".playing-audio").text(obj.audioName);
+}
+
+function clearStageMessage() {
+    $(".stage-message-input").val("");
+    websocket.send('{"action":"stageDisplayHideMessage"}');
+}
+
+function hideStageMessage() {
+    websocket.send('{"action":"stageDisplayHideMessage"}');
+}
+
+function showStageMessage() {
+    var message = $(".stage-message-input").val();
+    websocket.send('{"action":"stageDisplaySendMessage","stageDisplayMessage":"'+message+'"}');
+}
+
 function triggerSlide(obj) {
     var location = ($(obj).children("div").attr("id"));
     var index = $(obj).children("div").children("div").children(".slide-number").text() - 1;
@@ -391,12 +522,59 @@ function triggerSlide(obj) {
             }
         }
     );
+
+    $("#clear-slide").addClass("activated");
+    $("#clear-all").addClass("activated");
+}
+
+function triggerAudio(obj) {
+    var location = ($(obj).children("div").attr("id"));
+    if (location.charAt(0) == '0') {
+        websocket.send('{"action":"audioStartCue","audioChildPath":"'+location+'"}');
+        $("#audio-items").children("a").children("div").removeClass("selected");
+        $("#audio-items").children("a").children("div").removeClass("highlighted");
+    }
+
+    $(".item.con").each (
+        function () {
+            if ($(this).attr("id") == location) {
+                $(this).addClass("highlighted");
+            }
+        }
+    );
+
+    $(".item.lib.playlist.audio").each(
+        function () {
+            if ($(this).hasClass("selected")) {
+                $(this).removeClass("selected")
+                $(this).addClass("highlighted")
+            }
+        }
+    );
 }
 
 // End Page Actions Functions
 
 
 // Page Display Functions
+
+function displayTimerOptions() {
+    $("#messageOptions").hide();
+    $("#stageOptions").hide();
+    $("#timerOptions").show();
+}
+
+function displayMessageOptions() {
+    $("#timerOptions").hide();
+    $("#stageOptions").hide();
+    $("#messageOptions").show();
+}
+
+function displayStageOptions() {
+    $("#timerOptions").hide();
+    $("#messageOptions").hide();
+    $("#stageOptions").show();
+}
 
 function displayPlaylist(obj) {
     // Get the current playlist name
@@ -656,7 +834,6 @@ function displayPresentation(obj) {
     $(obj).parent().children("a").children("div").removeClass("highlighted");
 
     $(obj).children("div").addClass("selected");
-
 }
 
 // End Page Display Functions
@@ -686,19 +863,21 @@ function SortByName(a, b){
 function initialise() {
     // Add listener for action keys
     window.addEventListener('keydown', function(e) {
-        // When spacebar or right arrow is detected
-        if(e.keyCode == 32 || e.keyCode == 39 && e.target == document.body) {
-            // Prevent the default action
-            e.preventDefault();
-            // Trigger the next slide
-            websocket.send('{"action":"presentationTriggerNext"}');
-        }
-        // When left arrow is detected
-        if(e.keyCode == 37 && e.target == document.body) {
-            // Prevent the default action
-            e.preventDefault();
-            // Trigger the previous slide
-            websocket.send('{"action":"presentationTriggerPrevious"}');
+        if (!inputTyping) {
+            // When spacebar or right arrow is detected
+            if(e.keyCode == 32 || e.keyCode == 39 && e.target == document.body) {
+                // Prevent the default action
+                e.preventDefault();
+                // Trigger the next slide
+                websocket.send('{"action":"presentationTriggerNext"}');
+            }
+            // When left arrow is detected
+            if(e.keyCode == 37 && e.target == document.body) {
+                // Prevent the default action
+                e.preventDefault();
+                // Trigger the previous slide
+                websocket.send('{"action":"presentationTriggerPrevious"}');
+            }
         }
     });
 
@@ -719,6 +898,17 @@ function initialise() {
             // Set slide size
             setSlideSize(slideSizeEm);
         }, false
+    );
+
+    $("input").focus(
+        function () {
+            inputTyping = true;
+        }
+    );
+    $("input").focusout(
+        function () {
+            inputTyping = false;
+        }
     );
 }
 

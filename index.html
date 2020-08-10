@@ -71,12 +71,12 @@
 
 							</div>
 							<div class="clear">
-								<a onclick="clearAll();"><div class="all">Clear All</div></a>
+								<a onclick="clearAll();"><div id="clear-all" class="all">Clear All</div></a>
 								<div class="icons">
-									<a onclick="clearAudio();"><div><img src="img/clearaudio.png"/></div></a>
-									<a onclick="clearProps();"><div class="bordered"><img src="img/clearprops.png"/></div></a>
-									<a onclick="clearSlide();"><div class="bordered"><img src="img/clearslide.png"/></div></a>
-									<a onclick="clearMedia();"><div class="bordered"><img src="img/clearmedia.png"/></div></a>
+									<a onclick="clearAudio();"><div id="clear-audio"><img src="img/clearaudio.png"/></div></a>
+									<a onclick="clearProps();"><div id="clear-props" class="bordered"><img src="img/clearprops.png"/></div></a>
+									<a onclick="clearSlide();"><div id="clear-slide" class="bordered"><img src="img/clearslide.png"/></div></a>
+									<a onclick="clearMedia();"><div id="clear-media" class="bordered"><img src="img/clearmedia.png"/></div></a>
 								</div>
 							</div>
 						</div>
@@ -99,11 +99,11 @@
 						<div class="content">
 							<div id="timeline-controls" class="timeline-controls">
 								<div class="current playing-timeline"></div>
-								<a><div class="play"><i id="timeline-status" class="disabled fas fa-play"></i></div></a>
+								<a onclick="toggleTimelinePlayPause();"><div class="play"><i id="timeline-status" class="disabled fas fa-play"></i></div></a>
 							</div>
 							<div id="audio-controls" class="audio-controls">
 								<div class="current playing-audio"></div>
-								<a onclick="toggleAudioPlayPause(this);"><div class="play"><i id="audio-status" class="disabled fas fa-play"></i></div></a>
+								<a onclick="toggleAudioPlayPause();"><div class="play"><i id="audio-status" class="disabled fas fa-play"></i></div></a>
 							</div>
 						</div>
 					</div>
@@ -131,7 +131,54 @@
 		</div>
 		<div class="controls">
 			<div class="logo">
-				<a onclick="connect()"><img src="img/logo.png"/></a>
+				<a onclick="window.location.reload()"><img src="img/logo.png"/></a>
+			</div>
+			<div class="window-title">ProPresenter Web Remote</div>
+			<div class="producer">
+				<div class="control-container"><a onclick="displayTimerOptions();"><div class="control-button"><img src="img/timers.png" /></div></a><div class="control-text">Timers</div></div>
+				<div class="control-container"><a onclick="displayMessageOptions();"><div class="control-button"><img src="img/messages.png" /></div></a><div class="control-text">Messages</div></div>
+				<div class="control-container"><a onclick="displayStageOptions();"><div class="control-button"><img src="img/stage.png" /></div></a><div class="control-text">Stage</div></div>
+			</div>
+			<div id="timerOptions" class="options-container timers">
+				<div class="options-header">
+					<a onclick="$('#timerOptions').hide();"><div class="options-close"><i class="fas fa-times-circle"></i></div></a>
+					<div class="options-name">Timers</div>
+				</div>
+				<div class="options-content">
+
+				</div>
+				<div class="options-footer">
+
+				</div>
+			</div>
+			<div id="messageOptions" class="options-container messages">
+				<div class="options-header">
+					<a onclick="$('#messageOptions').hide();"><div class="options-close"><i class="fas fa-times-circle"></i></div></a>
+					<div class="options-name">Messages</div>
+				</div>
+				<div class="options-content">
+
+				</div>
+				<div class="options-footer">
+
+				</div>
+			</div>
+			<div id="stageOptions" class="options-container stage">
+				<div class="options-header">
+					<a onclick="$('#stageOptions').hide();"><div class="options-close"><i class="fas fa-times-circle"></i></div></a>
+					<div class="options-name">Stage</div>
+				</div>
+				<div class="options-content">
+					<div class="stage-message-title">Stage Message</div>
+					<input class="stage-message-input" type="text" />
+				</div>
+				<div class="options-footer">
+					<a onclick="clearStageMessage();"><div class="option-button clear-stage">Clear</div></a>
+					<div class="options-stage-hideshow">
+						<a onclick="hideStageMessage();"><div class="option-button hide-stage">Hide</div></a>
+						<a onclick="showStageMessage();"><div class="option-button show-stage">Show</div></a>
+					</div>
+				</div>
 			</div>
 			<!--
 			<div class="status">
