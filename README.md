@@ -7,3 +7,8 @@ Ensure that prior to running that the IP, Port, and Password have been changed i
 
 ## Usage
 ProWebRemote is designed to pull in all Library Presentations, Playlist Presentations, and Audio Playlists from ProPresenter 7 upon launch.
+
+## Troubleshooting
+ProWebRemote is not connecting to ProPresenter 7
+* ProWebRemote must be run from either the index.html file or hosted on a non-HTTPS server as ProPresenter 7 uses WebSocket (not WebSocketSecure), and HTTPS only supports WSS.
+* Ensure that the password provided to ProWebRemote matches the Remote password in ProPresenter 7
