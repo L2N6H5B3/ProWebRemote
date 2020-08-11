@@ -27,8 +27,7 @@
 								<h5 class="segment-header">Library</h5>
 								<a onclick="getLibrary();"><i class="fas fa-redo-alt"></i></a>
 							</div>
-							<div class="content">
-								<a onclick="displayLibrary(this);"><div class="item lib selected"><img src="img/library.png" /><div class="name">Library</div></div></a>
+							<div id="library-content" class="content">
 							</div>
 						</div>
 						<div class="playlists">
@@ -74,7 +73,9 @@
 								<a onclick="clearAll();"><div id="clear-all" class="all">Clear All</div></a>
 								<div class="icons">
 									<a onclick="clearAudio();"><div id="clear-audio"><img src="img/clearaudio.png"/></div></a>
+									<a onclick="clearMessages();"><div id="clear-messages" class="bordered"><img src="img/clearmessage.png"/></div></a>
 									<a onclick="clearProps();"><div id="clear-props" class="bordered"><img src="img/clearprops.png"/></div></a>
+									<a onclick="clearAnnouncements();"><div id="clear-announcements" class="bordered"><img src="img/clearannouncements.png"/></div></a>
 									<a onclick="clearSlide();"><div id="clear-slide" class="bordered"><img src="img/clearslide.png"/></div></a>
 									<a onclick="clearMedia();"><div id="clear-media" class="bordered"><img src="img/clearmedia.png"/></div></a>
 								</div>
@@ -144,11 +145,38 @@
 					<a onclick="$('#timerOptions').hide();"><div class="options-close"><i class="fas fa-times-circle"></i></div></a>
 					<div class="options-name">Timers</div>
 				</div>
-				<div class="options-content">
-
+				<div id="timer-content" class="options-content">
+					<div class="timer-container">
+						<div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div>
+						<div class="timer-name">
+							<input type="text" class="text-input"/>
+						</div>
+						<div class="timer-type"></div>
+						<div class="timer-timeOptions">
+							<div>
+								<div class="element-title">Start</div>
+								<input type="text" class="text-input"/>
+							</div>
+							<div>
+								<div class="element-title">End</div>
+								<input type="text" class="text-input"/>
+							</div>
+						</div>
+						<div class="timer-overrun">
+							<div class="element-title">Overrun</div>
+							<input type="checkbox" class="checkbox text-input" />
+						</div>
+						<div class="timer-reset">
+							<a onclick="resetTimer(this);"><div class="option-button"><img src="img/reset.png" /></div></a>
+						</div>
+						<div class="timer-currentTime">00:00:00.00</div>
+						<div class="timer-start"><a onclick="startTimer(this);"><div class="option-button">Start</div></a></div>
+					</div>
 				</div>
 				<div class="options-footer">
-
+					<a onclick="stopAllClocks();"><div class="option-button">Stop All</div></a>
+					<a onclick="resetAllClocks();"><div class="option-button">Reset All</div></a>
+					<a onclick="startAllClocks();"><div class="option-button">Start All</div></a>
 				</div>
 			</div>
 			<div id="messageOptions" class="options-container messages">
@@ -160,7 +188,9 @@
 
 				</div>
 				<div class="options-footer">
-
+					<div class="right-buttons">
+						<a onclick="showMessage();"><div class="option-button">Show</div></a>
+					</div>
 				</div>
 			</div>
 			<div id="stageOptions" class="options-container stage">
@@ -170,13 +200,15 @@
 				</div>
 				<div class="options-content">
 					<div class="stage-message-title">Stage Message</div>
-					<input class="stage-message-input" type="text" />
+					<input class="text-input stage-message" type="text" />
 				</div>
 				<div class="options-footer">
-					<a onclick="clearStageMessage();"><div class="option-button clear-stage">Clear</div></a>
-					<div class="options-stage-hideshow">
-						<a onclick="hideStageMessage();"><div class="option-button hide-stage">Hide</div></a>
-						<a onclick="showStageMessage();"><div class="option-button show-stage">Show</div></a>
+					<div class="left-buttons">
+						<a onclick="clearStageMessage();"><div class="option-button">Clear</div></a>
+					</div>
+					<div class="right-buttons">
+						<a onclick="hideStageMessage();"><div class="option-button">Hide</div></a>
+						<a onclick="showStageMessage();"><div class="option-button">Show</div></a>
 					</div>
 				</div>
 			</div>

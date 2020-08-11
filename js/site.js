@@ -4,6 +4,7 @@ var host = "127.0.0.1";
 var port = "50000";
 var pass = "control";
 
+var libraryList = [];
 var playlistList = [];
 var audioPlaylistList = [];
 var libraryPresentationList = [];
@@ -42,17 +43,24 @@ function onMessage(evt) {
         if (refresh) {
             getLibrary();
             getAudioPlaylists();
+            getClocks();
             refresh = false;
         }
         authenticated = true;
     } else if (obj.action == "presentationCurrent") {
         createPresentation(obj);
     } else if (obj.action == "libraryRequest") {
-        $(obj.library).each (
-            function () {
-                getPresentation(this);
-            }
-        );
+        // Empty the library area
+        $("#library-content").empty();
+        var data = "";
+        // For each item in the libraries
+        obj.library.forEach(function (item, index) {
+            console.log(item, index);
+            data += createLibrary(item);
+            getPresentation(item);
+        });
+        $("#library-content").append(data);
+        // Get playlists
         getPlaylists();
     } else if (obj.action == "playlistRequestAll") {
         // Empty the playlist area
@@ -90,6 +98,16 @@ function onMessage(evt) {
         setAudioSong(obj);
     } else if (obj.action == "audioIsPlaying") {
         setAudioStatus(obj.audioIsPlaying);
+    } else if (obj.action == "clockRequest") {
+        // Empty the clock area
+        $("#timer-content").empty();
+        var data = "";
+        // For each clock in the data
+        obj.clockInfo.forEach(function (item, index) {
+            console.log(item, index);
+            data += createClock(item);
+        });
+        $("#timer-content").append(data);
     } else if (obj.action == "presentationTriggerIndex") {
         displayPresentation(obj);
         $("#clear-slide").addClass("activated");
@@ -121,7 +139,38 @@ function onClose(evt) {
 //  End Websocket Functions
 
 
-// Playlist Build Functions
+// Build Functions
+
+function createLibrary(obj) {
+    // Variable to hold the unique status of the library in the array
+    var unique = true;
+    // Variable to hold the split string of the presentation path
+    var pathSplit = obj.split("/");
+    // Variable to hold the name of the library, retrieved from the presentation path
+    var libraryName = "";
+    // Variable to hold the data of the library
+    var libraryData = "";
+    // Iterate through each item in the split path to retrieve the library name
+    pathSplit.forEach(function (item, index) {
+      if (item == "Libraries") {
+          libraryName = pathSplit[index+1];
+      }
+    });
+    // Check if the library is unique and can be added in the array
+    libraryList.forEach(function (item) {
+        if (item == libraryName) {
+            unique = false;
+        }
+    });
+    // If the library is unique
+    if (unique) {
+        // Add the library name to the library list
+        libraryList.push(libraryName);
+        // Create the library data
+        var libraryData = '<a onclick="displayLibrary(this);"><div class="item lib library"><img src="img/library.png" /><div class="name">'+libraryName+'</div></div></a>';
+    }
+    return libraryData;
+}
 
 function createPlaylistGroup(obj) {
     var groupData = "";
@@ -181,7 +230,20 @@ function createAudioPlaylist(obj) {
     return playlistData;
 }
 
-// End Playlist Build Functions
+function createClock(obj) {
+    var clockdata = "";
+    if (obj.clockType == 0) {
+        clockData = '<div class="timer-container"><div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div><div class="timer-name"><input type="text" class="text-input" value="'+obj.clockName+'"/></div><div class="timer-type"></div><div class="timer-timeOptions"><div><div class="element-title">Start</div><input type="text" class="text-input"/></div><div></div></div><div class="timer-overrun"><div class="element-title">Overrun</div><input type="checkbox" class="checkbox text-input" /></div><div class="timer-reset"><a onclick="resetTimer(this);"><div class="option-button"><img src="img/reset.png" /></div></a></div><div class="timer-currentTime">00:00:00.00</div><div class="timer-start"><a onclick="startTimer(this);"><div class="option-button">Start</div></a></div></div>';
+    } else if (obj.clockType == 1) {
+        clockData = '<div class="timer-container"><div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div><div class="timer-name"><input type="text" class="text-input" value="'+obj.clockName+'"/></div><div class="timer-type"></div><div class="timer-timeOptions"><div><div class="element-title">Time</div><input type="text" class="text-input"/></div><div><div class="element-title">Format</div><input type="dropdown" class="text-input"/></div></div><div class="timer-overrun"><div class="element-title">Overrun</div><input type="checkbox" class="checkbox text-input" /></div><div class="timer-reset"><a onclick="resetTimer(this);"><div class="option-button"><img src="img/reset.png" /></div></a></div><div class="timer-currentTime"></div><div class="timer-start"><a onclick="startTimer(this);"><div class="option-button">Start</div></a></div></div>';
+    } else if (obj.clockType == 2) {
+        clockData = '<div class="timer-container"><div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div><div class="timer-name"><input type="text" class="text-input" value="'+obj.clockName+'"/></div><div class="timer-type"></div><div class="timer-timeOptions"><div><div class="element-title">Start</div><input type="text" class="text-input"/></div><div><div class="element-title">End</div><input type="text" class="text-input"/></div></div><div class="timer-overrun"><div class="element-title">Overrun</div><input type="checkbox" class="checkbox text-input" /></div><div class="timer-reset"><a onclick="resetTimer(this);"><div class="option-button"><img src="img/reset.png" /></div></a></div><div class="timer-currentTime">00:00:00.00</div><div class="timer-start"><a onclick="startTimer(this);"><div class="option-button">Start</div></a></div></div>';
+    }
+
+    return clockData;
+}
+
+// End Build Functions
 
 
 // Presentation Build Functions
@@ -250,6 +312,41 @@ function clearAll() {
     $("#audio-items").children("a").children("div").removeClass("highlighted");
 }
 
+function clearAudio() {
+    websocket.send('{"action":"clearAudio"}');
+    $("#clear-audio").removeClass("activated");
+    $(".playing-audio").empty();
+    $("#audio-status").addClass("disabled");
+    $("#audio-items").children("a").children("div").removeClass("highlighted");
+    if ($(".icons div.activated").length < 1) {
+        $("#clear-all").removeClass("activated");
+    }
+}
+
+function clearMessages() {
+    websocket.send('{"action":"clearMessages"}');
+    $("#clear-messages").removeClass("activated");
+    if ($(".icons div.activated").length < 1) {
+        $("#clear-all").removeClass("activated");
+    }
+}
+
+function clearProps() {
+    websocket.send('{"action":"clearProps"}');
+    $("#clear-props").removeClass("activated");
+    if ($(".icons div.activated").length < 1) {
+        $("#clear-all").removeClass("activated");
+    }
+}
+
+function clearAnnouncements() {
+    websocket.send('{"action":"clearAnnouncements"}');
+    $("#clear-announcements").removeClass("activated");
+    if ($(".icons div.activated").length < 1) {
+        $("#clear-all").removeClass("activated");
+    }
+}
+
 function clearSlide() {
     $('#live').empty();
     websocket.send('{"action":"clearText"}');
@@ -262,25 +359,6 @@ function clearSlide() {
 function clearMedia() {
     websocket.send('{"action":"clearVideo"}');
     $("#clear-media").removeClass("activated");
-    if ($(".icons div.activated").length < 1) {
-        $("#clear-all").removeClass("activated");
-    }
-}
-
-function clearAudio() {
-    websocket.send('{"action":"clearAudio"}');
-    $("#clear-audio").removeClass("activated");
-    $(".playing-audio").empty();
-    $("#audio-status").addClass("disabled");
-    $("#audio-items").children("a").children("div").removeClass("highlighted");
-    if ($(".icons div.activated").length < 1) {
-        $("#clear-all").removeClass("activated");
-    }
-}
-
-function clearProps() {
-    websocket.send('{"action":"clearProps"}');
-    $("#clear-props").removeClass("activated");
     if ($(".icons div.activated").length < 1) {
         $("#clear-all").removeClass("activated");
     }
@@ -367,17 +445,11 @@ function getAudioStatus() {
     websocket.send('{"action":"audioIsPlaying"}');
 }
 
-function getPresentation(obj) {
-    // Create the location variable
-    var location = "";
-    // Check the request origin
-    if ($(obj).attr("onclick") == null) {
-        // Use the parameter as the location
-        location = obj;
-    } else {
-        // Get the current presentation location
-        location = $(obj).children("div").attr("id");
-    }
+function getClocks() {
+    websocket.send('{"action":"clockRequest"}');
+}
+
+function getPresentation(location) {
     // Send the request to ProPresenter
     websocket.send('{"action": "presentationRequest","presentationPath": "'+location+'"}');
 }
@@ -476,10 +548,13 @@ function setAudioStatus(obj) {
         $("#clear-audio").addClass("activated");
         $("#clear-all").addClass("activated");
     } else {
-        $("#audio-status").removeClass("fa-pause");
-        $("#audio-status").addClass("fa-play").addClass("disabled");
         $("#clear-audio").removeClass("activated");
-        $("#clear-all").removeClass("activated");
+        $(".playing-audio").empty();
+        $("#audio-status").addClass("disabled");
+        $("#audio-items").children("a").children("div").removeClass("highlighted");
+        if ($(".icons div.activated").length < 1) {
+            $("#clear-all").removeClass("activated");
+        }
     }
 
 }
@@ -500,6 +575,18 @@ function hideStageMessage() {
 function showStageMessage() {
     var message = $(".stage-message-input").val();
     websocket.send('{"action":"stageDisplaySendMessage","stageDisplayMessage":"'+message+'"}');
+}
+
+function stopAllClocks() {
+    websocket.send('{"action":"clockStopAll"}');
+}
+
+function resetAllClocks() {
+    websocket.send('{"action":"clockResetAll"}');
+}
+
+function startAllClocks() {
+    websocket.send('{"action":"clockStartAll"}');
 }
 
 function triggerSlide(obj) {
@@ -660,17 +747,27 @@ function displayAudioPlaylist(obj) {
 }
 
 function displayLibrary(obj) {
+    // Get the current library name
+    var current = $(obj).children("div").children(".name").text();
     // Create variable to hold library items
     var data = "";
     // Sort the presentations in the library by name
     libraryPresentationList.sort(SortByName);
 
     // For each Presentation in the array
-    $(libraryPresentationList).each (
-        function () {
-            data += '<a onclick="displayPresentation(this);"><div id="'+this.presentationPath+'" class="item con"><img src="img/presentation.png" /><div class="name">'+this.presentation.presentationName+'</div></div></a>';
-        }
-    );
+    libraryPresentationList.forEach(function (item) {
+        // Variable to hold the split string of the presentation path
+        var pathSplit = item.presentationPath.split("/");
+        // Iterate through each item in the split path to retrieve the library name
+        pathSplit.forEach(function (element, index) {
+          if (element == "Libraries") {
+              // If this presentation is from this library, add the data
+              if (pathSplit[index+1] == current) {
+                  data += '<a onclick="displayPresentation(this);"><div id="'+item.presentationPath+'" class="item con"><img src="img/presentation.png" /><div class="name">'+item.presentation.presentationName+'</div></div></a>';
+              }
+          }
+        });
+    });
     // Reset the item count
     $("#left-count").empty();
     if (libraryPresentationList.length == 1) {
@@ -714,8 +811,6 @@ function displayPresentation(obj) {
     $("#playlist-items").children("a").children("div").removeClass("selected").removeClass("highlighted");
     // Check if the presentation is a playlist or a library presentation
     if (location.charAt(0) == '0') {
-        // Remove selected from playlists
-        $(".playlists").children("div").children("div").children("a").children("div").removeClass("selected");
         // Iterate through each playlist in the array
         $(playlistList).each(
             function () {
@@ -727,8 +822,7 @@ function displayPresentation(obj) {
                             $(".playlist").children(".name").each(
                                 function () {
                                     if (playlistName == $(this).text()){
-                                        // Add highlighted to playlist
-                                        $(this).parent().addClass("highlighted");
+
 
                                         var playlistGroupAnchor = $(this).parent().parent().parent().children(".expander");
                                         $(playlistGroupAnchor).parent().children("a").children(".playlist").each(
@@ -740,13 +834,14 @@ function displayPresentation(obj) {
                                         $(playlistGroupAnchor).children("i").removeClass("fa-caret-right");
                                         $(playlistGroupAnchor).children("i").addClass("fa-caret-down");
                                         displayPlaylist($(this).parent().parent());
+                                        // Add highlighted to playlist
+                                        $(this).parent().addClass("highlighted");
                                     }
                                 }
                             );
                         }
                     }
                 );
-
             }
         );
 
@@ -784,11 +879,37 @@ function displayPresentation(obj) {
         );
     } else {
         // Get the library
-        var library = $(".libraries").children("div").children("a")[0];
-        // Display the library
-        displayLibrary(library);
-        // Add highlighted to library
-        $(".libraries").children("div").children("a").children("div").addClass("highlighted");
+        var library;
+        // Iterate through each library
+        $(".libraries").children("div").children("a").each (
+            function () {
+                var libraryName = $(this).text();
+                // Split the string of the presentation path
+                var pathSplit = location.split("/");
+                // Iterate through each item in the split path to retrieve the library name
+                pathSplit.forEach(
+                    function (pathElement, index) {
+                        if (pathElement == "Libraries") {
+                            // If this presentation is from this library
+                            if (pathSplit[index+1] == libraryName) {
+                                // Highlight the library
+                                $(".library").children(".name").each(
+                                    function () {
+                                        if (libraryName == $(this).text()) {
+                                            // Display the library
+                                            displayLibrary($(this).parent().parent());
+                                            // Add highlighted to library
+                                            $(this).parent().addClass("highlighted");
+                                        }
+                                    }
+                                );
+                            }
+                        }
+                    }
+                );
+            }
+        );
+
         // For each Presentation in the array
         $(libraryPresentationList).each (
             function () {
@@ -829,10 +950,9 @@ function displayPresentation(obj) {
     setSlideSize(slideSizeEm);
     // Set the current slide
     setCurrentSlide(obj.slideIndex+1, location);
-
-    $(obj).parent().children("a").children("div").removeClass("selected");
-    $(obj).parent().children("a").children("div").removeClass("highlighted");
-
+    // Remove selected and highlighted from all items
+    $(obj).parent().children("a").children("div").removeClass("selected").removeClass("highlighted");
+    // Set the current item as selected
     $(obj).children("div").addClass("selected");
 }
 
@@ -853,6 +973,11 @@ function SortByName(a, b){
   var aName = a.presentation.presentationName.toLowerCase();
   var bName = b.presentation.presentationName.toLowerCase();
   return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
+}
+
+function getLocation(obj) {
+    // Return the current presentation location
+    return $(obj).children("div").attr("id");
 }
 
 // End Utility Functions
