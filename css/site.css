@@ -230,7 +230,7 @@ h5 {
 
 .collapser {
     position: absolute;
-    top: 1px;
+    top: 2px;
     left: 3px;
     padding: 1px 1px 1px 7px;
     font-size: 18px;
@@ -590,7 +590,6 @@ div.stage-message-title {
     display: inline-block;
     width: 408px;
     font-size: 14px;
-    margin-top: 10px;
     color: #e4e4e4;
 }
 
@@ -653,8 +652,9 @@ div.stage-message-title {
 .timer-timeOptions {
     position: absolute;
     left: 230px;
-    width: 140px;
-    padding: 13px 0px;
+    width: 132px;
+    padding: 13px 4px;
+    text-align: left;
 }
 
 .timer-timeOptions input {
@@ -673,6 +673,7 @@ div.stage-message-title {
 .timer-container .element-title {
     display: block;
     font-size: 12px;
+    text-align: center;
 }
 
 .timer-reset {
@@ -705,7 +706,30 @@ div.stage-message-title {
     padding: 14px 0px;
 }
 
-.input
+.stage-screen {
+    position: relative;
+    height: 20px;
+    padding: 14px 25px;
+}
+
+.stage-screen div {
+    display: inline-block;
+}
+
+.screen-name {
+    font-size: 14px;
+    color: #e4e4e4;
+    float: left;
+}
+
+.stage-layout {
+    float: right;
+}
+
+select {
+    background-color: #535353;
+    color: #e5e5e5;
+}
 
 .lds-spinner {
   color: official;

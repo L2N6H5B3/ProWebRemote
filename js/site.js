@@ -44,6 +44,7 @@ function onMessage(evt) {
             getLibrary();
             getAudioPlaylists();
             getClocks();
+            getStageLayouts();
             refresh = false;
         }
         authenticated = true;
@@ -105,9 +106,15 @@ function onMessage(evt) {
         // For each clock in the data
         obj.clockInfo.forEach(function (item, index) {
             console.log(item, index);
-            data += createClock(item);
+            data += createClock(item, index);
         });
         $("#timer-content").append(data);
+    } else if (obj.action == "clockStartStop") {
+        setClockState(obj);
+    } else if (obj.action == "clockCurrentTimes") {
+        setClockTimes(obj);
+    } else if (obj.action == "stageDisplaySets") {
+        createStageScreens(obj);
     } else if (obj.action == "presentationTriggerIndex") {
         displayPresentation(obj);
         $("#clear-slide").addClass("activated");
@@ -175,8 +182,7 @@ function createLibrary(obj) {
 function createPlaylistGroup(obj) {
     var groupData = "";
     groupData += '<div class="playlist-group">'+
-                    '<a onclick="togglePlaylistVisibility(this)" class="expander"><i class="collapser fas fa-caret-right"></i></a>'+
-                    '<div class="item lib group"><img src="img/playlistgroup.png" />'+obj.playlistName+'</div>';
+                    '<a onclick="togglePlaylistVisibility(this)" class="expander"><i class="collapser fas fa-caret-right"></i><div class="item lib group"><img src="img/playlistgroup.png" />'+obj.playlistName+'</div></a>';
     $(obj.playlist).each (
         function () {
             if (this.playlistType == "playlistTypeGroup") {
@@ -204,8 +210,7 @@ function createPlaylist(obj) {
 function createAudioPlaylistGroup(obj) {
     var groupData = "";
     groupData += '<div class="playlist-group">'+
-                    '<a onclick="togglePlaylistVisibility(this)" class="expander"><i class="collapser fas fa-caret-right"></i></a>'+
-                    '<div class="item lib group"><img src="img/playlistgroup.png" />'+obj.playlistName+'</div>';
+                    '<a onclick="togglePlaylistVisibility(this)" class="expander"><i class="collapser fas fa-caret-right"></i><div class="item lib group"><img src="img/playlistgroup.png" />'+obj.playlistName+'</div></a>';
     $(obj.playlist).each (
         function () {
             if (this.playlistType == "playlistTypeGroup") {
@@ -230,17 +235,39 @@ function createAudioPlaylist(obj) {
     return playlistData;
 }
 
-function createClock(obj) {
+function createClock(obj, clockIndex) {
     var clockdata = "";
     if (obj.clockType == 0) {
-        clockData = '<div class="timer-container"><div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div><div class="timer-name"><input type="text" class="text-input" value="'+obj.clockName+'"/></div><div class="timer-type"></div><div class="timer-timeOptions"><div><div class="element-title">Start</div><input type="text" class="text-input"/></div><div></div></div><div class="timer-overrun"><div class="element-title">Overrun</div><input type="checkbox" class="checkbox text-input" /></div><div class="timer-reset"><a onclick="resetTimer(this);"><div class="option-button"><img src="img/reset.png" /></div></a></div><div class="timer-currentTime">'+obj.clockTime+'</div><div class="timer-start"><a onclick="startTimer(this);"><div class="option-button">Start</div></a></div></div>';
+        clockData = '<div id="clock-'+clockIndex+'" class="timer-container"><div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div><div class="timer-name"><input id="clock-'+clockIndex+'-name" type="text" class="text-input" value="'+obj.clockName+'"/></div><div class="timer-type"></div><div class="timer-timeOptions"><div><div class="element-title">Duration</div><input id="clock-'+clockIndex+'-duration" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockDuration)+'"/></div><div></div></div><div class="timer-overrun"><div class="element-title">Overrun</div><input id="clock-'+clockIndex+'-overrun" type="checkbox" class="checkbox text-input" '+getClockOverrun(obj.clockOverrun)+'/></div><div class="timer-reset"><a onclick="resetClock('+clockIndex+');"><div class="option-button"><img src="img/reset.png" /></div></a></div><div id="clock-'+clockIndex+'-time" class="timer-currentTime">'+getClockSmallFormat(obj.clockTime)+'</div><div class="timer-start"><a onclick="toggleClock('+clockIndex+');"><div id="clock-'+clockIndex+'-state" class="option-button">Start</div></a></div></div>';
     } else if (obj.clockType == 1) {
-        clockData = '<div class="timer-container"><div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div><div class="timer-name"><input type="text" class="text-input" value="'+obj.clockName+'"/></div><div class="timer-type"></div><div class="timer-timeOptions"><div><div class="element-title">Time</div><input type="text" class="text-input"/></div><div><div class="element-title">Format</div><input type="dropdown" class="text-input"/></div></div><div class="timer-overrun"><div class="element-title">Overrun</div><input type="checkbox" class="checkbox text-input" /></div><div class="timer-reset"><a onclick="resetTimer(this);"><div class="option-button"><img src="img/reset.png" /></div></a></div><div class="timer-currentTime"></div><div class="timer-start"><a onclick="startTimer(this);"><div class="option-button">Start</div></a></div></div>';
+        clockData = '<div id="clock-'+clockIndex+'" class="timer-container"><div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div><div class="timer-name"><input id="clock-'+clockIndex+'-name" type="text" class="text-input" value="'+obj.clockName+'"/></div><div class="timer-type"></div><div class="timer-timeOptions"><div><div class="element-title">Time</div><input id="clock-'+clockIndex+'-duration" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockEndTime)+'"/></div><div><div class="element-title">Format</div><select class="text-input"><option>AM</option><option>PM</option><option>24Hr</option></select></div></div><div class="timer-overrun"><div class="element-title">Overrun</div><input id="clock-'+clockIndex+'-overrun" type="checkbox" class="checkbox text-input" '+getClockOverrun(obj.clockOverrun)+'/></div><div class="timer-reset"><a onclick="resetClock('+clockIndex+');"><div class="option-button"><img src="img/reset.png" /></div></a></div><div id="clock-'+clockIndex+'-time" class="timer-currentTime">'+getClockSmallFormat(obj.clockTime)+'</div><div class="timer-start"><a onclick="toggleClock('+clockIndex+');"><div id="clock-'+clockIndex+'-state" class="option-button">Start</div></a></div></div>';
     } else if (obj.clockType == 2) {
-        clockData = '<div class="timer-container"><div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div><div class="timer-name"><input type="text" class="text-input" value="'+obj.clockName+'"/></div><div class="timer-type"></div><div class="timer-timeOptions"><div><div class="element-title">Start</div><input type="text" class="text-input"/></div><div><div class="element-title">End</div><input type="text" class="text-input"/></div></div><div class="timer-overrun"><div class="element-title">Overrun</div><input type="checkbox" class="checkbox text-input" /></div><div class="timer-reset"><a onclick="resetTimer(this);"><div class="option-button"><img src="img/reset.png" /></div></a></div><div class="timer-currentTime">'+obj.clockTime+'</div><div class="timer-start"><a onclick="startTimer(this);"><div class="option-button">Start</div></a></div></div>';
+        clockData = '<div id="clock-'+clockIndex+'" class="timer-container"><div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div><div class="timer-name"><input id="clock-'+clockIndex+'-name" type="text" class="text-input" value="'+obj.clockName+'"/></div><div class="timer-type"></div><div class="timer-timeOptions"><div><div class="element-title">Start</div><input id="clock-'+clockIndex+'-duration" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockDuration)+'"/></div><div><div class="element-title">End</div><input type="text" class="text-input" placeholder="No Limit" value="'+getClockSmallFormat(obj.clockEndTime)+'"/></div></div><div class="timer-overrun"><div class="element-title">Overrun</div><input id="clock-'+clockIndex+'-overrun" type="checkbox" class="checkbox text-input" '+getClockOverrun(obj.clockOverrun)+'/></div><div class="timer-reset"><a onclick="resetClock('+clockIndex+');"><div class="option-button"><img src="img/reset.png" /></div></a></div><div id="clock-'+clockIndex+'-time" class="timer-currentTime">'+getClockSmallFormat(obj.clockTime)+'</div><div class="timer-start"><a onclick="toggleClock('+clockIndex+');"><div id="clock-'+clockIndex+'-state" class="option-button">Start</div></a></div></div>';
     }
 
     return clockData;
+}
+
+function createStageScreens(obj) {
+    var screenData = "";
+    obj.stageScreens.forEach(
+        function (item) {
+            var selectedLayout = item.stageLayoutSelectedLayoutUUID;
+            screenData += '<div class="stage-screen"><div class="screen-name">'+item.stageScreenName+'</div><div class="stage-layout"><select onchange="setStageLayout(this)" name="stage-layout" id="'+item.stageScreenUUID+'">';
+            obj.stageLayouts.forEach(
+                function (item) {
+                    if (item.stageLayoutUUID == selectedLayout) {
+                        screenData += '<option value="'+item.stageLayoutUUID+'" selected>'+item.stageLayoutName+'</option>';
+                    } else {
+                        screenData += '<option value="'+item.stageLayoutUUID+'">'+item.stageLayoutName+'</option>';
+                    }
+                }
+            );
+            screenData += '</select></div></div>';
+        }
+    );
+    // Add the screen data to stage screens
+    document.getElementById("stage-screens").innerHTML = screenData;
 }
 
 // End Build Functions
@@ -449,6 +476,10 @@ function getClocks() {
     websocket.send('{"action":"clockRequest"}');
 }
 
+function getStageLayouts() {
+    websocket.send('{"action":"stageDisplaySets"}');
+}
+
 function getPresentation(location) {
     // Send the request to ProPresenter
     websocket.send('{"action": "presentationRequest","presentationPath": "'+location+'"}');
@@ -508,6 +539,16 @@ function togglePlaylistVisibility(obj) {
         $(obj).addClass("expanded")
         $(obj).children("i").removeClass("fa-caret-right");
         $(obj).children("i").addClass("fa-caret-down");
+    }
+}
+
+function toggleClock(int) {
+    if ($("#clock-"+int+"-state").text() == "Start") {
+        websocket.send('{"action":"clockStart","clockIndex":"'+int+'"}');
+        websocket.send('{"action":"clockStartSendingCurrentTime"}');
+    } else {
+        websocket.send('{"action":"clockStop","clockIndex":"'+int+'"}');
+        websocket.send('{"action":"clockStopSendingCurrentTime"}');
     }
 }
 
@@ -577,8 +618,15 @@ function showStageMessage() {
     websocket.send('{"action":"stageDisplaySendMessage","stageDisplayMessage":"'+message+'"}');
 }
 
+function setStageLayout(obj) {
+    console.log($(obj).val());
+    console.log($(obj).attr("id"));
+    websocket.send('{"action":"stageDisplayChangeLayout","stageLayoutUUID":"'+$(obj).val()+'","stageScreenUUID":"'+$(obj).attr("id")+'"}');
+}
+
 function stopAllClocks() {
     websocket.send('{"action":"clockStopAll"}');
+    websocket.send('{"action":"clockStopSendingCurrentTime"}');
 }
 
 function resetAllClocks() {
@@ -586,7 +634,31 @@ function resetAllClocks() {
 }
 
 function startAllClocks() {
+    websocket.send('{"action":"clockStartSendingCurrentTime"}');
     websocket.send('{"action":"clockStartAll"}');
+}
+
+function resetClock(index, type) {
+    websocket.send('{"action":"clockReset","clockIndex":"'+index+'"}');
+    $("#clock-"+index+"-time").text($("#clock-"+index+"-duration").val());
+}
+
+function setClockState(obj) {
+    var clockIndex = obj.clockIndex;
+    $("#clock-"+obj.clockIndex+"-time").text(getClockSmallFormat(obj.clockTime));
+    if (obj.clockState == true) {
+        $("#clock-"+obj.clockIndex+"-state").text("Stop");
+    } else {
+        $("#clock-"+obj.clockIndex+"-state").text("Start");
+    }
+}
+
+function setClockTimes(obj) {
+    obj.clockTimes.forEach(function (item, index) {
+        $("#clock-"+index+"-time").text(getClockSmallFormat(item));
+        // Clock millisecond countdown - for future use
+        // clockMilisecondsCountdown($("#clock-"+index+"-time"));
+    });
 }
 
 function triggerSlide(obj) {
@@ -646,21 +718,39 @@ function triggerAudio(obj) {
 // Page Display Functions
 
 function displayTimerOptions() {
-    $("#messageOptions").hide();
-    $("#stageOptions").hide();
-    $("#timerOptions").show();
+    if($("#timerOptions:visible").length == 0) {
+        $("#messageOptions").hide();
+        $("#stageOptions").hide();
+        $("#timerOptions").show();
+    } else {
+        $("#messageOptions").hide();
+        $("#stageOptions").hide();
+        $("#timerOptions").hide();
+    }
 }
 
 function displayMessageOptions() {
-    $("#timerOptions").hide();
-    $("#stageOptions").hide();
-    $("#messageOptions").show();
+    if($("#messageOptions:visible").length == 0) {
+        $("#timerOptions").hide();
+        $("#stageOptions").hide();
+        $("#messageOptions").show();
+    } else {
+        $("#timerOptions").hide();
+        $("#stageOptions").hide();
+        $("#messageOptions").hide();
+    }
 }
 
 function displayStageOptions() {
-    $("#timerOptions").hide();
-    $("#messageOptions").hide();
-    $("#stageOptions").show();
+    if($("#stageOptions:visible").length == 0) {
+        $("#timerOptions").hide();
+        $("#messageOptions").hide();
+        $("#stageOptions").show();
+    } else {
+        $("#timerOptions").hide();
+        $("#messageOptions").hide();
+        $("#stageOptions").hide();
+    }
 }
 
 function displayPlaylist(obj) {
@@ -978,6 +1068,45 @@ function SortByName(a, b){
 function getLocation(obj) {
     // Return the current presentation location
     return $(obj).children("div").attr("id");
+}
+
+function getClockSmallFormat(obj) {
+    return obj.split(".")[0];
+}
+
+function getClockOverrun(obj) {
+    if (obj == true) {
+        return "checked";
+    } else {
+        return "";
+    }
+}
+
+function clockMilisecondsCountdown(obj) {
+    var ms = parseInt($(obj).text().split(".")[1]);
+    var millisecondCount = setInterval(
+        function () {
+            if (ms > 0) {
+                ms -= 1;
+            } else {
+                ms = 100;
+            }
+            var msString = ms.toString();
+            if (msString.length < 2) {
+                console.log(msString.length);
+                msString = "0"+msString;
+            }
+            time = $(obj).text().split(".")[0];
+            $(obj).text(time+"."+msString);
+        },
+        10
+    );
+    setTimeout(
+        function () {
+            clearInterval(millisecondCount);
+        },
+        1000
+    );
 }
 
 // End Utility Functions
