@@ -180,7 +180,8 @@ h5 {
 
 .content {
     color: #e2e2e2;
-    overflow-y: scroll;
+    overflow-y: auto;
+    overflow-x: hidden;
     min-height: 60px;
 }
 
