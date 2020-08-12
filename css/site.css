@@ -35,7 +35,8 @@ body {
     width: 264px;
     border-right: 1px solid black;
     height: calc(100% - 65px);
-    overflow: scroll;
+    overflow-y: auto;
+    overflow-x: hidden;
     background-color: #464646;
 }
 
@@ -62,7 +63,7 @@ body {
     margin-left: 265px;
     margin-right: 285px;
     border-top: 1px solid black;
-    overflow-y: scroll;
+    overflow-y: auto;
     overflow-x: hidden;
 }
 
@@ -115,7 +116,8 @@ body {
     width: 284px;
     border-left: 1px solid black;
     height: calc(100% - 65px);
-    overflow: scroll;
+    overflow-y: auto;
+    overflow-x: hidden;
     background-color: #2f2f2f;
 }
 
