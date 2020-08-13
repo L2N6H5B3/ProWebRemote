@@ -15,6 +15,7 @@ var wsUri = "ws://"+host+":"+port+"/remote";
 var refreshTimeout;
 var refresh = true;
 var inputTyping = false;
+var clockSingleUpdate = false;
 
 // End Variables
 
@@ -40,86 +41,135 @@ function onMessage(evt) {
     console.log("Message: "+evt.data);
 
     if (obj.action == "authenticate" && obj.authenticated == "1" && authenticated == false) {
+        // If the data is stale
         if (refresh) {
+            // Get the libraries and library contents, playlists and playlist contents
             getLibrary();
+            // Get the audio playlists and playlist contents
             getAudioPlaylists();
+            // Get clocks
             getClocks();
+            // Get messages
+            getMessages();
+            // Get stage layouts
             getStageLayouts();
+            // Set data to fresh
             refresh = false;
         }
+        // Set as authenticated
         authenticated = true;
     } else if (obj.action == "presentationCurrent") {
+        // Create presentation
         createPresentation(obj);
     } else if (obj.action == "libraryRequest") {
         // Empty the library area
         $("#library-content").empty();
+        // Create a variable to hold the libraries
         var data = "";
         // For each item in the libraries
         obj.library.forEach(function (item, index) {
-            console.log(item, index);
+            // Add the library if required
             data += createLibrary(item);
+            // Get the presentation file from the library
             getPresentation(item);
         });
+        // Add the libraries to the library content area
         $("#library-content").append(data);
         // Get playlists
         getPlaylists();
     } else if (obj.action == "playlistRequestAll") {
         // Empty the playlist area
         $("#playlist-content").empty();
+        // Create a variable to hold the playlists
         var data = "";
+        // For each playlist
         $(obj.playlistAll).each (
             function () {
+                // Check if this object is a playlist group or playlist
                 if (this.playlistType == "playlistTypeGroup") {
+                    // Create a new playlist group
                     data += createPlaylistGroup(this);
                 } else if (this.playlistType == "playlistTypePlaylist") {
+                    // Create a new playlist
                     data += createPlaylist(this);
                 }
             }
         );
+        // Add the playlists to the playlist content area
         $("#playlist-content").append(data);
     } else if (obj.action == "audioRequest") {
         // Empty the audio area
         $("#audio-content").empty();
+        // Create a variable to hold the audio playlists
         var data = "";
+        // For each audio playlist
         $(obj.audioPlaylist).each (
             function () {
+                // Check if this object is a audio playlist group or audio playlist
                 if (this.playlistType == "playlistTypeGroup") {
+                    // Create a new audio playlist group
                     data += createAudioPlaylistGroup(this);
                 } else if (this.playlistType == "playlistTypePlaylist") {
+                    // Create a new audio playlist
                     data += createAudioPlaylist(this);
                 }
             }
         );
+        // Add the audio playlists to the audio playlist content area
         $("#audio-content").append(data);
+        // Get the current audio status and song
         getAudioStatus();
-    } else if (obj.action == "audioPlayPause") {
-        setAudioStatus(obj.audioPlayPause);
-        getCurrentAudio();
-    } else if (obj.action == "audioCurrentSong") {
-        setAudioSong(obj);
-    } else if (obj.action == "audioIsPlaying") {
-        setAudioStatus(obj.audioIsPlaying);
     } else if (obj.action == "clockRequest") {
         // Empty the clock area
         $("#timer-content").empty();
+        // Create a variable to hold the clocks
         var data = "";
         // For each clock in the data
         obj.clockInfo.forEach(function (item, index) {
             console.log(item, index);
             data += createClock(item, index);
         });
+        // Add the clocks to the timer content area
         $("#timer-content").append(data);
-    } else if (obj.action == "clockStartStop") {
-        setClockState(obj);
-    } else if (obj.action == "clockCurrentTimes") {
-        setClockTimes(obj);
+        // Start receiving clock times from ProPresenter
+        startReceivingClockData();
+        // Prevent input fields from conflicting with slide progression
+        preventInputInterference();
+    } else if (obj.action == "messsageRequest") {
+        // Create
+        createMessages(obj);
+        preventInputInterference();
     } else if (obj.action == "stageDisplaySets") {
+        // Create stage display screens
         createStageScreens(obj);
     } else if (obj.action == "presentationTriggerIndex") {
+        // Display the current ProPresenter presentation
         displayPresentation(obj);
+        // Set clear slide to active
         $("#clear-slide").addClass("activated");
+        // Set clear media to active
         $("#clear-media").addClass("activated");
+        // Set clear all to active
         $("#clear-all").addClass("activated");
+    }else if (obj.action == "audioPlayPause") {
+        // Set the audio status
+        setAudioStatus(obj.audioPlayPause);
+        // Get the current song
+        getCurrentAudio();
+    } else if (obj.action == "audioCurrentSong") {
+        // Set the current song
+        setAudioSong(obj);
+    } else if (obj.action == "audioIsPlaying") {
+        // Set audio status
+        setAudioStatus(obj.audioIsPlaying);
+    } else if (obj.action == "clockStartStop") {
+        // Set clock state
+        setClockState(obj);
+    } else if (obj.action == "clockCurrentTimes") {
+        // Set clock current times
+        setClockTimes(obj);
+    } else if (obj.action == "clockTypeChanged") {
+        setClockTypePP(obj);
     }
 }
 
@@ -237,15 +287,69 @@ function createAudioPlaylist(obj) {
 
 function createClock(obj, clockIndex) {
     var clockdata = "";
-    if (obj.clockType == 0) {
-        clockData = '<div id="clock-'+clockIndex+'" class="timer-container"><div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div><div class="timer-name"><input id="clock-'+clockIndex+'-name" type="text" class="text-input" value="'+obj.clockName+'"/></div><div class="timer-type"></div><div class="timer-timeOptions"><div><div class="element-title">Duration</div><input id="clock-'+clockIndex+'-duration" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockDuration)+'"/></div><div></div></div><div class="timer-overrun"><div class="element-title">Overrun</div><input id="clock-'+clockIndex+'-overrun" type="checkbox" class="checkbox text-input" '+getClockOverrun(obj.clockOverrun)+'/></div><div class="timer-reset"><a onclick="resetClock('+clockIndex+');"><div class="option-button"><img src="img/reset.png" /></div></a></div><div id="clock-'+clockIndex+'-time" class="timer-currentTime">'+getClockSmallFormat(obj.clockTime)+'</div><div class="timer-start"><a onclick="toggleClock('+clockIndex+');"><div id="clock-'+clockIndex+'-state" class="option-button">Start</div></a></div></div>';
-    } else if (obj.clockType == 1) {
-        clockData = '<div id="clock-'+clockIndex+'" class="timer-container"><div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div><div class="timer-name"><input id="clock-'+clockIndex+'-name" type="text" class="text-input" value="'+obj.clockName+'"/></div><div class="timer-type"></div><div class="timer-timeOptions"><div><div class="element-title">Time</div><input id="clock-'+clockIndex+'-duration" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockEndTime)+'"/></div><div><div class="element-title">Format</div><select class="text-input"><option>AM</option><option>PM</option><option>24Hr</option></select></div></div><div class="timer-overrun"><div class="element-title">Overrun</div><input id="clock-'+clockIndex+'-overrun" type="checkbox" class="checkbox text-input" '+getClockOverrun(obj.clockOverrun)+'/></div><div class="timer-reset"><a onclick="resetClock('+clockIndex+');"><div class="option-button"><img src="img/reset.png" /></div></a></div><div id="clock-'+clockIndex+'-time" class="timer-currentTime">'+getClockSmallFormat(obj.clockTime)+'</div><div class="timer-start"><a onclick="toggleClock('+clockIndex+');"><div id="clock-'+clockIndex+'-state" class="option-button">Start</div></a></div></div>';
-    } else if (obj.clockType == 2) {
-        clockData = '<div id="clock-'+clockIndex+'" class="timer-container"><div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div><div class="timer-name"><input id="clock-'+clockIndex+'-name" type="text" class="text-input" value="'+obj.clockName+'"/></div><div class="timer-type"></div><div class="timer-timeOptions"><div><div class="element-title">Start</div><input id="clock-'+clockIndex+'-duration" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockDuration)+'"/></div><div><div class="element-title">End</div><input type="text" class="text-input" placeholder="No Limit" value="'+getClockSmallFormat(obj.clockEndTime)+'"/></div></div><div class="timer-overrun"><div class="element-title">Overrun</div><input id="clock-'+clockIndex+'-overrun" type="checkbox" class="checkbox text-input" '+getClockOverrun(obj.clockOverrun)+'/></div><div class="timer-reset"><a onclick="resetClock('+clockIndex+');"><div class="option-button"><img src="img/reset.png" /></div></a></div><div id="clock-'+clockIndex+'-time" class="timer-currentTime">'+getClockSmallFormat(obj.clockTime)+'</div><div class="timer-start"><a onclick="toggleClock('+clockIndex+');"><div id="clock-'+clockIndex+'-state" class="option-button">Start</div></a></div></div>';
-    }
-
+        clockData = '<div id="clock-'+clockIndex+'" class="timer-container type-'+obj.clockType+'">'
+            + '<div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div>'
+            + '<div class="timer-name"><input id="clock-'+clockIndex+'-name" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+obj.clockName+'"/></div>'
+            + '<div id="clock-'+clockIndex+'-type" class="timer-type">'+createClockTypeOptions(obj.clockType, clockIndex)+'</div>'
+            + '<div class="timer-timeOptions type-0"><div><div class="element-title">Duration</div><input id="clock-'+clockIndex+'-duration" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockDuration)+'"/></div><div></div></div>'
+            + '<div class="timer-timeOptions type-1"><div><div class="element-title">Time</div><input id="clock-'+clockIndex+'-time" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockEndTime)+'"/></div><div><div class="element-title">Format</div><select id="clock-'+clockIndex+'-format" onchange="updateClock('+clockIndex+');" class="text-input">'+createClockFormatOptions(obj.clockTimePeriodFormat)+'</select></div></div>'
+            + '<div class="timer-timeOptions type-2"><div><div class="element-title">Start</div><input id="clock-'+clockIndex+'-start" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockDuration)+'"/></div><div><div class="element-title">End</div><input id="clock-'+clockIndex+'-end" onchange="updateClock('+clockIndex+');" type="text" class="text-input" placeholder="No Limit" value="'+getClockSmallFormat(obj.clockEndTime)+'"/></div></div>'
+            + '<div class="timer-overrun"><div class="element-title">Overrun</div><input id="clock-'+clockIndex+'-overrun" onchange="updateClock('+clockIndex+');" type="checkbox" class="checkbox text-input" '+getClockOverrun(obj.clockOverrun)+'/></div>'
+            + '<div class="timer-reset"><a onclick="resetClock('+clockIndex+');"><div class="option-button"><img src="img/reset.png" /></div></a></div>'
+            + '<div id="clock-'+clockIndex+'-currentTime" class="timer-currentTime">'+getClockSmallFormat(obj.clockTime)+'</div>'
+            + '<div class="timer-start"><a onclick="toggleClock('+clockIndex+');"><div id="clock-'+clockIndex+'-state" class="option-button">Start</div></a></div></div>';
     return clockData;
+}
+
+function createClockTypeOptions(clockType, clockIndex) {
+    var clockTypeData = "";
+    switch(clockType) {
+        case 0:
+            clockTypeData += '<a id="'+clockType+'" onclick="expandTypeList(this);"><div class="type-selected type-0"><img class="selected-img type-0" src="img/timer-countdown.png"><img class="selected-img type-1" src="img/timer-counttotime.png"><img class="selected-img type-2" src="img/timer-elapsedtime.png"><div class="selected-indicator"><i class="fas fa-angle-up"></i><i class="fas fa-angle-down"></i></div></div></a>'
+                + '<div class="type-dropdown">'
+                + '<a onclick="setClockType(this);"><div id="type-0" class="dropdown-row selected"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-countdown.png"><div class="row-name">Countdown</div></div></a>'
+                + '<a onclick="setClockType(this);"><div id="type-1" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-counttotime.png"><div class="row-name">Countdown to Time</div></div></a>'
+                + '<a onclick="setClockType(this);"><div id="type-2" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-elapsedtime.png"><div class="row-name">Elapsed Time</div></div></a>'
+                + '</div>';
+            break; '';
+        case 1:
+            clockTypeData += '<a id="'+clockType+'" onclick="expandTypeList(this);"><div class="type-selected type-1"><img class="selected-img type-0" src="img/timer-countdown.png"><img class="selected-img type-1" src="img/timer-counttotime.png"><img class="selected-img type-2" src="img/timer-elapsedtime.png"><div class="selected-indicator"><i class="fas fa-angle-up"></i><i class="fas fa-angle-down"></i></div></div></a>'
+                + '<div class="type-dropdown">'
+                + '<a onclick="setClockType(this);"><div id="type-0" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-countdown.png"><div class="row-name">Countdown</div></div></a>'
+                + '<a onclick="setClockType(this);"><div id="type-1" class="dropdown-row selected"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-counttotime.png"><div class="row-name">Countdown to Time</div></div></a>'
+                + '<a onclick="setClockType(this);"><div id="type-2" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-elapsedtime.png"><div class="row-name">Elapsed Time</div></div></a>'
+                + '</div>';
+            break;
+        default:
+            clockTypeData += '<a id="'+clockType+'" onclick="expandTypeList(this);"><div class="type-selected type-2"><img class="selected-img type-0" src="img/timer-countdown.png"><img class="selected-img type-1" src="img/timer-counttotime.png"><img class="selected-img type-2" src="img/timer-elapsedtime.png"><div class="selected-indicator"><i class="fas fa-angle-up"></i><i class="fas fa-angle-down"></i></div></div></a>'
+                + '<div class="type-dropdown">'
+                + '<a onclick="setClockType(this);"><div id="type-0" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-countdown.png"><div class="row-name">Countdown</div></div></a>'
+                + '<a onclick="setClockType(this);"><div id="type-1" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-counttotime.png"><div class="row-name">Countdown to Time</div></div></a>'
+                + '<a onclick="setClockType(this);"><div id="type-2" class="dropdown-row selected"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-elapsedtime.png"><div class="row-name">Elapsed Time</div></div></a>'
+                + '</div>';
+            break;
+    }
+    return clockTypeData;
+}
+
+function createClockFormatOptions(formatType) {
+    switch(formatType) {
+        case 0:
+            return '<option value="0" selected>AM</option><option value="1">PM</option><option value="2">24Hr</option>';
+        case 1:
+            return '<option value="0">AM</option><option value="1" selected>PM</option><option value="2">24Hr</option>';
+        default:
+            return '<option value="0">AM</option><option value="1">PM</option><option value="2" selected>24Hr</option>';
+    }
+}
+
+function createMessages(obj) {
+    obj.messages.forEach(
+        function (item) {
+
+        }
+    );
+
 }
 
 function createStageScreens(obj) {
@@ -476,6 +580,10 @@ function getClocks() {
     websocket.send('{"action":"clockRequest"}');
 }
 
+function getMessages() {
+    websocket.send('{"action":"messageRequest"}');
+}
+
 function getStageLayouts() {
     websocket.send('{"action":"stageDisplaySets"}');
 }
@@ -552,7 +660,54 @@ function toggleClock(int) {
     }
 }
 
+function expandTypeList(obj) {
+    $(obj).parent("div").children(".type-dropdown").show();
+    // Create a element click handler to allow the opening of the custom dropdown
+    window.addEventListener('click', function(e){
+        if (document.getElementById(obj.parentNode.id).contains(e.target)){
+            console.log("clickedInside");
+        } else {
+            $(obj).parent("div").children(".type-dropdown").hide();
+        }
+    });
+}
+
 // End Toggle Data Functions
+
+
+// Update Clock Functions
+
+function updateClock(clockIndex) {
+    // Get the clock name
+    var clockName = document.getElementById("clock-"+clockIndex+"-name").value;
+    // Get the clock type
+    var clockType = document.getElementById("clock-"+clockIndex+"-type").firstElementChild.id;
+    // Get the clock overrun setting
+    var clockOverrun = document.getElementById("clock-"+clockIndex+"-overrun").checked;
+    // Send the request according to the clock type
+    if (clockType == 0) {
+        // Get the clock duration / start time / count to time
+        var clockDuration = document.getElementById("clock-"+clockIndex+"-duration").value;
+        // Send the change to ProPresenter
+        websocket.send('{"action":"clockUpdate","clockIndex":"'+clockIndex+'","clockType":"0","clockName":"'+clockName+'","clockTime":"'+clockDuration+'","clockOverrun":"'+clockOverrun+'"}');
+    } else if (clockType == 1) {
+        // Get the clock count to time
+        var clockTime = document.getElementById("clock-"+clockIndex+"-time").value;
+        // Get the clock format
+        var clockFormat = document.getElementById("clock-"+clockIndex+"-format").value;
+        // Send the change to ProPresenter
+        websocket.send('{"action":"clockUpdate","clockIndex":"'+clockIndex+'","clockType":"1","clockName":"'+clockName+'","clockTime":"'+clockTime+'","clockOverrun":"'+clockOverrun+'","clockIsPM":"'+clockFormat+'"}');
+    } else {
+        // Get the clock start time
+        var clockStart = document.getElementById("clock-"+clockIndex+"-start").value;
+        // Get the clock end time
+        var clockEndTime = document.getElementById("clock-"+clockIndex+"-end").value;
+        // Send the change to ProPresenter
+        websocket.send('{"action":"clockUpdate","clockIndex":"'+clockIndex+'","clockType":"2","clockName":"'+clockName+'","clockTime":"'+clockStart+'","clockOverrun":"'+clockOverrun+'","clockElapsedTime":"'+clockEndTime+'"}');
+    }
+}
+
+// End Update Clock Functions
 
 
 // Page Actions Functions
@@ -605,7 +760,7 @@ function setAudioSong(obj) {
 }
 
 function clearStageMessage() {
-    $(".stage-message-input").val("");
+    document.getElementById("stage-message").value = "";
     websocket.send('{"action":"stageDisplayHideMessage"}');
 }
 
@@ -614,7 +769,7 @@ function hideStageMessage() {
 }
 
 function showStageMessage() {
-    var message = $(".stage-message-input").val();
+    var message = document.getElementById("stage-message").value;
     websocket.send('{"action":"stageDisplaySendMessage","stageDisplayMessage":"'+message+'"}');
 }
 
@@ -625,22 +780,34 @@ function setStageLayout(obj) {
 }
 
 function stopAllClocks() {
+    // Send the stop all clocks command
     websocket.send('{"action":"clockStopAll"}');
-    websocket.send('{"action":"clockStopSendingCurrentTime"}');
 }
 
 function resetAllClocks() {
+    // Send the reset all clocks command
     websocket.send('{"action":"clockResetAll"}');
 }
 
 function startAllClocks() {
-    websocket.send('{"action":"clockStartSendingCurrentTime"}');
+
+    // Send the start all clocks command
     websocket.send('{"action":"clockStartAll"}');
 }
 
+function startReceivingClockData() {
+    // Send the start receiving clock times command
+    websocket.send('{"action":"clockStartSendingCurrentTime"}');
+}
+
+function stopReceivingClockData() {
+    // Send the stop receiving clock times command
+    websocket.send('{"action":"clockStopSendingCurrentTime"}');
+}
+
 function resetClock(index, type) {
+    // Send the reset clock command
     websocket.send('{"action":"clockReset","clockIndex":"'+index+'"}');
-    $("#clock-"+index+"-time").text($("#clock-"+index+"-duration").val());
 }
 
 function setClockState(obj) {
@@ -655,10 +822,39 @@ function setClockState(obj) {
 
 function setClockTimes(obj) {
     obj.clockTimes.forEach(function (item, index) {
-        $("#clock-"+index+"-time").text(getClockSmallFormat(item));
+        $("#clock-"+index+"-currentTime").text(getClockSmallFormat(item));
         // Clock millisecond countdown - for future use
         // clockMilisecondsCountdown($("#clock-"+index+"-time"));
     });
+}
+
+function setClockType(obj) {
+    // Array of supported clock types
+    var types = ["type-0","type-1","type-2"];
+    // Get the clock type
+    var type = $(obj).children("div").attr("id");
+    // Get the clock index
+    var clockIndex = $(obj).parent().parent().attr("id").split("-")[1];
+    // Remove the selected class from all rows of the current dropdown
+    $(obj).parent().children("a").children(".dropdown-row").removeClass("selected");
+    // Set the current element as selected
+    $(obj).children("div").addClass("selected");
+    // Set the parent div ID to the type
+    $(obj).parent().parent().children("a").attr("id", type.split("-")[1]);
+    // Show options specific to the clock type
+    $(obj).parent().parent().parent().removeClass(types).addClass(type);
+    // Hide all open dropdowns
+    $(".type-dropdown").hide();
+    // Send the updated type to ProPresenter
+    updateClock(clockIndex);
+}
+
+function setClockTypePP(obj) {
+    console.log("here!");
+    // Array of supported clock types
+    var types = ["type-0","type-1","type-2"];
+    $("#clock-"+obj.clockIndex).removeClass(types);
+    $("#clock-"+obj.clockIndex).addClass("type-"+obj.clockType);
 }
 
 function triggerSlide(obj) {
@@ -751,6 +947,11 @@ function displayStageOptions() {
         $("#messageOptions").hide();
         $("#stageOptions").hide();
     }
+}
+
+function displayMessage(obj) {
+    $(".message-name").removeClass("selected").removeClass("highlighted");
+    $(obj).children("div").addClass("selected");
 }
 
 function displayPlaylist(obj) {
@@ -1109,6 +1310,23 @@ function clockMilisecondsCountdown(obj) {
     );
 }
 
+function webMessages() {
+    window.open("http://"+host+":"+port+"/html/pages/messages", '_blank');
+}
+
+function preventInputInterference() {
+    $("input").focus(
+        function () {
+            inputTyping = true;
+        }
+    );
+    $("input").focusout(
+        function () {
+            inputTyping = false;
+        }
+    );
+}
+
 // End Utility Functions
 
 
@@ -1153,19 +1371,11 @@ function initialise() {
             setSlideSize(slideSizeEm);
         }, false
     );
+    // Prevent typing into inputs from affecting the slide progression
+    preventInputInterference();
 
-    $("input").focus(
-        function () {
-            inputTyping = true;
-        }
-    );
-    $("input").focusout(
-        function () {
-            inputTyping = false;
-        }
-    );
+
 }
-
 
 $(document).ready(function() {
     initialise();

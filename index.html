@@ -153,7 +153,38 @@
 						<div class="timer-name">
 							<input type="text" class="text-input"/>
 						</div>
-						<div class="timer-type"></div>
+						<div class="timer-type">
+							<div class="type-selected">
+								<img class="selected-img" src="img/timer-counttotime.png">
+								<div class="selected-indicator">
+									<i class="fas fa-angle-up"></i>
+									<i class="fas fa-angle-down"></i>
+								</div>
+							</div>
+							<div class="type-dropdown">
+								<div class="dropdown-row">
+									<div class="row-indicator">
+										<i class="fas fa-check"></i>
+									</div>
+									<img class="row-img" src="img/timer-countdown.png">
+									<div class="row-name">Countdown</div>
+								</div>
+								<div class="dropdown-row">
+									<div class="row-indicator">
+										<i class="fas fa-check"></i>
+									</div>
+									<img class="row-img" src="img/timer-counttotime.png">
+									<div class="row-name">Countdown to Time</div>
+								</div>
+								<div class="dropdown-row">
+									<div class="row-indicator">
+										<i class="fas fa-check"></i>
+									</div>
+									<img class="row-img" src="img/timer-elapsedtime.png">
+									<div class="row-name">Elapsed Time</div>
+								</div>
+							</div>
+						</div>
 						<div class="timer-timeOptions">
 							<div>
 								<div class="element-title">Start</div>
@@ -186,10 +217,26 @@
 					<a onclick="$('#messageOptions').hide();"><div class="options-close"><i class="fas fa-times-circle"></i></div></a>
 					<div class="options-name">Messages</div>
 				</div>
-				<div class="options-content">
-
+				<div id="message-content" class="options-content">
+					<div class="message name-container">
+						<a onclick="displayMessage(this);"><div class="message-name">Child Needs Attention</div></a>
+						<a onclick="displayMessage(this);"><div class="message-name">Countdown to Service</div></a>
+					</div>
+					<div class="message attribute-container">
+						<div class="message-attribute">
+							<div class="attribute-name">Name</div>
+							<input class="text-input attribute-data" />
+						</div>
+						<div class="message-attribute">
+							<div class="attribute-name">Room</div>
+							<input class="text-input attribute-data" />
+						</div>
+					</div>
 				</div>
 				<div class="options-footer">
+					<div class="message name-footer">
+						<a onclick="webMessages();"><div class="option-button messages-share"><i class="fas fa-share-alt"></i></div></a>
+					</div>
 					<div class="right-buttons">
 						<a onclick="showMessage();"><div class="option-button">Show</div></a>
 					</div>
@@ -204,7 +251,7 @@
 					<div id="stage-screens" class="stage-screen-container">
 					</div>
 					<div class="stage-message-title">Stage Message</div>
-					<input class="text-input stage-message" type="text" />
+					<input id="stage-message" class="text-input stage-message" type="text" />
 				</div>
 				<div class="options-footer">
 					<div class="left-buttons">

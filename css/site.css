@@ -552,6 +552,7 @@ h5 {
 
 .options-content {
     background-color: #1a1a1a;
+    position: relative;
 }
 
 .options-footer {
@@ -653,18 +654,109 @@ div.stage-message-title {
     width: 60px;
 }
 
-.timer-timeOptions {
+.type-selected {
+    width: 50px;
+    padding: 16px 5px;
+}
+
+.selected-img {
+    display:none;
+}
+
+div.timer-container.type-0 img.selected-img.type-0, div.timer-container.type-1 img.selected-img.type-1, div.timer-container.type-2 img.selected-img.type-2 {
+    display: inline-block;
+}
+
+.selected-img, .row-img {
+    width: 24px;
+    margin-top: 2px;
+}
+
+.selected-indicator {
+    width: 10px;
+    height: 24px;
+    position: relative;
+    font-size: 12px;
+    color: #8a898a;
+}
+
+div.selected-indicator i:first-child {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+}
+
+div.selected-indicator i:last-child {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+}
+
+div.type-dropdown {
+    display: none;
+    width: fit-content;
+    padding: 5px 0px;
+    border-radius: 10px;
+    border: 1px solid #4e4c50;
+    background-color: #353336;
+    position: absolute;
+    top: 0px;
+    left: -10px;
+    z-index: 999;
+    text-align: left;
+}
+
+.dropdown-row {
+    width: 200px;
+}
+
+.dropdown-row:hover {
+    background-color: #2a7bec;
+}
+
+.row-indicator i {
+    display: none;
+}
+
+.dropdown-row.selected div.row-indicator i {
+    display: inline-block;
+}
+
+.row-indicator {
+    vertical-align: super;
+    font-size: 12px;
+    margin: 0px 4px 0px 4px;
+    width: 14px;
+}
+
+.row-name {
+    vertical-align: super;
+    font-size: 15px;
+    padding: 0px 4px;
+}
+
+div.timer-timeOptions {
     position: absolute;
     left: 230px;
     width: 132px;
     padding: 13px 4px;
     text-align: left;
+    display: none;
+}
+
+.timer-container.type-0 .timer-timeOptions.type-0, .timer-container.type-1 .timer-timeOptions.type-1, .timer-container.type-2 .timer-timeOptions.type-2 {
+    display: inline-block;
 }
 
 .timer-timeOptions input {
     width: 56px;
     margin: 0px 2px;
     text-align: center;
+}
+
+.timer-timeOptions select {
+    width: 62px;
+    margin: 0px 2px;
 }
 
 .timer-overrun {
@@ -710,10 +802,95 @@ div.stage-message-title {
     padding: 14px 0px;
 }
 
+.message.name-container {
+    float: left;
+    width: 200px;
+    height: 200px;
+    background-color: #353635;
+    color: #ffffff
+}
+
+.message-name {
+    text-align: left;
+    font-size: 14px;
+    padding: 5px 8px 5px 8px;
+}
+
+.message-name.selected {
+    background-color: #2a7bec;
+}
+
+.message-name.highlighted {
+    background-color: #595a59;
+}
+
+.message.attribute-container {
+    background-color: #282828;
+    float: right;
+    width: 400px;
+    height: 200px;
+}
+
+.message-attribute {
+    border: 1px solid #808080;
+    padding: 10px 5px;
+    font-size: 13px;
+    margin-left: 6px;
+    margin-right: 6px;
+    text-align: left;
+}
+
+.message-attribute div {
+    display: inline-block;
+}
+
+.message-attribute .attribute-name {
+    margin: 0px 7px;
+    width: 100px;
+    text-align: right;
+}
+
+.message-attribute .attribute-data {
+    width: 240px;
+    border: 1px solid #434343;
+    background-color: #333333;
+}
+
+.message-attribute:first-child {
+    border-radius: 3px 3px 0px 0px;
+    border-bottom: 0px;
+    margin-top: 6px;
+}
+
+.message-attribute:last-child {
+    border-radius: 0px 0px 3px 3px;
+    margin-bottom: 6px;
+}
+
+.message.name-footer {
+    position: absolute;
+    left: 0px;
+    bottom: 0px;
+    width: 200px;
+    height: 32px;
+    background-color: #353635;
+    border-top: 1px solid #585958;
+}
+
+.options-footer.message {
+    background-color: #1a1a1a;
+}
+
+.option-button.messages-share {
+    float: right;
+    padding: 2px 2px;
+    font-size: 15px;
+}
+
 .stage-screen {
     position: relative;
     height: 20px;
-    padding: 14px 25px;
+    padding: 10px 25px;
 }
 
 .stage-screen div {
