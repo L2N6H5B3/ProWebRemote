@@ -146,65 +146,9 @@
 				<div class="options-header">
 					<a onclick="$('#timerOptions').hide();"><div class="options-close"><i class="fas fa-times-circle"></i></div></a>
 					<div class="options-name">Timers</div>
+					<a onclick="getClocks();"><i class="refresh fas fa-redo-alt"></i></a>
 				</div>
 				<div id="timer-content" class="options-content">
-					<div class="timer-container">
-						<div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div>
-						<div class="timer-name">
-							<input type="text" class="text-input"/>
-						</div>
-						<div class="timer-type">
-							<div class="type-selected">
-								<img class="selected-img" src="img/timer-counttotime.png">
-								<div class="selected-indicator">
-									<i class="fas fa-angle-up"></i>
-									<i class="fas fa-angle-down"></i>
-								</div>
-							</div>
-							<div class="type-dropdown">
-								<div class="dropdown-row">
-									<div class="row-indicator">
-										<i class="fas fa-check"></i>
-									</div>
-									<img class="row-img" src="img/timer-countdown.png">
-									<div class="row-name">Countdown</div>
-								</div>
-								<div class="dropdown-row">
-									<div class="row-indicator">
-										<i class="fas fa-check"></i>
-									</div>
-									<img class="row-img" src="img/timer-counttotime.png">
-									<div class="row-name">Countdown to Time</div>
-								</div>
-								<div class="dropdown-row">
-									<div class="row-indicator">
-										<i class="fas fa-check"></i>
-									</div>
-									<img class="row-img" src="img/timer-elapsedtime.png">
-									<div class="row-name">Elapsed Time</div>
-								</div>
-							</div>
-						</div>
-						<div class="timer-timeOptions">
-							<div>
-								<div class="element-title">Start</div>
-								<input type="text" class="text-input"/>
-							</div>
-							<div>
-								<div class="element-title">End</div>
-								<input type="text" class="text-input"/>
-							</div>
-						</div>
-						<div class="timer-overrun">
-							<div class="element-title">Overrun</div>
-							<input type="checkbox" class="checkbox text-input" />
-						</div>
-						<div class="timer-reset">
-							<a onclick="resetTimer(this);"><div class="option-button"><img src="img/reset.png" /></div></a>
-						</div>
-						<div class="timer-currentTime">00:00:00.00</div>
-						<div class="timer-start"><a onclick="startTimer(this);"><div class="option-button">Start</div></a></div>
-					</div>
 				</div>
 				<div class="options-footer">
 					<a onclick="stopAllClocks();"><div class="option-button">Stop All</div></a>

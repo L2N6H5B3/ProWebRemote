@@ -536,6 +536,13 @@ h5 {
     border-bottom: 1px solid #4d4d4d;
 }
 
+.options-header .refresh {
+    display: inline-block;
+    padding: 8px;
+    position: absolute;
+    right: 0px;
+}
+
 .options-close {
     display: inline-block;
     padding: 8px;

@@ -15,7 +15,6 @@ var wsUri = "ws://"+host+":"+port+"/remote";
 var refreshTimeout;
 var refresh = true;
 var inputTyping = false;
-var clockSingleUpdate = false;
 
 // End Variables
 
@@ -131,8 +130,6 @@ function onMessage(evt) {
         });
         // Add the clocks to the timer content area
         $("#timer-content").append(data);
-        // Start receiving clock times from ProPresenter
-        startReceivingClockData();
         // Prevent input fields from conflicting with slide progression
         preventInputInterference();
     } else if (obj.action == "messsageRequest") {
@@ -168,8 +165,24 @@ function onMessage(evt) {
     } else if (obj.action == "clockCurrentTimes") {
         // Set clock current times
         setClockTimes(obj);
+    } else if (obj.action == "clockNameChanged") {
+        // Set clock name
+        setClockName(obj);
     } else if (obj.action == "clockTypeChanged") {
+        // Set clock type
         setClockTypePP(obj);
+    } else if (obj.action == "clockIsPMChanged") {
+        // Set clock format
+        setClockFormat(obj);
+    } else if (obj.action == "clockDurationChanged") {
+        // Set clock duration
+        setClockDuration(obj);
+    } else if (obj.action == "clockEndTimeChanged") {
+        // Set clock end time
+        setClockEndTime(obj);
+    } else if (obj.action == "clockOverrunChanged") {
+        // Set clock overrun
+        setClockOverrun(obj);
     }
 }
 
@@ -287,17 +300,24 @@ function createAudioPlaylist(obj) {
 
 function createClock(obj, clockIndex) {
     var clockdata = "";
-        clockData = '<div id="clock-'+clockIndex+'" class="timer-container type-'+obj.clockType+'">'
-            + '<div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div>'
-            + '<div class="timer-name"><input id="clock-'+clockIndex+'-name" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+obj.clockName+'"/></div>'
-            + '<div id="clock-'+clockIndex+'-type" class="timer-type">'+createClockTypeOptions(obj.clockType, clockIndex)+'</div>'
-            + '<div class="timer-timeOptions type-0"><div><div class="element-title">Duration</div><input id="clock-'+clockIndex+'-duration" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockDuration)+'"/></div><div></div></div>'
-            + '<div class="timer-timeOptions type-1"><div><div class="element-title">Time</div><input id="clock-'+clockIndex+'-time" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockEndTime)+'"/></div><div><div class="element-title">Format</div><select id="clock-'+clockIndex+'-format" onchange="updateClock('+clockIndex+');" class="text-input">'+createClockFormatOptions(obj.clockTimePeriodFormat)+'</select></div></div>'
-            + '<div class="timer-timeOptions type-2"><div><div class="element-title">Start</div><input id="clock-'+clockIndex+'-start" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockDuration)+'"/></div><div><div class="element-title">End</div><input id="clock-'+clockIndex+'-end" onchange="updateClock('+clockIndex+');" type="text" class="text-input" placeholder="No Limit" value="'+getClockSmallFormat(obj.clockEndTime)+'"/></div></div>'
-            + '<div class="timer-overrun"><div class="element-title">Overrun</div><input id="clock-'+clockIndex+'-overrun" onchange="updateClock('+clockIndex+');" type="checkbox" class="checkbox text-input" '+getClockOverrun(obj.clockOverrun)+'/></div>'
-            + '<div class="timer-reset"><a onclick="resetClock('+clockIndex+');"><div class="option-button"><img src="img/reset.png" /></div></a></div>'
-            + '<div id="clock-'+clockIndex+'-currentTime" class="timer-currentTime">'+getClockSmallFormat(obj.clockTime)+'</div>'
-            + '<div class="timer-start"><a onclick="toggleClock('+clockIndex+');"><div id="clock-'+clockIndex+'-state" class="option-button">Start</div></a></div></div>';
+    clockData = '<div id="clock-'+clockIndex+'" class="timer-container type-'+obj.clockType+'">'
+        + '<div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div>'
+        + '<div class="timer-name"><input id="clock-'+clockIndex+'-name" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+obj.clockName+'"/></div>'
+        + '<div id="clock-'+clockIndex+'-type" class="timer-type">'+createClockTypeOptions(obj.clockType, clockIndex)+'</div>'
+        + '<div class="timer-timeOptions type-0"><div><div class="element-title">Duration</div><input id="clock-'+clockIndex+'-duration" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockDuration)+'"/></div><div></div></div>'
+        + '<div class="timer-timeOptions type-1"><div><div class="element-title">Time</div><input id="clock-'+clockIndex+'-time" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockEndTime)+'"/></div><div><div class="element-title">Format</div><select id="clock-'+clockIndex+'-format" onchange="updateClock('+clockIndex+');" class="text-input">'+createClockFormatOptions(obj.clockFormat.clockTimePeriodFormat)+'</select></div></div>'
+        + '<div class="timer-timeOptions type-2"><div><div class="element-title">Start</div><input id="clock-'+clockIndex+'-start" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockDuration)+'"/></div><div><div class="element-title">End</div><input id="clock-'+clockIndex+'-end" onchange="updateClock('+clockIndex+');" type="text" class="text-input" placeholder="No Limit" value="'+getClockSmallFormat(obj.clockEndTime)+'"/></div></div>'
+        + '<div class="timer-overrun"><div class="element-title">Overrun</div><input id="clock-'+clockIndex+'-overrun" onchange="updateClock('+clockIndex+');" type="checkbox" class="checkbox text-input" '+getClockOverrun(obj.clockOverrun)+'/></div>'
+        + '<div class="timer-reset"><a onclick="resetClock('+clockIndex+');"><div class="option-button"><img src="img/reset.png" /></div></a></div>'
+        + '<div id="clock-'+clockIndex+'-currentTime" class="timer-currentTime">'+getClockSmallFormat(obj.clockTime)+'</div>'
+        + '<div class="timer-start"><a onclick="toggleClock('+clockIndex+');"><div id="clock-'+clockIndex+'-state" class="option-button">Start</div></a></div></div>';
+
+    // If the clock is active
+    if (obj.clockState == true) {
+        // Start receiving clock times from ProPresenter
+        startReceivingClockData();
+    }
+
     return clockData;
 }
 
@@ -652,11 +672,11 @@ function togglePlaylistVisibility(obj) {
 
 function toggleClock(int) {
     if ($("#clock-"+int+"-state").text() == "Start") {
+        // Start receiving clock times from ProPresenter
+        startReceivingClockData();
         websocket.send('{"action":"clockStart","clockIndex":"'+int+'"}');
-        websocket.send('{"action":"clockStartSendingCurrentTime"}');
     } else {
         websocket.send('{"action":"clockStop","clockIndex":"'+int+'"}');
-        websocket.send('{"action":"clockStopSendingCurrentTime"}');
     }
 }
 
@@ -696,7 +716,8 @@ function updateClock(clockIndex) {
         // Get the clock format
         var clockFormat = document.getElementById("clock-"+clockIndex+"-format").value;
         // Send the change to ProPresenter
-        websocket.send('{"action":"clockUpdate","clockIndex":"'+clockIndex+'","clockType":"1","clockName":"'+clockName+'","clockTime":"'+clockTime+'","clockOverrun":"'+clockOverrun+'","clockIsPM":"'+clockFormat+'"}');
+        console.log('{"action":"clockUpdate","clockIndex":"'+clockIndex+'","clockType":"1","clockName":"'+clockName+'","clockElapsedTime":"'+clockTime+'","clockOverrun":"'+clockOverrun+'","clockTimePeriodFormat":"'+clockFormat+'"}');
+        websocket.send('{"action":"clockUpdate","clockIndex":"'+clockIndex+'","clockType":"1","clockName":"'+clockName+'","clockElapsedTime":"'+clockTime+'","clockOverrun":"'+clockOverrun+'","clockTimePeriodFormat":"'+clockFormat+'"}');
     } else {
         // Get the clock start time
         var clockStart = document.getElementById("clock-"+clockIndex+"-start").value;
@@ -780,17 +801,22 @@ function setStageLayout(obj) {
 }
 
 function stopAllClocks() {
+    // Stop receiving clock times from ProPresenter
+    stopReceivingClockData();
     // Send the stop all clocks command
     websocket.send('{"action":"clockStopAll"}');
 }
 
 function resetAllClocks() {
+    // Start receiving clock times from ProPresenter
+    startReceivingClockData();
     // Send the reset all clocks command
     websocket.send('{"action":"clockResetAll"}');
 }
 
 function startAllClocks() {
-
+    // Start receiving clock times from ProPresenter
+    startReceivingClockData();
     // Send the start all clocks command
     websocket.send('{"action":"clockStartAll"}');
 }
@@ -806,26 +832,15 @@ function stopReceivingClockData() {
 }
 
 function resetClock(index, type) {
+    // Start receiving clock times from ProPresenter
+    startReceivingClockData();
     // Send the reset clock command
     websocket.send('{"action":"clockReset","clockIndex":"'+index+'"}');
 }
 
-function setClockState(obj) {
-    var clockIndex = obj.clockIndex;
-    $("#clock-"+obj.clockIndex+"-time").text(getClockSmallFormat(obj.clockTime));
-    if (obj.clockState == true) {
-        $("#clock-"+obj.clockIndex+"-state").text("Stop");
-    } else {
-        $("#clock-"+obj.clockIndex+"-state").text("Start");
-    }
-}
 
-function setClockTimes(obj) {
-    obj.clockTimes.forEach(function (item, index) {
-        $("#clock-"+index+"-currentTime").text(getClockSmallFormat(item));
-        // Clock millisecond countdown - for future use
-        // clockMilisecondsCountdown($("#clock-"+index+"-time"));
-    });
+function setClockName(obj) {
+    document.getElementById("clock-"+obj.clockIndex+"-name").value = obj.clockName;
 }
 
 function setClockType(obj) {
@@ -850,11 +865,47 @@ function setClockType(obj) {
 }
 
 function setClockTypePP(obj) {
-    console.log("here!");
     // Array of supported clock types
     var types = ["type-0","type-1","type-2"];
+    // Remove all clock types
     $("#clock-"+obj.clockIndex).removeClass(types);
+    // Add the clock type
     $("#clock-"+obj.clockIndex).addClass("type-"+obj.clockType);
+}
+
+function setClockFormat(obj) {
+    document.getElementById("clock-"+obj.clockIndex+"-format").value = obj.clockFormat.clockTimePeriodFormat;
+}
+
+function setClockDuration(obj) {
+    document.getElementById("clock-"+obj.clockIndex+"-duration").value = getClockSmallFormat(obj.clockDuration);
+    document.getElementById("clock-"+obj.clockIndex+"-start").value = getClockSmallFormat(obj.clockDuration);
+}
+
+function setClockEndTime(obj) {
+    document.getElementById("clock-"+obj.clockIndex+"-time").value = getClockSmallFormat(obj.clockEndTime);
+    document.getElementById("clock-"+obj.clockIndex+"-end").value = getClockSmallFormat(obj.clockEndTime);
+}
+
+function setClockOverrun(obj) {
+    document.getElementById("clock-"+obj.clockIndex+"-overrun").checked = obj.clockOverrun;
+}
+
+function setClockTimes(obj) {
+    obj.clockTimes.forEach(
+        function (item, index) {
+            document.getElementById("clock-"+index+"-currentTime").innerHTML = getClockSmallFormat(item);
+        }
+    );
+}
+
+function setClockState(obj) {
+    document.getElementById("clock-"+obj.clockIndex+"-time").innerHTML = getClockSmallFormat(obj.clockTime);
+    if (obj.clockState == true) {
+        document.getElementById("clock-"+obj.clockIndex+"-state").innerHTML = "Stop";
+    } else {
+        document.getElementById("clock-"+obj.clockIndex+"-state").innerHTML = "Start";
+    }
 }
 
 function triggerSlide(obj) {
