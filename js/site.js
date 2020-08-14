@@ -835,8 +835,6 @@ function toggleFollowProPresenter(obj) {
     }
 }
 
-toggleFollowProPresenterChanges
-
 function toggleUseCookies(obj) {
     setUseCookiesCookie(obj.checked);
     useCookies = obj.checked;
