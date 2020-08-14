@@ -161,7 +161,6 @@ function onMessage(evt) {
         var data = "";
         // For each clock in the data
         obj.clockInfo.forEach(function (item, index) {
-            console.log(item, index);
             data += createClock(item, index);
         });
         // Add the clocks to the timer content area
@@ -780,7 +779,6 @@ function getStageLayouts() {
 }
 
 function getPresentation(location) {
-    console.log('{"action": "presentationRequest","presentationPath": "'+location+'"}');
     // Send the request to ProPresenter
     websocket.send('{"action": "presentationRequest","presentationPath": "'+location+'"}');
 }
@@ -864,7 +862,6 @@ function togglePlaylistVisibility(obj) {
 function toggleClockVisibility(obj) {
     if($(obj).hasClass("expanded")) {
         var index = $(obj).parent().parent().attr("id");
-        console.log("Index "+index);
         $("#"+index+"-name-text").text($("#"+index+"-name").val());
         $(obj).parent().parent().addClass("collapse");
         $(obj).removeClass("expanded")
@@ -893,7 +890,6 @@ function expandTypeList(obj) {
     // Create a element click handler to allow the opening of the custom dropdown
     window.addEventListener('click', function(e){
         if (document.getElementById(obj.parentNode.id).contains(e.target)){
-            console.log("clickedInside");
         } else {
             $(obj).parent("div").children(".type-dropdown").hide();
         }
@@ -1121,7 +1117,6 @@ function triggerSlide(obj) {
     var location = ($(obj).attr("id"));
     var index = $(obj).children("div").children("div").children(".slide-number").text() - 1;
     if (location.charAt(0) == '0') {
-        console.log('{"action":"presentationTriggerIndex","slideIndex":"'+index+'","presentationPath":"'+location+'"}');
         websocket.send('{"action":"presentationTriggerIndex","slideIndex":"'+index+'","presentationPath":"'+location+'"}');
         $("#playlist-items").children("a").children("div").removeClass("selected");
         $("#playlist-items").children("a").children("div").removeClass("highlighted");
@@ -1710,7 +1705,6 @@ function clockMilisecondsCountdown(obj) {
             }
             var msString = ms.toString();
             if (msString.length < 2) {
-                console.log(msString.length);
                 msString = "0"+msString;
             }
             time = $(obj).text().split(".")[0];
