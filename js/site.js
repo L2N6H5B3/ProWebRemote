@@ -290,8 +290,8 @@ function checkCookie(cname) {
 function getRetrieveEntireLibraryCookie() {
     if (checkCookie("retrieveEntireLibrary")) {
         console.log("REL Cookie Exists");
-        retrieveEntireLibrary = getCookie("retrieveEntireLibrary");
-        document.getElementById("retrieveEntireLibrary-checkbox").checked = getCookie("retrieveEntireLibrary");
+        retrieveEntireLibrary = (getCookie("retrieveEntireLibrary") == "true");
+        document.getElementById("retrieveEntireLibrary-checkbox").checked = (getCookie("retrieveEntireLibrary") == "true");
     }
 }
 
@@ -302,8 +302,8 @@ function setRetrieveEntireLibraryCookie(boolean) {
 function getContinuousPlaylistCookie() {
     if (checkCookie("continuousPlaylist")) {
         console.log("CP Cookie Exists");
-        continuousPlaylist = getCookie("continuousPlaylist");
-        document.getElementById("continuousPlaylist-checkbox").checked = getCookie("continuousPlaylist");
+        continuousPlaylist = (getCookie("continuousPlaylist") == "true");
+        document.getElementById("continuousPlaylist-checkbox").checked = (getCookie("continuousPlaylist") == "true");
     }
 }
 
@@ -314,8 +314,8 @@ function setContinuousPlaylistCookie(boolean) {
 function getUseCookiesCookie() {
     if (checkCookie("useCookies")) {
         console.log("UC Cookie Exists");
-        useCookies = getCookie("useCookies");
-        document.getElementById("useCookies-checkbox").checked = getCookie("useCookies");
+        useCookies = (getCookie("useCookies") == "true");
+        document.getElementById("useCookies-checkbox").checked = (getCookie("useCookies") == "true");
     }
 }
 
