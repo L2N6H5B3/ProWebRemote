@@ -11,7 +11,7 @@ var continuousPlaylist = true;
 var useCookies = true;
 
 // Application
-var libraryList = [];
+var libraryList;
 var playlistList = [];
 var audioPlaylistList = [];
 var libraryPresentationList = [];
@@ -81,6 +81,12 @@ function onMessage(evt) {
     } else if (obj.action == "libraryRequest") {
         // Empty the library area
         $("#library-content").empty();
+        // Empty the library list
+        libraryList = [];
+        // Empty the library presentation list
+        libraryPresentationList = [];
+        // Empty the library presentation name list
+        libraryPresentationNameList = [];
         // Create a variable to hold the libraries
         var data = "";
         // For each item in the libraries
@@ -103,6 +109,10 @@ function onMessage(evt) {
     } else if (obj.action == "playlistRequestAll") {
         // Empty the playlist area
         $("#playlist-content").empty();
+        // Empty the playlist list
+        var playlistList = [];
+        // Empty the playlist presentation list
+        var playlistPresentationList = [];
         // Create a variable to hold the playlists
         var data = "";
         // For each playlist
@@ -123,6 +133,8 @@ function onMessage(evt) {
     } else if (obj.action == "audioRequest") {
         // Empty the audio area
         $("#audio-content").empty();
+        // Empty the audio playlist list
+        var audioPlaylistList = [];
         // Create a variable to hold the audio playlists
         var data = "";
         // For each audio playlist
