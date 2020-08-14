@@ -279,7 +279,7 @@ function getRetrieveEntireLibraryCookie() {
     if (checkCookie("retrieveEntireLibrary")) {
         console.log("REL Cookie Exists");
         retrieveEntireLibrary = getCookie("retrieveEntireLibrary");
-        document.getElementById("retrieveEntireLibrary-checkbox").checked = retrieveEntireLibrary;
+        document.getElementById("retrieveEntireLibrary-checkbox").checked = getCookie("retrieveEntireLibrary");
     }
 }
 
@@ -291,7 +291,7 @@ function getContinuousPlaylistCookie() {
     if (checkCookie("continuousPlaylist")) {
         console.log("CP Cookie Exists");
         continuousPlaylist = getCookie("continuousPlaylist");
-        document.getElementById("continuousPlaylist-checkbox").checked = continuousPlaylist;
+        document.getElementById("continuousPlaylist-checkbox").checked = getCookie("continuousPlaylist");
     }
 }
 
@@ -303,7 +303,7 @@ function getUseCookiesCookie() {
     if (checkCookie("useCookies")) {
         console.log("UC Cookie Exists");
         useCookies = getCookie("useCookies");
-        document.getElementById("useCookies-checkbox").checked = useCookies;
+        document.getElementById("useCookies-checkbox").checked = getCookie("useCookies");
     }
 }
 
