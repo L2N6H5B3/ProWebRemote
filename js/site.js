@@ -1,13 +1,13 @@
 // Variables
 
 // Connection
-var host = "10.1.1.33";
+var host = "192.168.1.163";
 var port = "50000";
 var pass = "control";
 
-// User Preferences
+// User Preference
 var retrieveEntireLibrary = true;
-var continuousPlaylist = false;
+var continuousPlaylist = true;
 var useCookies = true;
 
 // Application
@@ -261,16 +261,13 @@ function getCookie(cname) {
   return "";
 }
 
-function checkCookie() {
-  var username = getCookie("username");
-  if (username != "") {
-   alert("Welcome again " + username);
-  } else {
-    username = prompt("Please enter your name:", "");
-    if (username != "" && username != null) {
-      setCookie("username", username, 365);
+function checkCookie(cname) {
+    var name = getCookie(cname);
+    if (name != "") {
+        return true;
+    } else {
+        return false;
     }
-  }
 }
 
 // End Cookie Functions
@@ -279,7 +276,10 @@ function checkCookie() {
 // Settings Functions
 
 function getRetrieveEntireLibraryCookie() {
-    retrieveEntireLibrary = getCookie("retrieveEntireLibrary");
+    if (checkCookie("retrieveEntireLibrary")) {
+        retrieveEntireLibrary = getCookie("retrieveEntireLibrary");
+        document.getElementById("retrieveEntireLibrary-checkbox").checked = retrieveEntireLibrary;
+    }
 }
 
 function setRetrieveEntireLibraryCookie(boolean) {
@@ -287,7 +287,10 @@ function setRetrieveEntireLibraryCookie(boolean) {
 }
 
 function getContinuousPlaylistCookie() {
-    continuousPlaylist = getCookie("continuousPlaylist");
+    if (checkCookie("continuousPlaylist")) {
+        continuousPlaylist = getCookie("continuousPlaylist");
+        document.getElementById("continuousPlaylist-checkbox").checked = continuousPlaylist;
+    }
 }
 
 function setContinuousPlaylistCookie(boolean) {
@@ -295,7 +298,10 @@ function setContinuousPlaylistCookie(boolean) {
 }
 
 function getUseCookiesCookie() {
-    useCookies = getCookie("useCookies");
+    if (checkCookie("useCookies")) {
+        useCookies = getCookie("useCookies");
+        document.getElementById("useCookies-checkbox").checked = useCookies;
+    }
 }
 
 function setUseCookiesCookie(boolean) {
@@ -669,8 +675,15 @@ function setCurrentSlide(index, location) {
     // Add selected to the current indexed slide
     $(".slide-number").each(
         function () {
-            if ($(this).text() == index) {
+            if ($(this).text() == index && $(this).parent().parent().parent().attr("id") == location) {
                 $(this).parent().parent().parent().parent().addClass("selected");
+                if (!isElementInViewport(document.getElementById("slide"+index+"."+location))) {
+                    document.getElementById("slide"+index+"."+location).scrollIntoView();
+                    var presentationContainer = document.getElementById("presentations");
+                    if (presentationContainer.scrollTop + presentationContainer.clientHeight < presentationContainer.scrollHeight) {
+                        document.getElementById("presentations").scrollTop = document.getElementById("presentations").scrollTop - 10;
+                    }
+                }
             }
         }
     );
@@ -1090,7 +1103,7 @@ function setClockState(obj) {
 }
 
 function triggerSlide(obj) {
-    var location = ($(obj).children("div").attr("id"));
+    var location = ($(obj).attr("id"));
     var index = $(obj).children("div").children("div").children(".slide-number").text() - 1;
     if (location.charAt(0) == '0') {
         websocket.send('{"action":"presentationTriggerIndex","slideIndex":"'+index+'","presentationPath":"'+location+'"}');
@@ -1283,6 +1296,8 @@ function displayPlaylist(obj) {
     var current = $(obj).children("div").children(".name").text();
     // Create variable to hold playlist items
     var data = "";
+    // Sort presentations in the playlist presentation list
+    playlistPresentationList.sort(SortPresentationByPath);
     // Find the playlist in the array
     $(playlistList).each (
         function () {
@@ -1380,16 +1395,32 @@ function displayPresentation(obj) {
     $(".playlists").children("div").children("div").children("a").children("div").removeClass("selected").removeClass("highlighted");
     $("#library-items").children("a").children("div").removeClass("selected").removeClass("highlighted");
     $("#playlist-items").children("a").children("div").removeClass("selected").removeClass("highlighted");
+
+    // if (document.getElementById("presentation."+location)) {
+    //     console.log("Presentation already loaded");
+    // } else {
+    //
+    // }
+
+
     // Check if the presentation is a playlist or a library presentation
     if (location.charAt(0) == '0') {
+
+        // Create a variable to hold the playlist location
+        var playlistLocation = "";
         // Iterate through each playlist in the array
         $(playlistList).each(
             function () {
-                // Iterate through each element in the playlist
+                // Get the playlist name
                 var playlistName = this.playlistName;
+                // Get the current playlist
+                var currentPlaylist = this;
+                // Iterate through each element in the playlist
                 $(this.playlist).each (
                     function () {
                         if (this.playlistItemLocation == location) {
+                            // Set the playlist location
+                            playlistLocation = currentPlaylist.playlistLocation
                             $(".playlist").children(".name").each(
                                 function () {
                                     if (playlistName == $(this).text()){
@@ -1416,35 +1447,75 @@ function displayPresentation(obj) {
             }
         );
 
-        // For each Presentation in the array
+
+        // For each Presentation in the playlist presentation array
         $(playlistPresentationList).each (
             function () {
-                if (this.presentationPath == location) {
-                    $("#playlist-items").children("a").each (
-                        function () {
-                            if ($(this).children("div").attr("id") == location) {
-                                $(this).children("div").addClass("highlighted");
-                            }
-                        }
-                    );
-                    data += '<div class="presentation">'+
-                                '<div class="presentation-header padded">'+this.presentation.presentationName+'</div>'+
-                                '<div class="presentation-content padded">';
-                    var count = 1;
-                    $(this.presentation.presentationSlideGroups).each (
-                        function () {
-                            var colorArray = this.groupColor.split(" ");
-                            var groupName = this.groupName;
-                            $(this.groupSlides).each (
-                                function () {
-                                    data += '<div class="slide-container"><a onclick="triggerSlide(this);"><div id="'+location+'" class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
-                                    count ++;
-                                }
-                            );
-                        }
-                    );
+                // If continuous playlists are enabled
+                if (continuousPlaylist) {
 
-                    data +='</div></div>';
+                    // If the presentation path matches the path of the selected presentation, set it as highlighted
+                    if (this.presentationPath == location) {
+                        $("#playlist-items").children("a").each (
+                            function () {
+                                if ($(this).children("div").attr("id") == location) {
+                                    $(this).children("div").addClass("highlighted");
+                                }
+                            }
+                        );
+                    }
+
+                    // If this presentation is part of the selected presentation's playlist
+                    if (this.presentationPath.split(":")[0] == playlistLocation) {
+                        var presentationPath = this.presentationPath;
+                        data += '<div id="presentation.'+this.presentationPath+'" class="presentation">'+
+                                    '<div class="presentation-header padded">'+this.presentation.presentationName+'</div>'+
+                                    '<div class="presentation-content padded">';
+                        var count = 1;
+                        $(this.presentation.presentationSlideGroups).each (
+                            function () {
+                                var colorArray = this.groupColor.split(" ");
+                                var groupName = this.groupName;
+                                $(this.groupSlides).each (
+                                    function () {
+                                        data += '<div id="slide'+count+'.'+presentationPath+'" class="slide-container"><a id="'+presentationPath+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
+                                        count ++;
+                                    }
+                                );
+                            }
+                        );
+                        data +='</div></div>';
+                    }
+
+                } else {
+
+                    if (this.presentationPath == location) {
+                        $("#playlist-items").children("a").each (
+                            function () {
+                                if ($(this).children("div").attr("id") == location) {
+                                    $(this).children("div").addClass("highlighted");
+                                }
+                            }
+                        );
+                        data += '<div id="presentation.'+location+'" class="presentation">'+
+                                    '<div class="presentation-header padded">'+this.presentation.presentationName+'</div>'+
+                                    '<div class="presentation-content padded">';
+                        var count = 1;
+                        $(this.presentation.presentationSlideGroups).each (
+                            function () {
+                                var colorArray = this.groupColor.split(" ");
+                                var groupName = this.groupName;
+                                $(this.groupSlides).each (
+                                    function () {
+                                        data += '<div id="slide'+count+'.'+location+'" class="slide-container"><a id="'+location+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
+                                        count ++;
+                                    }
+                                );
+                            }
+                        );
+
+                        data +='</div></div>';
+                    }
                 }
             }
         );
@@ -1515,7 +1586,7 @@ function displayPresentation(obj) {
                             }
                         }
                     );
-                    data += '<div class="presentation">'+
+                    data += '<div id="presentation.'+location+'" class="presentation">'+
                                 '<div class="presentation-header padded">'+this.presentation.presentationName+'</div>'+
                                 '<div class="presentation-content padded">';
                     var count = 1;
@@ -1525,7 +1596,7 @@ function displayPresentation(obj) {
                             var groupName = this.groupName;
                             $(this.groupSlides).each (
                                 function () {
-                                    data += '<div class="slide-container"><a onclick="triggerSlide(this);"><div id="'+location+'" class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
+                                    data += '<div id="slide'+count+'.'+location+'" class="slide-container"><a id="'+location+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
                                     count ++;
                                 }
                             );
@@ -1574,6 +1645,12 @@ function SortPresentationByName(a, b) {
         var bName = b.presentation.presentationName.toLowerCase();
         return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
     }
+}
+
+function SortPresentationByPath(a, b) {
+    var aName = a.presentationPath.toLowerCase();
+    var bName = b.presentationPath.toLowerCase();
+    return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
 }
 
 function getLocation(obj) {
@@ -1650,12 +1727,32 @@ function preventInputInterference() {
     );
 }
 
+function isElementInViewport (el) {
+    // Special bonus for those using jQuery
+    if (typeof jQuery === "function" && el instanceof jQuery) {
+        el = el[0];
+    }
+    var rect = el.getBoundingClientRect();
+    return (
+        (rect.top-65) >= 0 &&
+        rect.left >= 0 &&
+        (rect.bottom-25) <= (window.innerHeight || document.documentElement.clientHeight) && /* or $(window).height() */
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth) /* or $(window).width() */
+    );
+}
+
 // End Utility Functions
 
 
 // Initialisation Functions
 
 function initialise() {
+
+    getRetrieveEntireLibraryCookie();
+
+    getContinuousPlaylistCookie();
+
+    getUseCookiesCookie();
 
     // Add listener for action keys
     window.addEventListener('keydown', function(e) {
