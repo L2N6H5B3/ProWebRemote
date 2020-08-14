@@ -277,6 +277,7 @@ function checkCookie(cname) {
 
 function getRetrieveEntireLibraryCookie() {
     if (checkCookie("retrieveEntireLibrary")) {
+        console.log("REL Cookie Exists");
         retrieveEntireLibrary = getCookie("retrieveEntireLibrary");
         document.getElementById("retrieveEntireLibrary-checkbox").checked = retrieveEntireLibrary;
     }
@@ -288,6 +289,7 @@ function setRetrieveEntireLibraryCookie(boolean) {
 
 function getContinuousPlaylistCookie() {
     if (checkCookie("continuousPlaylist")) {
+        console.log("CP Cookie Exists");
         continuousPlaylist = getCookie("continuousPlaylist");
         document.getElementById("continuousPlaylist-checkbox").checked = continuousPlaylist;
     }
@@ -299,6 +301,7 @@ function setContinuousPlaylistCookie(boolean) {
 
 function getUseCookiesCookie() {
     if (checkCookie("useCookies")) {
+        console.log("UC Cookie Exists");
         useCookies = getCookie("useCookies");
         document.getElementById("useCookies-checkbox").checked = useCookies;
     }
@@ -1106,6 +1109,7 @@ function triggerSlide(obj) {
     var location = ($(obj).attr("id"));
     var index = $(obj).children("div").children("div").children(".slide-number").text() - 1;
     if (location.charAt(0) == '0') {
+        console.log('{"action":"presentationTriggerIndex","slideIndex":"'+index+'","presentationPath":"'+location+'"}');
         websocket.send('{"action":"presentationTriggerIndex","slideIndex":"'+index+'","presentationPath":"'+location+'"}');
         $("#playlist-items").children("a").children("div").removeClass("selected");
         $("#playlist-items").children("a").children("div").removeClass("highlighted");
