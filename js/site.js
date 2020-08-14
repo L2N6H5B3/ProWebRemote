@@ -900,7 +900,7 @@ function setClockTimes(obj) {
 }
 
 function setClockState(obj) {
-    document.getElementById("clock-"+obj.clockIndex+"-time").innerHTML = getClockSmallFormat(obj.clockTime);
+    document.getElementById("clock-"+obj.clockIndex+"-currentTime").innerHTML = getClockSmallFormat(obj.clockTime);
     if (obj.clockState == true) {
         document.getElementById("clock-"+obj.clockIndex+"-state").innerHTML = "Stop";
     } else {
