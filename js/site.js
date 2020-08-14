@@ -1633,6 +1633,8 @@ function displayPresentation(obj) {
     // Add the data to the presentations section
     $("#presentations").empty();
     $("#presentations").append(data);
+    // Scroll the presentation into view
+    document.getElementById("presentation."+location).scrollIntoView();
     // Set the slide size
     setSlideSize(slideSizeEm);
     // Set the current slide
