@@ -884,7 +884,9 @@ function setClockDuration(obj) {
 
 function setClockEndTime(obj) {
     document.getElementById("clock-"+obj.clockIndex+"-time").value = getClockSmallFormat(obj.clockEndTime);
-    document.getElementById("clock-"+obj.clockIndex+"-end").value = getClockSmallFormat(obj.clockEndTime);
+    if (getClockSmallFormat(obj.clockEndTime) == "00:00:00") {
+        document.getElementById("clock-"+obj.clockIndex+"-end").value = "";
+    }
 }
 
 function setClockOverrun(obj) {
