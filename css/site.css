@@ -981,6 +981,8 @@ div.timer-container.collapse .collapse-hide {
 
 .settings .options-content {
     padding-top: 10px;
+    max-height: calc(88vh - 133px);
+    overflow: auto;
 }
 
 .settings-row {

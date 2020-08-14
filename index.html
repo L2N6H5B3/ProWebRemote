@@ -234,6 +234,20 @@
 							<div class="row-desc">Allow continuous scroll through playlist items.</div>
 						</div>
 					</div>
+					<div style="display: none;" class="settings-row">
+						<div class="row-action"><input id="forceNextSlide-checkbox" onchange="toggleForceNextSlide(this);" type="checkbox"/></div>
+						<div class="row-name">
+							<div class="row-text">Force Next/Previous Slide</div>
+							<div class="row-desc">If a presentation from a different location (Library/Playlist) than the previous presentation is selected remotely, ProPresenter will default to the previous presentation on next/previous slide.  Check this feature to force progression using the remotely-selected presentation.</div>
+						</div>
+					</div>
+					<div style="display: none;" class="settings-row">
+						<div class="row-action"><input id="followProPresenter-checkbox" onchange="toggleFollowProPresenter(this);" type="checkbox" checked/></div>
+						<div class="row-name">
+							<div class="row-text">Follow ProPresenter Presentation</div>
+							<div class="row-desc">By default, presentations will be automatically changed to follow along with ProPresenter.  Uncheck this feature to ignore presentation changes in ProPresenter.</div>
+						</div>
+					</div>
 					<div class="settings-row">
 						<div class="row-action"><input id="useCookies-checkbox" onchange="toggleUseCookies(this);" type="checkbox" checked/></div>
 						<div class="row-name">

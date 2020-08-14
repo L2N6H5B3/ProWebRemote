@@ -8,6 +8,7 @@ var pass = "control";
 // User Preference
 var retrieveEntireLibrary = true;
 var continuousPlaylist = true;
+var followProPresenter = true;
 var useCookies = true;
 
 // Application
@@ -287,7 +288,7 @@ function checkCookie(cname) {
 // Settings Functions
 
 function getRetrieveEntireLibraryCookie() {
-    if (checkCookie("retrieveEntireLibrary")) {
+    if (checkCookie("retrieveEntireLibrary") && useCookies) {
         console.log("REL Cookie Exists");
         retrieveEntireLibrary = (getCookie("retrieveEntireLibrary") == "true");
         document.getElementById("retrieveEntireLibrary-checkbox").checked = (getCookie("retrieveEntireLibrary") == "true");
@@ -299,7 +300,7 @@ function setRetrieveEntireLibraryCookie(boolean) {
 }
 
 function getContinuousPlaylistCookie() {
-    if (checkCookie("continuousPlaylist")) {
+    if (checkCookie("continuousPlaylist") && useCookies) {
         console.log("CP Cookie Exists");
         continuousPlaylist = (getCookie("continuousPlaylist") == "true");
         document.getElementById("continuousPlaylist-checkbox").checked = (getCookie("continuousPlaylist") == "true");
@@ -311,7 +312,7 @@ function setContinuousPlaylistCookie(boolean) {
 }
 
 function getUseCookiesCookie() {
-    if (checkCookie("useCookies")) {
+    if (checkCookie("useCookies") && useCookies) {
         console.log("UC Cookie Exists");
         useCookies = (getCookie("useCookies") == "true");
         document.getElementById("useCookies-checkbox").checked = (getCookie("useCookies") == "true");
@@ -323,13 +324,16 @@ function setUseCookiesCookie(boolean) {
 }
 
 function getSlideSizeCookie() {
-    var presentationSlideSize = getCookie("presentationSlideSize");
-    console.log(presentationSlideSize)
-    // if (accessMode == true) {
-    //     retrieveEntireLibrary = accessMode
-    // }
+    if (checkCookie("slideSize") && useCookies) {
+        console.log("SS Cookie Exists");
+        slideSizeEm = parseInt(getCookie("slideSize"));
+        document.getElementById("slide-size").value = parseInt(getCookie("slideSize"));
+    }
 }
 
+function setSlideSizeCookie(int) {
+    setCookie("slideSize", int, 90);
+}
 
 // End Settings Functions
 
@@ -823,6 +827,15 @@ function toggleContinuousPlaylist(obj) {
         continuousPlaylist = obj.checked;
     }
 }
+
+function toggleFollowProPresenter(obj) {
+    if (useCookies) {
+        setFollowProPresenterCookie(obj.checked);
+        followProPresenter = obj.checked;
+    }
+}
+
+toggleFollowProPresenterChanges
 
 function toggleUseCookies(obj) {
     setUseCookiesCookie(obj.checked);
@@ -1764,6 +1777,8 @@ function initialise() {
 
     getUseCookiesCookie();
 
+    getSlideSizeCookie();
+
     // Add listener for action keys
     window.addEventListener('keydown', function(e) {
         if (!inputTyping) {
@@ -1800,7 +1815,7 @@ function initialise() {
             slideSizeEm = size;
             // Set slide size
             setSlideSize(slideSizeEm);
-            setSlideSizeCookie("presentationSlideSize", slideSizeEm, 180);
+            setSlideSizeCookie(slideSizeEm);
         }, false
     );
     // Prevent typing into inputs from affecting the slide progression
