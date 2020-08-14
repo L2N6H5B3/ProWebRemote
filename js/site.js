@@ -279,15 +279,27 @@ function checkCookie() {
 // Settings Functions
 
 function getRetrieveEntireLibraryCookie() {
-    var retrieveEntireLibraryCookie = getCookie("retrieveEntireLibrary");
-    console.log(retrieveEntireLibraryCookie);
-    // if (accessMode == true) {
-    //     retrieveEntireLibrary = accessMode
-    // }
+    retrieveEntireLibrary = getCookie("retrieveEntireLibrary");
 }
 
 function setRetrieveEntireLibraryCookie(boolean) {
     setCookie("retrieveEntireLibrary", boolean, 90);
+}
+
+function getContinuousPlaylistCookie() {
+    continuousPlaylist = getCookie("continuousPlaylist");
+}
+
+function setContinuousPlaylistCookie(boolean) {
+    setCookie("continuousPlaylist", boolean, 90);
+}
+
+function getUseCookiesCookie() {
+    useCookies = getCookie("useCookies");
+}
+
+function setUseCookiesCookie(boolean) {
+    setCookie("useCookies", boolean, 90);
 }
 
 function getSlideSizeCookie() {

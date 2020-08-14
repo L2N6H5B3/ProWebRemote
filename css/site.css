@@ -976,7 +976,7 @@ div.timer-container.collapse .collapse-hide {
 .settings {
     width: 250px;
     position: absolute;
-    right: 0px;
+    right: 15px;
 }
 
 .settings .options-content {
