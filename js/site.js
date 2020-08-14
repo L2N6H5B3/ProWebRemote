@@ -1,26 +1,36 @@
 // Variables
 
+// Connection
 var host = "10.1.1.33";
 var port = "50000";
 var pass = "control";
 
+// User Preferences
+var retrieveEntireLibrary = true;
+var continuousPlaylist = false;
+var useCookies = true;
+
+// Application
 var libraryList = [];
 var playlistList = [];
 var audioPlaylistList = [];
 var libraryPresentationList = [];
+var libraryPresentationNameList = [];
 var playlistPresentationList = [];
 var slideSizeEm = 17;
 var authenticated = false;
 var wsUri = "ws://"+host+":"+port+"/remote";
-var refreshTimeout;
+var resetTimeout;
 var refresh = true;
 var inputTyping = false;
+var presentationDisplayRequest = null;
 
 // End Variables
 
 // Websocket Functions
 
 function connect() {
+    $(".disconnected").show();
     websocket = new WebSocket(wsUri);
     websocket.onopen = function(evt) { onOpen(evt) };
     websocket.onclose = function(evt) { onClose(evt) };
@@ -57,6 +67,14 @@ function onMessage(evt) {
         }
         // Set as authenticated
         authenticated = true;
+        // Remove disconnected status
+        $(".disconnected").hide();
+        // Show connected status
+        $(".connected").show();
+        // Prevent disconnect auto-refresh
+        clearTimeout(resetTimeout);
+        // Start receiving clock times from ProPresenter
+        startReceivingClockData();
     } else if (obj.action == "presentationCurrent") {
         // Create presentation
         createPresentation(obj);
@@ -69,8 +87,14 @@ function onMessage(evt) {
         obj.library.forEach(function (item, index) {
             // Add the library if required
             data += createLibrary(item);
-            // Get the presentation file from the library
-            getPresentation(item);
+            // If set to only get names from ProPresenter libraries
+            if (!retrieveEntireLibrary) {
+                // Create a presentation name element for the library
+                createPresentationName(item);
+            } else {
+                // Get the presentation file from the library
+                getPresentation(item);
+            }
         });
         // Add the libraries to the library content area
         $("#library-content").append(data);
@@ -194,7 +218,10 @@ function onError(evt) {
 
 function onClose(evt) {
     authenticated = false;
-    console.log('Socket is closed. Reconnect will be attempted in 1 second.', evt.reason);
+    // Remove connected status
+    $(".connected").hide();
+    // Show disconnected status
+    $(".disconnected").show();
     // Retry connection every second
     setTimeout(function() {
       connect();
@@ -207,6 +234,72 @@ function onClose(evt) {
 }
 
 //  End Websocket Functions
+
+
+// Cookie Functions
+
+function setCookie(cname, cvalue, exdays) {
+  var d = new Date();
+  d.setTime(d.getTime() + (exdays*24*60*60*1000));
+  var expires = "expires="+ d.toUTCString();
+  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+}
+
+function getCookie(cname) {
+  var name = cname + "=";
+  var decodedCookie = decodeURIComponent(document.cookie);
+  var ca = decodedCookie.split(';');
+  for(var i = 0; i <ca.length; i++) {
+    var c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+}
+
+function checkCookie() {
+  var username = getCookie("username");
+  if (username != "") {
+   alert("Welcome again " + username);
+  } else {
+    username = prompt("Please enter your name:", "");
+    if (username != "" && username != null) {
+      setCookie("username", username, 365);
+    }
+  }
+}
+
+// End Cookie Functions
+
+
+// Settings Functions
+
+function getRetrieveEntireLibraryCookie() {
+    var retrieveEntireLibraryCookie = getCookie("retrieveEntireLibrary");
+    console.log(retrieveEntireLibraryCookie);
+    // if (accessMode == true) {
+    //     retrieveEntireLibrary = accessMode
+    // }
+}
+
+function setRetrieveEntireLibraryCookie(boolean) {
+    setCookie("retrieveEntireLibrary", boolean, 90);
+}
+
+function getSlideSizeCookie() {
+    var presentationSlideSize = getCookie("presentationSlideSize");
+    console.log(presentationSlideSize)
+    // if (accessMode == true) {
+    //     retrieveEntireLibrary = accessMode
+    // }
+}
+
+
+// End Settings Functions
 
 
 // Build Functions
@@ -301,16 +394,16 @@ function createAudioPlaylist(obj) {
 function createClock(obj, clockIndex) {
     var clockdata = "";
     clockData = '<div id="clock-'+clockIndex+'" class="timer-container type-'+obj.clockType+'">'
-        + '<div class="timer-expand"><a onclick="toggleTimerVisibility(this)" class="expander"><i class="collapser fas fa-caret-down expanded"></i></a></div>'
-        + '<div class="timer-name"><input id="clock-'+clockIndex+'-name" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+obj.clockName+'"/></div>'
-        + '<div id="clock-'+clockIndex+'-type" class="timer-type">'+createClockTypeOptions(obj.clockType, clockIndex)+'</div>'
-        + '<div class="timer-timeOptions type-0"><div><div class="element-title">Duration</div><input id="clock-'+clockIndex+'-duration" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockDuration)+'"/></div><div></div></div>'
-        + '<div class="timer-timeOptions type-1"><div><div class="element-title">Time</div><input id="clock-'+clockIndex+'-time" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockEndTime)+'"/></div><div><div class="element-title">Format</div><select id="clock-'+clockIndex+'-format" onchange="updateClock('+clockIndex+');" class="text-input">'+createClockFormatOptions(obj.clockFormat.clockTimePeriodFormat)+'</select></div></div>'
-        + '<div class="timer-timeOptions type-2"><div><div class="element-title">Start</div><input id="clock-'+clockIndex+'-start" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockDuration)+'"/></div><div><div class="element-title">End</div><input id="clock-'+clockIndex+'-end" onchange="updateClock('+clockIndex+');" type="text" class="text-input" placeholder="No Limit" value="'+getClockSmallFormat(obj.clockEndTime)+'"/></div></div>'
-        + '<div class="timer-overrun"><div class="element-title">Overrun</div><input id="clock-'+clockIndex+'-overrun" onchange="updateClock('+clockIndex+');" type="checkbox" class="checkbox text-input" '+getClockOverrun(obj.clockOverrun)+'/></div>'
+        + '<div class="timer-expand"><a onclick="toggleClockVisibility(this)" class="expander expanded"><i class="collapser fas fa-caret-down"></i></a></div>'
+        + '<div class="timer-name"><input id="clock-'+clockIndex+'-name" onchange="updateClock('+clockIndex+');" type="text" class="text-input collapse-hide" value="'+obj.clockName+'"/><div id="clock-'+clockIndex+'-name-text" class="timer-name-text collapse-show"></div></div>'
+        + '<div id="clock-'+clockIndex+'-type" class="timer-type collapse-hide">'+createClockTypeOptions(obj.clockType, clockIndex)+'</div>'
+        + '<div class="timer-timeOptions collapse-hide type-0"><div><div class="element-title">Duration</div><input id="clock-'+clockIndex+'-duration" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockDuration)+'"/></div><div></div></div>'
+        + '<div class="timer-timeOptions collapse-hide type-1"><div><div class="element-title">Time</div><input id="clock-'+clockIndex+'-time" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockEndTime)+'"/></div><div><div class="element-title">Format</div><select id="clock-'+clockIndex+'-format" onchange="updateClock('+clockIndex+');" class="text-input">'+createClockFormatOptions(obj.clockFormat.clockTimePeriodFormat)+'</select></div></div>'
+        + '<div class="timer-timeOptions collapse-hide type-2"><div><div class="element-title">Start</div><input id="clock-'+clockIndex+'-start" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockDuration)+'"/></div><div><div class="element-title">End</div><input id="clock-'+clockIndex+'-end" onchange="updateClock('+clockIndex+');" type="text" class="text-input" placeholder="No Limit" value="'+getClockEndTimeFormat(obj.clockEndTime)+'"/></div></div>'
+        + '<div class="timer-overrun collapse-hide"><div class="element-title">Overrun</div><input id="clock-'+clockIndex+'-overrun" onchange="updateClock('+clockIndex+');" type="checkbox" class="checkbox text-input" '+getClockOverrun(obj.clockOverrun)+'/></div>'
         + '<div class="timer-reset"><a onclick="resetClock('+clockIndex+');"><div class="option-button"><img src="img/reset.png" /></div></a></div>'
         + '<div id="clock-'+clockIndex+'-currentTime" class="timer-currentTime">'+getClockSmallFormat(obj.clockTime)+'</div>'
-        + '<div class="timer-start"><a onclick="toggleClock('+clockIndex+');"><div id="clock-'+clockIndex+'-state" class="option-button">Start</div></a></div></div>';
+        + '<div class="timer-state"><a onclick="toggleClockState('+clockIndex+');"><div id="clock-'+clockIndex+'-state" class="option-button">Start</div></a></div></div>';
 
     // If the clock is active
     if (obj.clockState == true) {
@@ -394,6 +487,34 @@ function createStageScreens(obj) {
     document.getElementById("stage-screens").innerHTML = screenData;
 }
 
+function createPresentationName(obj) {
+    // Variable to hold the unique status of the presentation
+    var unique = true;
+    // Variable to hold the split string of the presentation path
+    var pathSplit = obj.split("/");
+    // Variable to hold the name of the presentation, retrieved from the presentation path
+    var presentationName = "";
+    // Iterate through each item in the split path to retrieve the library name
+    pathSplit.forEach(function (item, index) {
+      if (item == "Libraries") {
+          presentationName = pathSplit[index+2].replace(".pro", "");
+      }
+    });
+    // Check if the presentation is unique and can be added in the array
+    libraryPresentationNameList.forEach(function (item) {
+        if (item.presentationName == presentationName) {
+            unique = false;
+        }
+    });
+    // If the presentation is unique
+    if (unique) {
+        // Create object with presentation name and path
+        var presentationObj = {presentationName:presentationName, presentationPath:obj}
+        // Add the new presentation object to the library presentation name list
+        libraryPresentationNameList.push(presentationObj);
+    }
+}
+
 // End Build Functions
 
 
@@ -440,6 +561,16 @@ function createPresentation(obj) {
         );
         if (unique) {
             libraryPresentationList.push(obj);
+        }
+    }
+    // If set to only get names from ProPresenter libraries
+    if (!retrieveEntireLibrary) {
+        // Display this presentation if requested
+        if (presentationDisplayRequest == obj.presentationPath) {
+            // Set the presentation display request to none
+            presentationDisplayRequest = null;
+            // Display the presentation
+            displayPresentation(obj);
         }
     }
 }
@@ -609,6 +740,7 @@ function getStageLayouts() {
 }
 
 function getPresentation(location) {
+    console.log('{"action": "presentationRequest","presentationPath": "'+location+'"}');
     // Send the request to ProPresenter
     websocket.send('{"action": "presentationRequest","presentationPath": "'+location+'"}');
 }
@@ -640,6 +772,25 @@ function getAudioPlaylists() {
 
 // Toggle Data Functions
 
+function toggleRetrieveEntireLibrary(obj) {
+    if (useCookies) {
+        setRetrieveEntireLibraryCookie(obj.checked);
+        retrieveEntireLibrary = obj.checked;
+    }
+}
+
+function toggleContinuousPlaylist(obj) {
+    if (useCookies) {
+        setContinuousPlaylistCookie(obj.checked);
+        continuousPlaylist = obj.checked;
+    }
+}
+
+function toggleUseCookies(obj) {
+    setUseCookiesCookie(obj.checked);
+    useCookies = obj.checked;
+}
+
 function toggleAudioPlayPause() {
     websocket.send('{"action":"audioPlayPause"}');
 }
@@ -670,7 +821,24 @@ function togglePlaylistVisibility(obj) {
     }
 }
 
-function toggleClock(int) {
+function toggleClockVisibility(obj) {
+    if($(obj).hasClass("expanded")) {
+        var index = $(obj).parent().parent().attr("id");
+        console.log("Index "+index);
+        $("#"+index+"-name-text").text($("#"+index+"-name").val());
+        $(obj).parent().parent().addClass("collapse");
+        $(obj).removeClass("expanded")
+        $(obj).children("i").removeClass("fa-caret-down");
+        $(obj).children("i").addClass("fa-caret-right");
+    } else {
+        $(obj).parent().parent().removeClass("collapse");
+        $(obj).addClass("expanded")
+        $(obj).children("i").removeClass("fa-caret-right");
+        $(obj).children("i").addClass("fa-caret-down");
+    }
+}
+
+function toggleClockState(int) {
     if ($("#clock-"+int+"-state").text() == "Start") {
         // Start receiving clock times from ProPresenter
         startReceivingClockData();
@@ -716,13 +884,12 @@ function updateClock(clockIndex) {
         // Get the clock format
         var clockFormat = document.getElementById("clock-"+clockIndex+"-format").value;
         // Send the change to ProPresenter
-        console.log('{"action":"clockUpdate","clockIndex":"'+clockIndex+'","clockType":"1","clockName":"'+clockName+'","clockElapsedTime":"'+clockTime+'","clockOverrun":"'+clockOverrun+'","clockTimePeriodFormat":"'+clockFormat+'"}');
         websocket.send('{"action":"clockUpdate","clockIndex":"'+clockIndex+'","clockType":"1","clockName":"'+clockName+'","clockElapsedTime":"'+clockTime+'","clockOverrun":"'+clockOverrun+'","clockTimePeriodFormat":"'+clockFormat+'"}');
     } else {
         // Get the clock start time
         var clockStart = document.getElementById("clock-"+clockIndex+"-start").value;
         // Get the clock end time
-        var clockEndTime = document.getElementById("clock-"+clockIndex+"-end").value;
+        var clockEndTime = getClockEndTimeFormat(document.getElementById("clock-"+clockIndex+"-end").value);
         // Send the change to ProPresenter
         websocket.send('{"action":"clockUpdate","clockIndex":"'+clockIndex+'","clockType":"2","clockName":"'+clockName+'","clockTime":"'+clockStart+'","clockOverrun":"'+clockOverrun+'","clockElapsedTime":"'+clockEndTime+'"}');
     }
@@ -795,8 +962,7 @@ function showStageMessage() {
 }
 
 function setStageLayout(obj) {
-    console.log($(obj).val());
-    console.log($(obj).attr("id"));
+    // Send the change stage layout request to ProPresenter
     websocket.send('{"action":"stageDisplayChangeLayout","stageLayoutUUID":"'+$(obj).val()+'","stageScreenUUID":"'+$(obj).attr("id")+'"}');
 }
 
@@ -840,7 +1006,10 @@ function resetClock(index, type) {
 
 
 function setClockName(obj) {
+    // Set the clock name in the input
     document.getElementById("clock-"+obj.clockIndex+"-name").value = obj.clockName;
+    // Set the clock name in the div
+    document.getElementById("clock-"+obj.clockIndex+"-name-text").innerHTML = obj.clockName;
 }
 
 function setClockType(obj) {
@@ -884,9 +1053,7 @@ function setClockDuration(obj) {
 
 function setClockEndTime(obj) {
     document.getElementById("clock-"+obj.clockIndex+"-time").value = getClockSmallFormat(obj.clockEndTime);
-    if (getClockSmallFormat(obj.clockEndTime) == "00:00:00") {
-        document.getElementById("clock-"+obj.clockIndex+"-end").value = "";
-    }
+    document.getElementById("clock-"+obj.clockIndex+"-end").value = getClockEndTimeFormat(obj.clockEndTime);
 }
 
 function setClockOverrun(obj) {
@@ -970,10 +1137,12 @@ function displayTimerOptions() {
     if($("#timerOptions:visible").length == 0) {
         $("#messageOptions").hide();
         $("#stageOptions").hide();
+        $("#settings").hide();
         $("#timerOptions").show();
     } else {
         $("#messageOptions").hide();
         $("#stageOptions").hide();
+        $("#settings").hide();
         $("#timerOptions").hide();
     }
 }
@@ -982,10 +1151,12 @@ function displayMessageOptions() {
     if($("#messageOptions:visible").length == 0) {
         $("#timerOptions").hide();
         $("#stageOptions").hide();
+        $("#settings").hide();
         $("#messageOptions").show();
     } else {
         $("#timerOptions").hide();
         $("#stageOptions").hide();
+        $("#settings").hide();
         $("#messageOptions").hide();
     }
 }
@@ -994,16 +1165,104 @@ function displayStageOptions() {
     if($("#stageOptions:visible").length == 0) {
         $("#timerOptions").hide();
         $("#messageOptions").hide();
+        $("#settings").hide();
         $("#stageOptions").show();
     } else {
         $("#timerOptions").hide();
         $("#messageOptions").hide();
+        $("#settings").hide();
         $("#stageOptions").hide();
+    }
+}
+
+function displaySettings() {
+    if($("#settings:visible").length == 0) {
+        $("#timerOptions").hide();
+        $("#messageOptions").hide();
+        $("#stageOptions").hide();
+        $("#settings").show();
+    } else {
+        $("#timerOptions").hide();
+        $("#messageOptions").hide();
+        $("#stageOptions").hide();
+        $("#settings").hide();
     }
 }
 
 function displayMessage(obj) {
     $(".message-name").removeClass("selected").removeClass("highlighted");
+    $(obj).children("div").addClass("selected");
+}
+
+function displayLibrary(obj) {
+    // Get the current library name
+    var current = $(obj).children("div").children(".name").text();
+    // Create variable to hold library items
+    var data = "";
+    // Reset the item count
+    $("#left-count").empty();
+    // If set to only get names from ProPresenter libraries
+    if (!retrieveEntireLibrary) {
+        // Set the library item count
+        if (libraryPresentationNameList.length == 1) {
+            $("#left-count").append(libraryPresentationNameList.length+" Item");
+        } else {
+            $("#left-count").append(libraryPresentationNameList.length+" Items");
+        }
+        // Sort the presentations in the library by name
+        libraryPresentationNameList.sort(SortPresentationByName);
+        // For each Presentation Name in the array
+        libraryPresentationNameList.forEach(function (item) {
+            // Variable to hold the split string of the presentation path
+            var pathSplit = item.presentationPath.split("/");
+            // Iterate through each item in the split path to retrieve the library name
+            pathSplit.forEach(function (element, index) {
+              if (element == "Libraries") {
+                  // If this presentation is from this library, add the data
+                  if (pathSplit[index+1] == current) {
+                      data += '<a onclick="displayPresentation(this);"><div id="'+item.presentationPath+'" class="item con"><img src="img/presentation.png" /><div class="name">'+item.presentationName+'</div></div></a>';
+                  }
+              }
+            });
+        });
+    } else {
+        // Set the library item count
+        if (libraryPresentationList.length == 1) {
+            $("#left-count").append(libraryPresentationList.length+" Item");
+        } else {
+            $("#left-count").append(libraryPresentationList.length+" Items");
+        }
+        // Sort the presentations in the library by name
+        libraryPresentationList.sort(SortPresentationByName);
+        // For each Presentation in the array
+        libraryPresentationList.forEach(function (item) {
+            // Variable to hold the split string of the presentation path
+            var pathSplit = item.presentationPath.split("/");
+            // Iterate through each item in the split path to retrieve the library name
+            pathSplit.forEach(function (element, index) {
+              if (element == "Libraries") {
+                  // If this presentation is from this library, add the data
+                  if (pathSplit[index+1] == current) {
+                      data += '<a onclick="displayPresentation(this);"><div id="'+item.presentationPath+'" class="item con"><img src="img/presentation.png" /><div class="name">'+item.presentation.presentationName+'</div></div></a>';
+                  }
+              }
+            });
+        });
+    }
+    // Empty the library items area
+    $("#library-items").empty();
+    // Add the data to the library items area
+    $("#library-items").append(data);
+    // Show the library items area
+    $("#playlist-items").hide();
+    $("#library-items").show();
+    // Remove selected and highlighted from libraries
+    $(obj).parent().children("a").children("div").removeClass("selected");
+    $(obj).parent().children("a").children("div").removeClass("highlighted");
+    // Remove selected and highlighted from playlists
+    $(".playlists").children("div").children("div").children("a").children("div").removeClass("selected");
+    $(".playlists").children("div").children("div").children("a").children("div").removeClass("highlighted");
+    // Set the library as selected
     $(obj).children("div").addClass("selected");
 }
 
@@ -1057,12 +1316,13 @@ function displayAudioPlaylist(obj) {
     var current = $(obj).children("div").children(".name").text();
     // Create variable to hold playlist items
     var data = "";
+    // Reset the item count
+    $("#right-count").empty();
     // Find the playlist in the array
     $(audioPlaylistList).each (
         function () {
             if (this.playlistName == current) {
-                // Reset the item count
-                $("#right-count").empty();
+
                 // Get the new item count
                 if (this.playlist.length == 1) {
                     $("#right-count").append((this.playlist).length+" Item");
@@ -1087,51 +1347,6 @@ function displayAudioPlaylist(obj) {
     $(obj).parent().children("a").children("div").removeClass("selected");
     $(obj).parent().children("a").children("div").removeClass("highlighted");
     // Set the playlist as selected
-    $(obj).children("div").addClass("selected");
-}
-
-function displayLibrary(obj) {
-    // Get the current library name
-    var current = $(obj).children("div").children(".name").text();
-    // Create variable to hold library items
-    var data = "";
-    // Sort the presentations in the library by name
-    libraryPresentationList.sort(SortByName);
-
-    // For each Presentation in the array
-    libraryPresentationList.forEach(function (item) {
-        // Variable to hold the split string of the presentation path
-        var pathSplit = item.presentationPath.split("/");
-        // Iterate through each item in the split path to retrieve the library name
-        pathSplit.forEach(function (element, index) {
-          if (element == "Libraries") {
-              // If this presentation is from this library, add the data
-              if (pathSplit[index+1] == current) {
-                  data += '<a onclick="displayPresentation(this);"><div id="'+item.presentationPath+'" class="item con"><img src="img/presentation.png" /><div class="name">'+item.presentation.presentationName+'</div></div></a>';
-              }
-          }
-        });
-    });
-    // Reset the item count
-    $("#left-count").empty();
-    if (libraryPresentationList.length == 1) {
-        $("#left-count").append(libraryPresentationList.length+" Item");
-    } else {
-        $("#left-count").append(libraryPresentationList.length+" Items");
-    }
-
-    $("#library-items").empty();
-    $("#library-items").append(data);
-
-    $("#playlist-items").hide();
-    $("#library-items").show();
-    // Remove selected and highlighted from libraries
-    $(obj).parent().children("a").children("div").removeClass("selected");
-    $(obj).parent().children("a").children("div").removeClass("highlighted");
-    // Remove selected and highlighted from playlists
-    $(".playlists").children("div").children("div").children("a").children("div").removeClass("selected");
-    $(".playlists").children("div").children("div").children("a").children("div").removeClass("highlighted");
-    // Set the library as selected
     $(obj).children("div").addClass("selected");
 }
 
@@ -1254,6 +1469,29 @@ function displayPresentation(obj) {
             }
         );
 
+        // If set to only get names from ProPresenter libraries
+        if (!retrieveEntireLibrary) {
+            // Create a variable to hold whether the presentation should be retrieved
+            var retrieve = true;
+            // Check if the presentation currently exists in the list
+            libraryPresentationList.forEach(
+                function (item) {
+                    // If the presentation exists
+                    if (item.presentationPath == location) {
+                        // Do not retrieve it
+                        retrieve = false;
+                    }
+                }
+            );
+            // If we should retrieve the presentation
+            if (retrieve) {
+                // Get the presentation from the library
+                getPresentation(location);
+                // Set the presentation display request to this presentation
+                presentationDisplayRequest = location;
+            }
+        }
+
         // For each Presentation in the array
         $(libraryPresentationList).each (
             function () {
@@ -1313,10 +1551,17 @@ function setSlideSize(int) {
     $(".slide img").width(int + "em");
 }
 
-function SortByName(a, b){
-  var aName = a.presentation.presentationName.toLowerCase();
-  var bName = b.presentation.presentationName.toLowerCase();
-  return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
+function SortPresentationByName(a, b) {
+    // If set to only get names from ProPresenter libraries
+    if (!retrieveEntireLibrary) {
+        var aName = a.presentationName.toLowerCase();
+        var bName = b.presentationName.toLowerCase();
+        return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
+    } else {
+        var aName = a.presentation.presentationName.toLowerCase();
+        var bName = b.presentation.presentationName.toLowerCase();
+        return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
+    }
 }
 
 function getLocation(obj) {
@@ -1325,7 +1570,11 @@ function getLocation(obj) {
 }
 
 function getClockSmallFormat(obj) {
-    return obj.split(".")[0];
+    if (obj.length > 6) {
+        return obj.split(".")[0];
+    } else {
+        return obj;
+    }
 }
 
 function getClockOverrun(obj) {
@@ -1333,6 +1582,15 @@ function getClockOverrun(obj) {
         return "checked";
     } else {
         return "";
+    }
+}
+
+function getClockEndTimeFormat(obj) {
+    var endTimeFormatted = getClockSmallFormat(obj);
+    if (endTimeFormatted == "00:00:00") {
+        return "";
+    } else {
+        return endTimeFormatted;
     }
 }
 
@@ -1386,6 +1644,7 @@ function preventInputInterference() {
 // Initialisation Functions
 
 function initialise() {
+
     // Add listener for action keys
     window.addEventListener('keydown', function(e) {
         if (!inputTyping) {
@@ -1422,6 +1681,7 @@ function initialise() {
             slideSizeEm = size;
             // Set slide size
             setSlideSize(slideSizeEm);
+            setSlideSizeCookie("presentationSlideSize", slideSizeEm, 180);
         }, false
     );
     // Prevent typing into inputs from affecting the slide progression

@@ -25,8 +25,8 @@
 				<div class="library segment">
 					<div class="top light">
 						<div class="libraries">
-							<div class="header padded">
-								<h5 class="segment-header">Library</h5>
+							<div class="segment-header padded">
+								<h5>Library</h5>
 								<a onclick="getLibrary();"><i class="fas fa-redo-alt"></i></a>
 							</div>
 							<div id="library-content" class="content">
@@ -34,8 +34,8 @@
 							</div>
 						</div>
 						<div class="playlists">
-							<div class="header padded">
-								<h5 class="segment-header">Playlist</h5>
+							<div class="segment-header padded">
+								<h5>Playlist</h5>
 							</div>
 							<div id="playlist-content" class="content">
 								<h5 style="margin-left: 20px">Connect to ProPresenter to see Playlists</h5>
@@ -43,8 +43,8 @@
 						</div>
 					</div>
 					<div class="bottom dark">
-						<div class="header padded segment">
-							<h5 id="left-count" class="segment-header count"></h5>
+						<div class="segment-header padded segment">
+							<h5 id="left-count" class="count"></h5>
 
 						</div>
 						<div id="library-items" class="content">
@@ -95,7 +95,7 @@
 				</div>
 				<div class="playback segment">
 					<div class="bottom dark">
-						<div class="header padded segment">
+						<div class="segment-header padded segment">
 							<div class="playback-controls">
 								<a onclick="focusTimelineControls();"><img id="control-slide" src="img/slideblue.png"/></a>
 								<a onclick="focusAudioControls();"><img id="control-audio" src="img/clearaudio.png"/></a>
@@ -116,8 +116,8 @@
 				<div class="audio segment">
 					<div class="top light">
 						<div class="audio">
-							<div class="header padded">
-								<h5 class="segment-header">Audio</h5>
+							<div class="segment-header padded">
+								<h5>Audio</h5>
 								<a onclick="getAudioPlaylists();"><i class="fas fa-redo-alt"></i></a>
 							</div>
 							<div id="audio-content" class="content">
@@ -126,8 +126,8 @@
 						</div>
 					</div>
 					<div class="bottom dark">
-						<div class="header padded segment">
-							<h5 id="right-count" class="segment-header count"></h5>
+						<div class="segment-header padded segment">
+							<h5 id="right-count" class="count"></h5>
 						</div>
 						<div id="audio-items" class="content">
 						</div>
@@ -135,12 +135,12 @@
 				</div>
 			</div>
 		</div>
-		<div class="controls">
+		<div class="header">
 			<div class="logo">
 				<a onclick="window.location.reload()"><img src="img/logo.png"/></a>
 			</div>
 			<div class="window-title">ProPresenter Web Remote</div>
-			<div class="producer">
+			<div class="producer-controls">
 				<div class="control-container"><a onclick="displayTimerOptions();"><div class="control-button"><img src="img/timers.png" /></div></a><div class="control-text">Timers</div></div>
 				<div class="control-container"><a onclick="displayMessageOptions();"><div class="control-button"><img src="img/messages.png" /></div></a><div class="control-text">Messages</div></div>
 				<div class="control-container"><a onclick="displayStageOptions();"><div class="control-button"><img src="img/stage.png" /></div></a><div class="control-text">Stage</div></div>
@@ -211,14 +211,54 @@
 					</div>
 				</div>
 			</div>
-			<!--
-			<div class="status">
-				<div class="text">Connecting</div>
-				<div class="loader">
-					<div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+			<div class="settings-controls">
+				<div class="control-container"><a onclick="displaySettings();"><div class="control-button"><i class="fas fa-cog"></i></div></a><div class="control-text">Settings</div></div>
+			</div>
+			<div id="settings" class="options-container settings">
+				<div class="options-header">
+					<a onclick="$('#settings').hide();"><div class="options-close"><i class="fas fa-times-circle"></i></div></a>
+					<div class="options-name">Settings</div>
+				</div>
+				<div class="options-content">
+					<div class="settings-row">
+						<div class="row-action"><input onchange="toggleRetrieveEntireLibrary(this);" type="checkbox" checked/></div>
+						<div class="row-name">
+							<div class="row-text">Retrieve Entire Library on Load</div>
+							<div class="row-desc">If ticked, entire Library will be downloaded upon connection to speed up the experience.  If you are having issues with ProPresenter crashing on connection, uncheck this feature.</div>
+						</div>
+					</div>
+					<div class="settings-row">
+						<div class="row-action"><input onchange="toggleContinuousPlaylist(this);" type="checkbox"/></div>
+						<div class="row-name">
+							<div class="row-text">Continuous Playlist</div>
+							<div class="row-desc">Allow continuous scroll through playlist items.</div>
+						</div>
+					</div>
+					<div class="settings-row">
+						<div class="row-action"><input onchange="toggleUseCookies(this);" type="checkbox" checked/></div>
+						<div class="row-name">
+							<div class="row-text">Save Browser Cookies</div>
+							<div class="row-desc">If ticked, browser cookies will be saved to retain user preferences between sessions.  If you do not want to retain user preferences, uncheck this feature.</div>
+						</div>
+					</div>
+				</div>
+				<div class="options-footer">
+					<a onclick="window.location.reload();"><div class="option-button">Restart ProWebRemote</div></a>
 				</div>
 			</div>
-		-->
+		</div>
+		<div class="footer">
+			<div class="status">
+				<div class="disconnected">
+					<div class="text disconnected">Connecting</div>
+					<div class="loader">
+						<div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+					</div>
+				</div>
+				<div class="connected">
+					<div class="text connected">Connected</div>
+				</div>
+			</div>
 		</div>
 	</div>
 </body>
