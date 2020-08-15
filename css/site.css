@@ -1015,6 +1015,12 @@ div.timer-container.collapse .collapse-hide {
     margin-top: 5px;
 }
 
+.settings-separator {
+    background-color: #262626;
+    height: 2px;
+    margin-bottom: 10px;
+}
+
 .control-button i {
     color: #fbfcff;
     font-size: 18px;
