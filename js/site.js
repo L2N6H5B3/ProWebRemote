@@ -1,7 +1,7 @@
 // Variables
 
 // Connection
-var host = "192.168.1.163";
+var host = "172.16.101.32";
 var port = "50000";
 var pass = "control";
 
@@ -1500,7 +1500,7 @@ function displayPresentation(obj) {
                                 var groupName = this.groupName;
                                 $(this.groupSlides).each (
                                     function () {
-                                        data += '<div id="slide'+count+'.'+presentationPath+'" class="slide-container"><a id="'+presentationPath+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
+                                        data += '<div id="slide'+count+'.'+presentationPath+'" class="slide-container '+getEnabledValue(this.slideEnabled)+'"><a id="'+presentationPath+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
                                         count ++;
                                     }
                                 );
@@ -1529,7 +1529,7 @@ function displayPresentation(obj) {
                                 var groupName = this.groupName;
                                 $(this.groupSlides).each (
                                     function () {
-                                        data += '<div id="slide'+count+'.'+location+'" class="slide-container"><a id="'+location+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
+                                        data += '<div id="slide'+count+'.'+location+'" class="slide-container '+getEnabledValue(this.slideEnabled)+'"><a id="'+location+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
                                         count ++;
                                     }
                                 );
@@ -1618,7 +1618,7 @@ function displayPresentation(obj) {
                             var groupName = this.groupName;
                             $(this.groupSlides).each (
                                 function () {
-                                    data += '<div id="slide'+count+'.'+location+'" class="slide-container"><a id="'+location+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
+                                    data += '<div id="slide'+count+'.'+location+'" class="slide-container '+getEnabledValue(this.slideEnabled)+'"><a id="'+location+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
                                     count ++;
                                 }
                             );
@@ -1762,6 +1762,15 @@ function isElementInViewport (el) {
         (rect.bottom-25) <= (window.innerHeight || document.documentElement.clientHeight) && /* or $(window).height() */
         rect.right <= (window.innerWidth || document.documentElement.clientWidth) /* or $(window).width() */
     );
+}
+
+function getEnabledValue(enabled) {
+    console.log(enabled);
+    if (enabled) {
+        return "";
+    } else {
+        return "disabled";
+    }
 }
 
 // End Utility Functions

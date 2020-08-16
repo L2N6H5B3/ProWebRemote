@@ -426,6 +426,10 @@ select {
     border: 2px solid #d4722b;
 }
 
+.slide-container.disabled {
+    opacity: 50%;
+}
+
 .slide-number {
     display: inline-block !important;
     background-color: initial !important;
