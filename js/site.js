@@ -853,6 +853,13 @@ function toggleContinuousPlaylist(obj) {
     }
 }
 
+function toggleForceSlides(obj) {
+    if (useCookies) {
+        setForceSlidesCookie(obj.checked);
+        forceSlides = obj.checked;
+    }
+}
+
 function toggleFollowProPresenter(obj) {
     if (useCookies) {
         setFollowProPresenterCookie(obj.checked);
@@ -1172,6 +1179,34 @@ function triggerSlide(obj) {
 
     $("#clear-slide").addClass("activated");
     $("#clear-all").addClass("activated");
+}
+
+function triggerPreviousSlide() {
+    var currentSlide = $(".slide-container.selected");
+    var slideNumber = parseInt(currentSlide.find(".slide-number").text());
+    var totalSlides = parseInt(currentSlide.parent("div").children("div").length);
+    if (slideNumber > 0 && slideNumber < totalSlides) {
+        console.log("insideIf");
+    }
+}
+
+function triggerNextSlide() {
+    var currentSlide = $(".slide-container.selected");
+    var location = $(currentSlide).children("a").attr("id");
+    var slideNumber = parseInt(currentSlide.find(".slide-number").text());
+    var totalSlides = parseInt(currentSlide.parent("div").children("div").length);
+
+    var slideFound = false;
+    while (!slideFound) {
+        if (slideNumber > 0 && slideNumber < totalSlides) {
+            slideNumber ++;
+            var nextSlideId = "slide"+slideNumber+"."+location;
+            if (!$(document.getElementById(nextSlideId)).hasClass("disabled")) {
+                slideFound = true;
+                triggerSlide($(document.getElementById(nextSlideId)).children("a"));
+            }
+        }
+    }
 }
 
 function triggerAudio(obj) {
@@ -1741,10 +1776,16 @@ function displayPresentation(obj) {
         );
     }
 
+    // If the presentation exists in the middle segment
+    if (document.getElementById("presentation."+location) != null) {
+        // Scroll the presentation into view
+        document.getElementById("presentation."+location).scrollIntoView();
+    }
     // Set the slide size
     setSlideSize(slideSize);
     // If this is a header
     if (header) {
+        console.log("this is a header");
         document.getElementById("header."+location).scrollIntoView();
     } else {
         // Set the current slide
@@ -1754,11 +1795,6 @@ function displayPresentation(obj) {
     $(obj).parent().children("a").children("div").removeClass("selected").removeClass("highlighted");
     // Set the current item as selected
     $(obj).children("div").addClass("selected");
-    // If the presentation exists in the middle segment
-    if (document.getElementById("presentation."+location) != null) {
-        // Scroll the presentation into view
-        document.getElementById("presentation."+location).scrollIntoView();
-    }
 }
 
 function displayHeader(obj) {
@@ -1921,15 +1957,23 @@ function initialise() {
             if(e.keyCode == 32 || e.keyCode == 39 && e.target == document.body) {
                 // Prevent the default action
                 e.preventDefault();
-                // Trigger the next slide
-                websocket.send('{"action":"presentationTriggerNext"}');
+                if (forceSlides) {
+                    triggerNextSlide();
+                } else {
+                    // Trigger the next slide
+                    websocket.send('{"action":"presentationTriggerNext"}');
+                }
             }
             // When left arrow is detected
             if(e.keyCode == 37 && e.target == document.body) {
                 // Prevent the default action
                 e.preventDefault();
-                // Trigger the previous slide
-                websocket.send('{"action":"presentationTriggerPrevious"}');
+                if (forceSlides) {
+                    triggerPreviousSlide();
+                } else {
+                    // Trigger the previous slide
+                    websocket.send('{"action":"presentationTriggerPrevious"}');
+                }
             }
         }
     });
