@@ -1,13 +1,14 @@
 // Variables
 
 // Connection
-var host = "172.16.101.32";
+var host = "127.0.0.1";
 var port = "50000";
 var pass = "control";
 
 // User Preference
-var retrieveEntireLibrary = true;
+var retrieveEntireLibrary = false;
 var continuousPlaylist = true;
+var forceSlides = true;
 var followProPresenter = true;
 var useCookies = true;
 
@@ -17,8 +18,9 @@ var playlistList = [];
 var audioPlaylistList = [];
 var libraryPresentationList = [];
 var libraryPresentationNameList = [];
+var playlistHeaderList = [];
 var playlistPresentationList = [];
-var slideSizeEm = 17;
+var slideSize = 9;
 var authenticated = false;
 var wsUri = "ws://"+host+":"+port+"/remote";
 var resetTimeout;
@@ -108,6 +110,7 @@ function onMessage(evt) {
         // Get playlists
         getPlaylists();
     } else if (obj.action == "playlistRequestAll") {
+        console.log(obj);
         // Empty the playlist area
         $("#playlist-content").empty();
         // Empty the playlist list
@@ -289,9 +292,10 @@ function checkCookie(cname) {
 
 function getRetrieveEntireLibraryCookie() {
     if (checkCookie("retrieveEntireLibrary") && useCookies) {
-        console.log("REL Cookie Exists");
         retrieveEntireLibrary = (getCookie("retrieveEntireLibrary") == "true");
         document.getElementById("retrieveEntireLibrary-checkbox").checked = (getCookie("retrieveEntireLibrary") == "true");
+    } else {
+        document.getElementById("retrieveEntireLibrary-checkbox").checked = retrieveEntireLibrary;
     }
 }
 
@@ -301,9 +305,10 @@ function setRetrieveEntireLibraryCookie(boolean) {
 
 function getContinuousPlaylistCookie() {
     if (checkCookie("continuousPlaylist") && useCookies) {
-        console.log("CP Cookie Exists");
         continuousPlaylist = (getCookie("continuousPlaylist") == "true");
         document.getElementById("continuousPlaylist-checkbox").checked = (getCookie("continuousPlaylist") == "true");
+    } else {
+        document.getElementById("continuousPlaylist-checkbox").checked = continuousPlaylist;
     }
 }
 
@@ -311,11 +316,25 @@ function setContinuousPlaylistCookie(boolean) {
     setCookie("continuousPlaylist", boolean, 90);
 }
 
+function getForceSlidesCookie() {
+    if (checkCookie("forceSlides") && useCookies) {
+        forceSlides = (getCookie("forceSlides") == "true");
+        document.getElementById("forceSlides-checkbox").checked = (getCookie("forceSlides") == "true");
+    } else {
+        document.getElementById("forceSlides-checkbox").checked = forceSlides;
+    }
+}
+
+function setForceSlidesCookie(boolean) {
+    setCookie("forceSlides", boolean, 90);
+}
+
 function getUseCookiesCookie() {
     if (checkCookie("useCookies") && useCookies) {
-        console.log("UC Cookie Exists");
         useCookies = (getCookie("useCookies") == "true");
         document.getElementById("useCookies-checkbox").checked = (getCookie("useCookies") == "true");
+    } else {
+        document.getElementById("useCookies-checkbox").checked = useCookies;
     }
 }
 
@@ -325,9 +344,10 @@ function setUseCookiesCookie(boolean) {
 
 function getSlideSizeCookie() {
     if (checkCookie("slideSize") && useCookies) {
-        console.log("SS Cookie Exists");
-        slideSizeEm = parseInt(getCookie("slideSize"));
+        slideSize = parseInt(getCookie("slideSize"));
         document.getElementById("slide-size").value = parseInt(getCookie("slideSize"));
+    } else {
+        document.getElementById("slide-size").value = slideSize;
     }
 }
 
@@ -393,7 +413,12 @@ function createPlaylist(obj) {
     playlistList.push(obj);
     $(obj.playlist).each (
         function () {
-            getPresentation(this.playlistItemLocation);
+            if (this.playlistItemType == "playlistItemTypeHeader") {
+                var playlistHeader = {presentationPath: this.playlistItemLocation, presentation: {presentationName: this.playlistItemName}}
+                playlistHeaderList.push(playlistHeader);
+            } else  {
+                getPresentation(this.playlistItemLocation);
+            }
         }
     );
     return playlistData;
@@ -1335,7 +1360,11 @@ function displayPlaylist(obj) {
                 // Add the presentations in the playlist
                 $(this.playlist).each (
                     function () {
-                        data += '<a onclick="displayPresentation(this);"><div id="'+this.playlistItemLocation+'" class="item con"><img src="img/presentation.png" /><div class="name">'+this.playlistItemName+'</div></div></a>'
+                        if (this.playlistItemType == "playlistItemTypeHeader") {
+                            data += '<a onclick="displayPresentation(this);"><div id="'+this.playlistItemLocation+'" class="item head"><div class="name">'+this.playlistItemName+'</div></div></a>'
+                        } else if (this.playlistItemType == "playlistItemTypePresentation") {
+                            data += '<a onclick="displayPresentation(this);"><div id="'+this.playlistItemLocation+'" class="item con"><img src="img/presentation.png" /><div class="name">'+this.playlistItemName+'</div></div></a>'
+                        }
                     }
                 );
             }
@@ -1401,9 +1430,11 @@ function displayAudioPlaylist(obj) {
 
 function displayPresentation(obj) {
     // Create variable to hold presentation data
-    var data = "";
+    var data = [];
     // Create the location variable
     var location = "";
+    // Check if header
+    var header = $(obj).children("div").hasClass("head");
     // Check the request origin
     if ($(obj).attr("onclick") == null) {
         // Use the presentationPath as the location
@@ -1475,7 +1506,6 @@ function displayPresentation(obj) {
             function () {
                 // If continuous playlists are enabled
                 if (continuousPlaylist) {
-
                     // If the presentation path matches the path of the selected presentation, set it as highlighted
                     if (this.presentationPath == location) {
                         $("#playlist-items").children("a").each (
@@ -1489,24 +1519,39 @@ function displayPresentation(obj) {
 
                     // If this presentation is part of the selected presentation's playlist
                     if (this.presentationPath.split(":")[0] == playlistLocation) {
+                        // Get the presentation path
                         var presentationPath = this.presentationPath;
-                        data += '<div id="presentation.'+this.presentationPath+'" class="presentation">'+
-                                    '<div class="presentation-header padded">'+this.presentation.presentationName+'</div>'+
-                                    '<div class="presentation-content padded">';
+                        // Get the index of the presentation in the playlist
+                        var presentationIndex = parseInt(this.presentationPath.split(":")[1]);
+                        // Create the presentation container in the presentation data
+                        var presentationData = '<div id="presentation.'+presentationPath+'" class="presentation">'
+                            + '<div class="presentation-header padded">'+this.presentation.presentationName+'</div>'
+                            + '<div class="presentation-content padded">';
+                        // Create a variable to hold the slide count
                         var count = 1;
+                        // Iterate through each slide group in the presentation
                         $(this.presentation.presentationSlideGroups).each (
                             function () {
+                                // Get the slide group color
                                 var colorArray = this.groupColor.split(" ");
+                                // Get the slide group name
                                 var groupName = this.groupName;
+                                // Iterate through each slide in the slide group
                                 $(this.groupSlides).each (
                                     function () {
-                                        data += '<div id="slide'+count+'.'+presentationPath+'" class="slide-container '+getEnabledValue(this.slideEnabled)+'"><a id="'+presentationPath+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
+                                        // Add the slide to the presentation data
+                                        presentationData += '<div id="slide'+count+'.'+presentationPath+'" class="slide-container '+getEnabledValue(this.slideEnabled)+'"><a id="'+presentationPath+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
+                                        // Increase the slide count
                                         count ++;
                                     }
                                 );
                             }
                         );
-                        data +='</div></div>';
+
+                        // Add the close tags to the presentation data
+                        presentationData += '</div></div>';
+                        // Add the presentation data to the array
+                        data.push({presentationIndex:presentationIndex, presentationData:presentationData});
                     }
 
                 } else {
@@ -1519,28 +1564,78 @@ function displayPresentation(obj) {
                                 }
                             }
                         );
-                        data += '<div id="presentation.'+location+'" class="presentation">'+
-                                    '<div class="presentation-header padded">'+this.presentation.presentationName+'</div>'+
-                                    '<div class="presentation-content padded">';
+                        // Get the presentation path
+                        var presentationPath = this.presentationPath;
+                        // Get the index of the presentation in the playlist
+                        var presentationIndex = parseInt(this.presentationPath.split(":")[1]);
+                        // Create the presentation container in the presentation data
+                        var presentationData = '<div id="presentation.'+presentationPath+'" class="presentation">'
+                            + '<div class="presentation-header padded">'+this.presentation.presentationName+'</div>'
+                            + '<div class="presentation-content padded">';
+                        // Create a variable to hold the slide count
                         var count = 1;
+                        // Iterate through each slide group in the presentation
                         $(this.presentation.presentationSlideGroups).each (
                             function () {
+                                // Get the slide group color
                                 var colorArray = this.groupColor.split(" ");
+                                // Get the slide group name
                                 var groupName = this.groupName;
+                                // Iterate through each slide in the slide group
                                 $(this.groupSlides).each (
                                     function () {
-                                        data += '<div id="slide'+count+'.'+location+'" class="slide-container '+getEnabledValue(this.slideEnabled)+'"><a id="'+location+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
+                                        // Add the slide to the presentation data
+                                        presentationData += '<div id="slide'+count+'.'+presentationPath+'" class="slide-container '+getEnabledValue(this.slideEnabled)+'"><a id="'+presentationPath+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
+                                        // Increase the slide count
                                         count ++;
                                     }
                                 );
                             }
                         );
+                        // Add the close tags to the presentation data
+                        presentationData += '</div></div>';
+                        // Add the presentation data to the array
+                        data.push({presentationIndex:presentationIndex, presentationData:presentationData});
 
-                        data +='</div></div>';
+
                     }
                 }
             }
         );
+
+
+        $(playlistHeaderList).each (
+            function () {
+                // If continuous playlists are enabled
+                if (continuousPlaylist) {
+                    // If this header is part of the selected presentation's playlist
+                    if (this.presentationPath.split(":")[0] == playlistLocation) {
+                        // Get the header path
+                        var headerPath = this.presentationPath;
+                        // Get the index of the header in the playlist
+                        var headerIndex = parseInt(this.presentationPath.split(":")[1]);
+                        // Create the presentation container in the presentation data
+                        var headerData = '<div id="header.'+headerPath+'">'
+                            + '<div class="header-header padded">'+this.presentation.presentationName+'</div>'
+                            + '</div>';
+                        // Add the header data to the array
+                        data.push({presentationIndex:headerIndex, presentationData:headerData});
+                    }
+                }
+            }
+        );
+        // Sort the playlist presentations
+        data.sort(SortPresentationByIndex);
+        // Empty the presentation content area
+        $("#presentations").empty();
+        // For each presentation in the presentation data array
+        data.forEach(
+            function (item) {
+                // Add the presentation data to the presentations section
+                $("#presentations").append(item.presentationData);
+            }
+        );
+
     } else {
         // Get the library
         var library;
@@ -1608,41 +1703,68 @@ function displayPresentation(obj) {
                             }
                         }
                     );
-                    data += '<div id="presentation.'+location+'" class="presentation">'+
-                                '<div class="presentation-header padded">'+this.presentation.presentationName+'</div>'+
-                                '<div class="presentation-content padded">';
+                    // Get the presentation path
+                    var presentationPath = this.presentationPath;
+                    // Create the presentation container in the presentation data
+                    var presentationData = '<div id="presentation.'+presentationPath+'" class="presentation">'
+                        + '<div class="presentation-header padded">'+this.presentation.presentationName+'</div>'
+                        + '<div class="presentation-content padded">';
+                    // Create a variable to hold the slide count
                     var count = 1;
+                    // Iterate through each slide group in the presentation
                     $(this.presentation.presentationSlideGroups).each (
                         function () {
+                            // Get the slide group color
                             var colorArray = this.groupColor.split(" ");
+                            // Get the slide group name
                             var groupName = this.groupName;
+                            // Iterate through each slide in the slide group
                             $(this.groupSlides).each (
                                 function () {
-                                    data += '<div id="slide'+count+'.'+location+'" class="slide-container '+getEnabledValue(this.slideEnabled)+'"><a id="'+location+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
+                                    // Add the slide to the presentation data
+                                    presentationData += '<div id="slide'+count+'.'+location+'" class="slide-container '+getEnabledValue(this.slideEnabled)+'"><a id="'+location+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
+                                    // Increase the slide count
                                     count ++;
                                 }
                             );
                         }
                     );
 
-                    data +='</div></div>';
+                    // Add the close tags to the presentation data
+                    presentationData += '</div></div>';
+                    // Empty the presentation content area
+                    $("#presentations").empty();
+                    // Add the presentation data to the presentations section
+                    $("#presentations").append(presentationData);
                 }
             }
         );
     }
-    // Add the data to the presentations section
-    $("#presentations").empty();
-    $("#presentations").append(data);
-    // Scroll the presentation into view
-    document.getElementById("presentation."+location).scrollIntoView();
+
     // Set the slide size
-    setSlideSize(slideSizeEm);
-    // Set the current slide
-    setCurrentSlide(obj.slideIndex+1, location);
+    setSlideSize(slideSize);
+    // If this is a header
+    if (header) {
+        document.getElementById("header."+location).scrollIntoView();
+    } else {
+        // Set the current slide
+        setCurrentSlide(obj.slideIndex+1, location);
+    }
     // Remove selected and highlighted from all items
     $(obj).parent().children("a").children("div").removeClass("selected").removeClass("highlighted");
     // Set the current item as selected
     $(obj).children("div").addClass("selected");
+    // If the presentation exists in the middle segment
+    if (document.getElementById("presentation."+location) != null) {
+        // Scroll the presentation into view
+        document.getElementById("presentation."+location).scrollIntoView();
+    }
+}
+
+function displayHeader(obj) {
+    var location = $(obj).children("div").attr("id");
+
+
 }
 
 // End Page Display Functions
@@ -1655,7 +1777,7 @@ function getRGBValue(int) {
 }
 
 function setSlideSize(int) {
-    $(".slide img").width(int + "em");
+    $(".slide img").width((int + 8) + "em");
 }
 
 function SortPresentationByName(a, b) {
@@ -1675,6 +1797,12 @@ function SortPresentationByPath(a, b) {
     var aName = a.presentationPath.toLowerCase();
     var bName = b.presentationPath.toLowerCase();
     return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
+}
+
+function SortPresentationByIndex(a, b) {
+    var aIndex = a.presentationIndex;
+    var bIndex = b.presentationIndex;
+    return ((aIndex < bIndex) ? -1 : ((aIndex > bIndex) ? 1 : 0));
 }
 
 function getLocation(obj) {
@@ -1765,7 +1893,6 @@ function isElementInViewport (el) {
 }
 
 function getEnabledValue(enabled) {
-    console.log(enabled);
     if (enabled) {
         return "";
     } else {
@@ -1780,12 +1907,11 @@ function getEnabledValue(enabled) {
 
 function initialise() {
 
+    // Get Cookie Values
     getRetrieveEntireLibraryCookie();
-
     getContinuousPlaylistCookie();
-
+    getForceSlidesCookie();
     getUseCookiesCookie();
-
     getSlideSizeCookie();
 
     // Add listener for action keys
@@ -1815,16 +1941,15 @@ function initialise() {
     document.getElementById("slide-size").addEventListener('input',
         function (s) {
             // Get proper size
-            var size = parseInt(this.value)+8;
+            slideSize = parseInt(this.value);
             // Check if size is large enough to enlargen at a higher rate
-            if (size > 26) {
-                size = size + (size-26);
+            if (slideSize > 18) {
+                slideSize = slideSize + (slideSize-18);
             }
-            // Add the slide size to variable
-            slideSizeEm = size;
             // Set slide size
-            setSlideSize(slideSizeEm);
-            setSlideSizeCookie(slideSizeEm);
+            setSlideSize(slideSize);
+            // Set slide size cookie
+            setSlideSizeCookie(slideSize);
         }, false
     );
     // Prevent typing into inputs from affecting the slide progression

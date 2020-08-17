@@ -232,6 +232,29 @@ select {
     border-radius: 4px;
 }
 
+.item.head {
+    font-size: 13px;
+    padding: 3px;
+    border-color: #575757;
+    border-style: solid;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left: none;
+    border-right: none;
+    white-space: nowrap;
+    background-color: #3f3f3f;
+}
+
+.item.head.selected {
+    background-color: #0e5ecd;
+}
+
+.item.head.highlighted {
+    border: 1px solid #6a6a6a;
+    background-color: #444444;
+    border-radius: 4px;
+}
+
 .item.lib {
     font-size: 13px;
     padding: 3px;
@@ -349,6 +372,12 @@ select {
 
 .all:active {
     background-color: #303234 !important;
+}
+
+.header-header {
+    background-color: #808080;
+    font-size: 18px;
+    font-weight: bold;
 }
 
 .presentation-header {
