@@ -45,7 +45,7 @@ select {
     left: 0px;
     width: 264px;
     border-right: 1px solid black;
-    height: calc(100% - 65px);
+    height: calc(100% - 91px);
     overflow-y: auto;
     overflow-x: hidden;
     background-color: #464646;
@@ -126,10 +126,14 @@ select {
     right: 0px;
     width: 284px;
     border-left: 1px solid black;
-    height: calc(100% - 65px);
+    height: calc(100% - 91px);
     overflow-y: auto;
     overflow-x: hidden;
     background-color: #2f2f2f;
+}
+
+.right-sub {
+    height: calc(100% - 200px);
 }
 
 .audio {
@@ -170,7 +174,6 @@ select {
 .logo img {
     height: 45px;
 }
-
 .segment .header {
     position: relative;
 }
@@ -200,13 +203,11 @@ select {
     padding: 6px 10px 6px 10px;
 }
 
-
-
 .content {
     color: #e2e2e2;
     overflow-y: auto;
     overflow-x: hidden;
-    min-height: 60px;
+    min-height: 30px;
 }
 
 .playlist-group {
@@ -278,6 +279,31 @@ select {
     display: none;
 }
 
+.library.segment {
+    height: calc(100% - 1px);
+}
+
+.library .top, .audio .top {
+    height: 33%;
+    overflow-y: auto;
+}
+
+.library .bottom, .audio .bottom {
+    height: 67%;
+    overflow-y: auto;
+}
+
+#library-items, #playlist-items, #audio-items {
+    height: calc(100% - 26px);
+}
+
+.playback.segment {
+    height: 95px;
+}
+
+.audio.segment {
+    height: calc(100% - 97px);
+}
 
 .collapser {
     position: absolute;
@@ -327,7 +353,7 @@ select {
 }
 
 .icons div {
-    padding: 7.4px 14px 5.4px 14px;
+    padding: 7.4px 14px 5.2px 14px;
 }
 
 .icons div.bordered {
@@ -410,8 +436,28 @@ select {
     position: relative;
 }
 
+.media {
+    font-size: 90px;
+    padding: 10px 22px;
+    color: #868686;
+    vertical-align: middle;
+}
+
+.media i {
+    margin-top: 8px;
+}
+
+.media i:active {
+    color: #ffffff;
+}
+
+.media-name {
+    font-size: 14px;
+}
+
 .screens {
     background-color: black;
+    height: 200px;
 }
 
 .fa-caret-down {
@@ -432,11 +478,9 @@ select {
 }
 
 .playlists .content {
-    min-height: 100px;
 }
 
 .audio .content {
-    min-height: 100px;
 }
 
 .bottom .content {
@@ -455,7 +499,7 @@ select {
     border: 2px solid #d4722b;
 }
 
-.slide-container.disabled {
+.slide-container.disabled .slide {
     opacity: 50%;
 }
 
@@ -555,18 +599,6 @@ select {
     border: 1px solid black;
 }
 
-.timers div.options-content {
-    height: 280px;
-}
-
-.messages div.options-content {
-    height: 200px;
-}
-
-.stage div.options-content {
-    /* height: 180px; */
-}
-
 .options-header {
     background-color: #3a3a3a;
     position: relative;
@@ -598,6 +630,19 @@ select {
 .options-content {
     background-color: #1a1a1a;
     position: relative;
+    max-height: calc(88vh - 133px);
+    overflow: auto;
+}
+
+.timers div.options-content {
+    height: 280px;
+}
+
+.messages div.options-content {
+    height: 200px;
+}
+
+.stage div.options-content {
 }
 
 .options-footer {
@@ -1014,8 +1059,6 @@ div.timer-container.collapse .collapse-hide {
 
 .settings .options-content {
     padding-top: 10px;
-    max-height: calc(88vh - 133px);
-    overflow: auto;
 }
 
 .settings-row {

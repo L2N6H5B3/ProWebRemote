@@ -66,9 +66,6 @@
 			<div class="right">
 				<div class="screens">
 					<div class="preview">
-						<div class="top">
-
-						</div>
 						<div class="content">
 							<div id="live" class="live">
 
@@ -85,51 +82,47 @@
 								</div>
 							</div>
 						</div>
-						<div class="bottom">
-
-						</div>
-					</div>
-					<div class="playback">
-
 					</div>
 				</div>
-				<div class="playback segment">
-					<div class="bottom dark">
-						<div class="segment-header padded segment">
-							<div class="playback-controls">
-								<a onclick="focusTimelineControls();"><img id="control-slide" src="img/slideblue.png"/></a>
-								<a onclick="focusAudioControls();"><img id="control-audio" src="img/clearaudio.png"/></a>
+				<div class="right-sub">
+					<div class="playback segment">
+						<div class="bottom dark">
+							<div class="segment-header padded segment">
+								<div class="playback-controls">
+									<a onclick="focusTimelineControls();"><img id="control-slide" src="img/slideblue.png"/></a>
+									<a onclick="focusAudioControls();"><img id="control-audio" src="img/clearaudio.png"/></a>
+								</div>
 							</div>
-						</div>
-						<div class="content">
-							<div id="timeline-controls" class="timeline-controls">
-								<div class="current playing-timeline"></div>
-								<a onclick="toggleTimelinePlayPause();"><div class="play"><i id="timeline-status" class="disabled fas fa-play"></i></div></a>
-							</div>
-							<div id="audio-controls" class="audio-controls">
-								<div class="current playing-audio"></div>
-								<a onclick="toggleAudioPlayPause();"><div class="play"><i id="audio-status" class="disabled fas fa-play"></i></div></a>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="audio segment">
-					<div class="top light">
-						<div class="audio">
-							<div class="segment-header padded">
-								<h5>Audio</h5>
-								<a onclick="getAudioPlaylists();"><i class="fas fa-redo-alt"></i></a>
-							</div>
-							<div id="audio-content" class="content">
-								<h5 style="margin-left: 20px">Connect to ProPresenter to see Audio Playlists</h5>
+							<div class="content">
+								<div id="timeline-controls" class="timeline-controls">
+									<div class="current playing-timeline"></div>
+									<a onclick="toggleTimelinePlayPause();"><div class="play"><i id="timeline-status" class="disabled fas fa-play"></i></div></a>
+								</div>
+								<div id="audio-controls" class="audio-controls">
+									<div class="current playing-audio"></div>
+									<a onclick="toggleAudioPlayPause();"><div class="play"><i id="audio-status" class="disabled fas fa-play"></i></div></a>
+								</div>
 							</div>
 						</div>
 					</div>
-					<div class="bottom dark">
-						<div class="segment-header padded segment">
-							<h5 id="right-count" class="count"></h5>
+					<div class="audio segment">
+						<div class="top light">
+							<div class="audio">
+								<div class="segment-header padded">
+									<h5>Audio</h5>
+									<a onclick="getAudioPlaylists();"><i class="fas fa-redo-alt"></i></a>
+								</div>
+								<div id="audio-content" class="content">
+									<h5 style="margin-left: 20px">Connect to ProPresenter to see Audio Playlists</h5>
+								</div>
+							</div>
 						</div>
-						<div id="audio-items" class="content">
+						<div class="bottom dark">
+							<div class="segment-header padded segment">
+								<h5 id="right-count" class="count"></h5>
+							</div>
+							<div id="audio-items" class="content">
+							</div>
 						</div>
 					</div>
 				</div>
@@ -221,17 +214,17 @@
 				</div>
 				<div class="options-content">
 					<div class="settings-row">
-						<div class="row-action"><input id="retrieveEntireLibrary-checkbox" onchange="toggleRetrieveEntireLibrary(this);" type="checkbox"/></div>
-						<div class="row-name">
-							<div class="row-text">Retrieve Entire Library on Load</div>
-							<div class="row-desc">If ticked, entire Library will be downloaded upon connection to speed up the experience.  If you are having issues with ProPresenter crashing on connection, uncheck this feature.</div>
-						</div>
-					</div>
-					<div class="settings-row">
 						<div class="row-action"><input id="continuousPlaylist-checkbox" onchange="toggleContinuousPlaylist(this);" type="checkbox"/></div>
 						<div class="row-name">
 							<div class="row-text">Continuous Playlist</div>
 							<div class="row-desc">Allow continuous scroll through playlist items.</div>
+						</div>
+					</div>
+					<div class="settings-row">
+						<div class="row-action"><input id="retrieveEntireLibrary-checkbox" onchange="toggleRetrieveEntireLibrary(this);" type="checkbox"/></div>
+						<div class="row-name">
+							<div class="row-text">Retrieve Entire Library on Load</div>
+							<div class="row-desc">If ticked, entire Library will be downloaded upon connection to speed up the experience.  If you are having issues with ProPresenter crashing on connection, uncheck this feature.</div>
 						</div>
 					</div>
 					<div class="settings-row">
@@ -249,6 +242,13 @@
 						</div>
 					</div>
 					<div style="display: none;" class="settings-row">
+						<div class="row-action"><input id="advancedLiveDisplay-checkbox" onchange="toggleAdvancedLiveDisplay(this);" type="checkbox"/></div>
+						<div class="row-name">
+							<div class="row-text">Enable Advanced Live Display</div>
+							<div class="row-desc">By default, the live display only displays a static image representing the presentation.  Check this feature to utilise ProPresenter's network Stage Display protocol to show a current stream of the live slide as the live display.</div>
+						</div>
+					</div>
+					<div class="settings-row">
 						<div class="row-action"><input id="useCookies-checkbox" onchange="toggleUseCookies(this);" type="checkbox"/></div>
 						<div class="row-name">
 							<div class="row-text">Save Browser Cookies</div>
