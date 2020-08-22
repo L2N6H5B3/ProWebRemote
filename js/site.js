@@ -26,13 +26,17 @@ var libraryPresentationNameList = [];
 var playlistHeaderList = [];
 var playlistPresentationList = [];
 var playlistMediaList = [];
+var libraryRequests = [];
+var playlistRequests = [];
+var audioRequests = [];
+var initialPresentationLocation;
 var slideSize = 9;
 var wsUri = "ws://"+host+":"+port;
 var wsStageUri = "ws://"+host+":"+port;
 var resetTimeout;
 var refresh = true;
 var inputTyping = false;
-var presentationDisplayRequest = null;
+var presentationDisplayRequest = [];
 var previousPresentationRequest = false;
 
 // End Variables
@@ -90,10 +94,11 @@ function onMessage(evt) {
         clearTimeout(resetTimeout);
         // Start receiving clock times from ProPresenter
         // startReceivingClockData();
-    } else if (obj.action == "presentationCurrent") {
-        // Create presentation
-        createPresentation(obj);
     } else if (obj.action == "libraryRequest") {
+        // Remove connected status
+        $(".connected").hide();
+        // Show downloading status
+        $(".downloading-library").show();
         // Empty the library area
         $("#library-content").empty();
         // Empty the library list
@@ -102,6 +107,8 @@ function onMessage(evt) {
         libraryPresentationList = [];
         // Empty the library presentation name list
         libraryPresentationNameList = [];
+        // Empty the library request list
+        libraryRequests = [];
         // Create a variable to hold the libraries
         var data = "";
         // For each item in the libraries
@@ -113,21 +120,37 @@ function onMessage(evt) {
                 // Create a presentation name element for the library
                 createPresentationName(item);
             } else {
+                // Add this library item location to the requests array
+                libraryRequests.push(item);
                 // Get the presentation file from the library
                 getPresentation(item);
             }
         });
         // Add the libraries to the library content area
         $("#library-content").append(data);
+        // Remove downloading status
+        $(".downloading-library").hide();
+        // Show connected status
+        $(".connected").show();
         // Get playlists
         getPlaylists();
     } else if (obj.action == "playlistRequestAll") {
+        // Remove connected status
+        $(".connected").hide();
+        // Show downloading status
+        $(".downloading-playlist").show();
         // Empty the playlist area
         $("#playlist-content").empty();
         // Empty the playlist list
-        var playlistList = [];
+        playlistList = [];
         // Empty the playlist presentation list
-        var playlistPresentationList = [];
+        playlistPresentationList = [];
+        // Empty the playlist header list
+        playlistHeaderList = [];
+        // Empty the playlist media list
+        playlistMediaList = [];
+        // Empty the playlist request list
+        playlistRequests = [];
         // Create a variable to hold the playlists
         var data = "";
         // For each playlist
@@ -146,10 +169,16 @@ function onMessage(evt) {
         // Add the playlists to the playlist content area
         $("#playlist-content").append(data);
     } else if (obj.action == "audioRequest") {
+        // Remove connected status
+        $(".connected").hide();
+        // Show downloading status
+        $(".downloading-audio").show();
         // Empty the audio area
         $("#audio-content").empty();
         // Empty the audio playlist list
         var audioPlaylistList = [];
+        // Empty the audio request list
+        audioRequests = [];
         // Create a variable to hold the audio playlists
         var data = "";
         // For each audio playlist
@@ -167,6 +196,10 @@ function onMessage(evt) {
         );
         // Add the audio playlists to the audio playlist content area
         $("#audio-content").append(data);
+        // Remove downloading status
+        $(".downloading-audio").hide();
+        // Show connected status
+        $(".connected").show();
         // Get the current audio status and song
         getAudioStatus();
     } else if (obj.action == "clockRequest") {
@@ -189,6 +222,11 @@ function onMessage(evt) {
     } else if (obj.action == "stageDisplaySets") {
         // Create stage display screens
         createStageScreens(obj);
+    } else if (obj.action == "presentationCurrent") {
+        // Create presentation
+        createPresentation(obj);
+    } else if (obj.action == "presentationSlideIndex") {
+        displayPresentation(obj);
     } else if (obj.action == "presentationTriggerIndex") {
         // Display the current ProPresenter presentation
         displayPresentation(obj);
@@ -432,33 +470,6 @@ function setSlideSizeCookie(int) {
 // End Settings Functions
 
 
-// // Stage Display Functions
-//
-// function getStageDisplayLayouts() {
-//     stageWebSocket.send('{"acn":"asl"}');
-// }
-//
-// function processStageDisplayLayouts(obj) {
-//
-//     var liveSlideFrames = [];
-//
-//     obj.ary.forEach(
-//         function (item) {
-//             item.fme.forEach(
-//                 function (item) {
-//                     if (item.mde == 2) {
-//                         liveSlideFrames.push(item);
-//                     }
-//                 }
-//             );
-//         }
-//     );
-//
-// }
-//
-// // End Stage Display Functions
-
-
 // Build Functions
 
 function createLibrary(obj) {
@@ -512,16 +523,19 @@ function createPlaylistGroup(obj) {
 function createPlaylist(obj) {
     var playlistData = '<a onclick="displayPlaylist(this);"><div class="item lib playlist presentation"><img src="img/playlist.png"/><div class="name">'+obj.playlistName+'</div></div></a>';
     playlistList.push(obj);
-    $(obj.playlist).each (
-        function () {
-            if (this.playlistItemType == "playlistItemTypeHeader") {
-                var playlistHeader = {presentationPath: this.playlistItemLocation, presentation: {presentationName: this.playlistItemName}}
+    obj.playlist.forEach (
+        function (item, index) {
+            if (item.playlistItemType == "playlistItemTypeHeader") {
+                var playlistHeader = {presentationPath: item.playlistItemLocation, presentation: {presentationName: item.playlistItemName}}
                 playlistHeaderList.push(playlistHeader);
-            } else if (this.playlistItemType == "playlistItemTypeVideo") {
-                var playlistVideo = {presentationPath: this.playlistItemLocation, presentation: {presentationName: this.playlistItemName}}
+            } else if (item.playlistItemType == "playlistItemTypeVideo") {
+                var playlistVideo = {presentationPath: item.playlistItemLocation, presentation: {presentationName: item.playlistItemName}}
                 playlistMediaList.push(playlistVideo);
-            } else  {
-                getPresentation(this.playlistItemLocation);
+            } else {
+                // Add this playlist item location to the requests array
+                playlistRequests.push(item.playlistItemLocation);
+                // Get the presentation in the playlist from ProPresenter
+                getPresentation(item.playlistItemLocation);
             }
         }
     );
@@ -548,11 +562,6 @@ function createAudioPlaylistGroup(obj) {
 function createAudioPlaylist(obj) {
     var playlistData = '<a onclick="displayAudioPlaylist(this);"><div class="item lib playlist audio"><img src="img/audio.png"/><div class="name">'+obj.playlistName+'</div></div></a>';
     audioPlaylistList.push(obj);
-    $(obj.playlist).each (
-        function () {
-            getPresentation(this.playlistItemLocation);
-        }
-    );
     return playlistData;
 }
 
@@ -704,38 +713,70 @@ function createPresentation(obj) {
     );
     // Add this presentation to either the playlist or library presentation list
     if (obj.presentationPath.charAt(0) == '0') {
-        // Check if the presentation is unique and can be added in the array
-        $(playlistPresentationList).each(
-            function () {
-                if (this.presentationPath == obj.presentationPath) {
-                    unique = false;
+        if (playlistRequests.includes(obj.presentationPath)) {
+            // Check if the presentation is unique and can be added in the array
+            $(playlistPresentationList).each(
+                function () {
+                    if (this.presentationPath == obj.presentationPath) {
+                        unique = false;
+                    }
                 }
+            );
+            if (unique) {
+                playlistPresentationList.push(obj);
+                // Remove the request from the array
+                removeArrayValue(playlistRequests, obj.presentationPath);
             }
-        );
-        if (unique) {
-            playlistPresentationList.push(obj);
+            if (playlistRequests.length == 0) {
+                // Get the current displayed presentation from ProPresenter
+                getCurrentPresentation();
+                // Remove downloading status
+                $(".downloading-playlist").hide();
+                // Show connected status
+                $(".connected").show();
+            }
+        } else {
+            // Set the initial presentation location
+            initialPresentationLocation = obj.presentationPath;
+            // Get the current slide index
+            getCurrentSlide();
         }
     } else {
-        // Check if the presentation is unique and can be added in the array
-        $(libraryPresentationList).each(
-            function () {
-                if (this.presentationPath == obj.presentationPath) {
-                    unique = false;
+        if (libraryRequests.includes(obj.presentationPath)) {
+            // Check if the presentation is unique and can be added in the array
+            $(libraryPresentationList).each(
+                function () {
+                    if (this.presentationPath == obj.presentationPath) {
+                        unique = false;
+                    }
                 }
+            );
+            if (unique) {
+                libraryPresentationList.push(obj);
+                // Remove the request from the array
+                removeArrayValue(libraryRequests, obj.presentationPath);
             }
-        );
-        if (unique) {
-            libraryPresentationList.push(obj);
+        } else {
+            // Set the initial presentation location
+            initialPresentationLocation = obj.presentationPath;
+            // Get the current slide index
+            getCurrentSlide();
         }
     }
     // If set to only get names from ProPresenter libraries
     if (!retrieveEntireLibrary) {
         // Display this presentation if requested
-        if (presentationDisplayRequest == obj.presentationPath) {
-            // Set the presentation display request to none
-            presentationDisplayRequest = null;
+        if (presentationDisplayRequest[0] == obj.presentationPath) {
+            // Create an object to hold the presentation data
+            var presentationObject = {action:"presentationTriggerIndex", presentationPath:presentationDisplayRequest[0], slideIndex:presentationDisplayRequest[1]};
             // Display the presentation
-            displayPresentation(obj);
+            displayPresentation(presentationObject);
+            // Set the presentation display request to empty
+            presentationDisplayRequest = [];
+            // Remove downloading status
+            $(".downloading-library").hide();
+            // Show connected status
+            $(".connected").show();
         }
     }
 }
@@ -903,6 +944,10 @@ function setCurrentSlide(index, location) {
 
 function getCurrentPresentation() {
     remoteWebSocket.send('{"action":"presentationCurrent", "presentationSlideQuality": 25}');
+}
+
+function getCurrentSlide() {
+    remoteWebSocket.send('{"action":"presentationSlideIndex"}');
 }
 
 function getCurrentAudio() {
@@ -1314,48 +1359,54 @@ function triggerSlide(obj) {
     if (location.charAt(0) == '0') {
         // Sent the request to ProPresenter
         remoteWebSocket.send('{"action":"presentationTriggerIndex","slideIndex":"'+index+'","presentationPath":"'+location+'"}');
-        // // Check if we should follow ProPresenter
-        // if (followProPresenter) {
-        //     // Remove selected from all playlist items
-        //     $("#playlist-items").children("a").children("div").removeClass("selected");
-        //     // Remove highlighted from all playlist items
-        //     $("#playlist-items").children("a").children("div").removeClass("highlighted");
-        // }
+        // Check if we should follow ProPresenter
+        if (followProPresenter) {
+            // Remove selected from all playlist items
+            $("#playlist-items").children("a").children("div").removeClass("selected");
+            // Remove highlighted from all playlist items
+            $("#playlist-items").children("a").children("div").removeClass("highlighted");
+        }
     } else {
         // Sent the request to ProPresenter
         remoteWebSocket.send('{"action":"presentationTriggerIndex","slideIndex":"'+index+'","presentationPath":"'+location.replace(/\//g, "\\/")+'"}');
-        // // Check if we should follow ProPresenter
-        // if (followProPresenter) {
-        //     // Remove selected from all library items
-        //     $("#library-items").children("a").children("div").removeClass("selected");
-        //     // Remove highlighted from all library items
-        //     $("#library-items").children("a").children("div").removeClass("highlighted");
-        // }
+        // Check if we should follow ProPresenter
+        if (followProPresenter) {
+            // Remove selected from all library items
+            $("#library-items").children("a").children("div").removeClass("selected");
+            // Remove highlighted from all library items
+            $("#library-items").children("a").children("div").removeClass("highlighted");
+        }
     }
-    //
-    // // Check if we should follow ProPresenter
-    // if (followProPresenter) {
-    //     // Iterate through each item in the library / playlist area
-    //     $(".item.con").each (
-    //         function () {
-    //             // If the current item matches the slide presentation location
-    //             if ($(this).attr("id") == location) {
-    //                 // Highlight the current item
-    //                 $(this).addClass("highlighted");
-    //             }
-    //         }
-    //     );
-    // }
+
+    // Check if we should follow ProPresenter
+    if (followProPresenter) {
+        // Iterate through each item in the library / playlist area
+        $(".item.con").each (
+            function () {
+                // If the current item matches the slide presentation location
+                if ($(this).attr("id") == location) {
+                    // Highlight the current item
+                    $(this).addClass("highlighted");
+                }
+            }
+        );
+    }
 
 
     // Check if this is a media item
     if ($(obj).children("div").hasClass("media")) {
         // Remove selected from any previous slides
         $(".slide-container").removeClass("selected");
+        // Remove active from any previous media
+        $(".media").removeClass("active");
+        // Set clear slide to inactive
+        $("#clear-slide").removeClass("activated");
         // Set clear media to active
         $("#clear-media").addClass("activated");
         // Empty the live preview area
         $('#live').empty();
+        // Set the media element as active
+        $(obj).children("div").addClass("active");
     }
 
     // Set clear all to active
@@ -1364,87 +1415,24 @@ function triggerSlide(obj) {
 
 // Force Previous Slide
 function triggerPreviousSlide() {
-    // Get the current location
-    var currentLocation = $(".slide-container.selected").children("a").attr("id");
     // Get the current slide
     var currentSlide = $(".slide-container.selected");
-    // Get the current slide number
-    var currentSlideNumber = parseInt($(currentSlide).find(".slide-number").text());
-    // Create variable to determine loop status
-    var loop = true;
-    // Loop until a slide is found or the slides are exhausted
-    while (loop) {
-        // If the current slide is at least the first
-        if (currentSlideNumber > 1) {
-            // Decrease the slide number
-            currentSlideNumber --;
-            // Create the next slide id
-            var nextSlideId = "slide"+currentSlideNumber+"."+currentLocation;
-            // If the next slide is not disabled
-            if (!$(document.getElementById(nextSlideId)).hasClass("disabled")) {
-                // Trigger the next slide
-                triggerSlide($(document.getElementById(nextSlideId)).children("a"));
-                // Stop the loop
-                loop = false;
-            }
-        } else {
-            // Get the current presentation
-            var currentPresentation = $(".slide-container.selected").parent("div").parent("div");
-            // Get the current presentation location
-            var currentPresentationLocation = $(currentPresentation).attr("id");
-            // Get the current presentation number
-            var currentPresentationNumber = parseInt(currentPresentationLocation.split(":")[1]);
-            // Create variable to determine loop status
-            var presentationLoop = true;
-            // Loop until a presentation is found or the presentations are exhausted
-            while (presentationLoop) {
-                // If the current presentation is at least the first
-                if (currentPresentationNumber > 1) {
-                    // Decrease the presentation number
-                    currentPresentationNumber --;
-                    // Create the next presentation id
-                    var nextPresentationId = currentPresentationLocation.split(":")[0] + ":" + currentPresentationNumber;
-                    // Get the next presentation
-                    var nextPresentation = document.getElementById(nextPresentationId);
-                    // If the next presentation exists
-                    if (nextPresentation != null) {
-                        // Trigger the first available slide of the next presentation
-                        triggerSlide($(nextPresentation).children(".presentation-content").children('div:not(.disabled):first').children("a"));
-                        // Stop the loop
-                        presentationLoop = false;
-                    }
-                } else {
-                    // Stop the loop
-                    presentationLoop = false;
-                }
-            }
-            // Stop the loop
-            loop = false
-        }
-    }
-}
-
-// Force Next Slide
-function triggerNextSlide() {
-    // Get the current slide
-    var currentSlide = $(".slide-container.selected");
-    // Get the current location
-    var currentLocation = $(currentSlide).children("a").attr("id");
-    // Get the current slide number
-    var currentSlideNumber = parseInt($(currentSlide).find(".slide-number").text());
-    // Get the total slide count
-    var totalSlideCount = parseInt($(currentSlide).parent("div").children("div").length)
-    // Check if this is a playlist or library presentation
-    if (currentLocation.charAt(0) == '0') {
-        var nextPresentation
+    // Get the current media
+    var currentMedia = $(".media.active");
+    // Check if the currently selected item is a presentation or media item
+    if (currentSlide.length > 0) {
+        // Get the current location
+        var currentLocation = $(".slide-container.selected").children("a").attr("id");
+        // Get the current slide number
+        var currentSlideNumber = parseInt($(currentSlide).find(".slide-number").text());
         // Create variable to determine loop status
         var loop = true;
         // Loop until a slide is found or the slides are exhausted
         while (loop) {
-            // If the current slide is at least the first, but is not the last
-            if (currentSlideNumber > 0 && currentSlideNumber < totalSlideCount) {
-                // Increase the slide number
-                currentSlideNumber ++;
+            // If the current slide is at least the first
+            if (currentSlideNumber > 1) {
+                // Decrease the slide number
+                currentSlideNumber --;
                 // Create the next slide id
                 var nextSlideId = "slide"+currentSlideNumber+"."+currentLocation;
                 // If the next slide is not disabled
@@ -1461,16 +1449,14 @@ function triggerNextSlide() {
                 var currentPresentationLocation = $(currentPresentation).attr("id");
                 // Get the current presentation number
                 var currentPresentationNumber = parseInt(currentPresentationLocation.split(":")[1]);
-                // Get the total presentation count
-                var totalPresentationCount = parseInt($(currentPresentation).parent("div").children("div").length)
                 // Create variable to determine loop status
                 var presentationLoop = true;
                 // Loop until a presentation is found or the presentations are exhausted
                 while (presentationLoop) {
-                    // If the current presentation is at least the first, but is not the last
-                    if (currentPresentationNumber > 0 && currentPresentationNumber < totalPresentationCount) {
-                        // Increase the presentation number
-                        currentPresentationNumber ++;
+                    // If the current presentation is at least the first
+                    if (currentPresentationNumber > 1) {
+                        // Decrease the presentation number
+                        currentPresentationNumber --;
                         // Create the next presentation id
                         var nextPresentationId = currentPresentationLocation.split(":")[0] + ":" + currentPresentationNumber;
                         // Get the next presentation
@@ -1491,28 +1477,167 @@ function triggerNextSlide() {
                 loop = false
             }
         }
-    } else {
+    } else if (currentMedia.length > 0) {
+        // Get the current presentation
+        var currentPresentation = $(".media.active").parent("a").parent("div").parent("div").parent("div");
+        // Get the current presentation location
+        var currentPresentationLocation = $(currentPresentation).attr("id");
+        // Get the current presentation number
+        var currentPresentationNumber = parseInt(currentPresentationLocation.split(":")[1]);
         // Create variable to determine loop status
-        var loop = true;
-        // Loop until a slide is found or the slides are exhausted
-        while (loop) {
-            // If the current slide is at least the first, but is not the last
-            if (currentSlideNumber > 0 && currentSlideNumber < totalSlideCount) {
-                // Increase the slide number
-                currentSlideNumber ++;
-                // Create the next slide id
-                var nextSlideId = "slide"+currentSlideNumber+"."+currentLocation;
-                // If the next slide is not disabled
-                if (!$(document.getElementById(nextSlideId)).hasClass("disabled")) {
-                    // Trigger the next slide
-                    triggerSlide($(document.getElementById(nextSlideId)).children("a"));
+        var presentationLoop = true;
+        // Loop until a presentation is found or the presentations are exhausted
+        while (presentationLoop) {
+            // If the current presentation is at least the first
+            if (currentPresentationNumber > 1) {
+                // Decrease the presentation number
+                currentPresentationNumber --;
+                // Create the next presentation id
+                var nextPresentationId = currentPresentationLocation.split(":")[0] + ":" + currentPresentationNumber;
+                // Get the next presentation
+                var nextPresentation = document.getElementById(nextPresentationId);
+                // If the next presentation exists
+                if (nextPresentation != null) {
+                    // Trigger the first available slide of the next presentation
+                    triggerSlide($(nextPresentation).children(".presentation-content").children('div:not(.disabled):first').children("a"));
                     // Stop the loop
-                    loop = false;
+                    presentationLoop = false;
                 }
             } else {
                 // Stop the loop
-                loop = false
-                console.log("stoppedLoop");
+                presentationLoop = false;
+            }
+        }
+    }
+}
+
+// Force Next Slide
+function triggerNextSlide() {
+    // Get the current slide
+    var currentSlide = $(".slide-container.selected");
+    // Get the current media
+    var currentMedia = $(".media.active");
+    // Check if the currently selected item is a presentation or media item
+    if (currentSlide.length > 0) {
+        // Get the current location
+        var currentLocation = $(currentSlide).children("a").attr("id");
+        // Get the current slide number
+        var currentSlideNumber = parseInt($(currentSlide).find(".slide-number").text());
+        // Get the total slide count
+        var totalSlideCount = parseInt($(currentSlide).parent("div").children("div").length)
+        // Check if this is a playlist or library presentation
+        if (currentLocation.charAt(0) == '0') {
+            var nextPresentation
+            // Create variable to determine loop status
+            var loop = true;
+            // Loop until a slide is found or the slides are exhausted
+            while (loop) {
+                // If the current slide is at least the first, but is not the last
+                if (currentSlideNumber > 0 && currentSlideNumber < totalSlideCount) {
+                    // Increase the slide number
+                    currentSlideNumber ++;
+                    // Create the next slide id
+                    var nextSlideId = "slide"+currentSlideNumber+"."+currentLocation;
+                    // If the next slide is not disabled
+                    if (!$(document.getElementById(nextSlideId)).hasClass("disabled")) {
+                        // Trigger the next slide
+                        triggerSlide($(document.getElementById(nextSlideId)).children("a"));
+                        // Stop the loop
+                        loop = false;
+                    }
+                } else {
+                    // Get the current presentation
+                    var currentPresentation = $(".slide-container.selected").parent("div").parent("div");
+                    // Get the current presentation location
+                    var currentPresentationLocation = $(currentPresentation).attr("id");
+                    // Get the current presentation number
+                    var currentPresentationNumber = parseInt(currentPresentationLocation.split(":")[1]);
+                    // Get the total presentation count
+                    var totalPresentationCount = parseInt($(currentPresentation).parent("div").children("div").length)
+                    // Create variable to determine loop status
+                    var presentationLoop = true;
+                    // Loop until a presentation is found or the presentations are exhausted
+                    while (presentationLoop) {
+                        // If the current presentation is at least the first, but is not the last
+                        if (currentPresentationNumber > 0 && currentPresentationNumber < totalPresentationCount) {
+                            // Increase the presentation number
+                            currentPresentationNumber ++;
+                            // Create the next presentation id
+                            var nextPresentationId = currentPresentationLocation.split(":")[0] + ":" + currentPresentationNumber;
+                            // Get the next presentation
+                            var nextPresentation = document.getElementById(nextPresentationId);
+                            // If the next presentation exists
+                            if (nextPresentation != null) {
+                                // Trigger the first available slide of the next presentation
+                                triggerSlide($(nextPresentation).children(".presentation-content").children('div:not(.disabled):first').children("a"));
+                                // Stop the loop
+                                presentationLoop = false;
+                            }
+                        } else {
+                            // Stop the loop
+                            presentationLoop = false;
+                        }
+                    }
+                    // Stop the loop
+                    loop = false
+                }
+            }
+        } else {
+            // Create variable to determine loop status
+            var loop = true;
+            // Loop until a slide is found or the slides are exhausted
+            while (loop) {
+                // If the current slide is at least the first, but is not the last
+                if (currentSlideNumber > 0 && currentSlideNumber < totalSlideCount) {
+                    // Increase the slide number
+                    currentSlideNumber ++;
+                    // Create the next slide id
+                    var nextSlideId = "slide"+currentSlideNumber+"."+currentLocation;
+                    // If the next slide is not disabled
+                    if (!$(document.getElementById(nextSlideId)).hasClass("disabled")) {
+                        // Trigger the next slide
+                        triggerSlide($(document.getElementById(nextSlideId)).children("a"));
+                        // Stop the loop
+                        loop = false;
+                    }
+                } else {
+                    // Stop the loop
+                    loop = false
+                }
+            }
+        }
+    } else if (currentMedia.length > 0) {
+        console.log("currentMediaHasElements");
+        // Get the current presentation
+        var currentPresentation = $(".media.active").parent("a").parent("div").parent("div").parent("div");
+        // Get the current presentation location
+        var currentPresentationLocation = $(currentPresentation).attr("id");
+        // Get the current presentation number
+        var currentPresentationNumber = parseInt(currentPresentationLocation.split(":")[1]);
+        // Get the total presentation count
+        var totalPresentationCount = parseInt($(currentPresentation).parent("div").children("div").length)
+        // Create variable to determine loop status
+        var presentationLoop = true;
+        // Loop until a presentation is found or the presentations are exhausted
+        while (presentationLoop) {
+            // If the current presentation is at least the first, but is not the last
+            if (currentPresentationNumber > 0 && currentPresentationNumber < totalPresentationCount) {
+                // Increase the presentation number
+                currentPresentationNumber ++;
+                // Create the next presentation id
+                var nextPresentationId = currentPresentationLocation.split(":")[0] + ":" + currentPresentationNumber;
+                // Get the next presentation
+                var nextPresentation = document.getElementById(nextPresentationId);
+                // If the next presentation exists
+                if (nextPresentation != null) {
+                    // Trigger the first available slide of the next presentation
+                    triggerSlide($(nextPresentation).children(".presentation-content").children('div:not(.disabled):first').children("a"));
+                    // Stop the loop
+                    presentationLoop = false;
+                }
+            } else {
+                // Stop the loop
+                presentationLoop = false;
             }
         }
     }
@@ -1778,21 +1903,33 @@ function displayAudioPlaylist(obj) {
 function displayPresentation(obj) {
     // Create variable to hold presentation data
     var data = [];
+    // Create object from the parameter
+    var thisObject = obj;
     // Create the location variable
     var location = "";
+    // Create the slide index variable
+    var slideIndex = "";
     // Create a variable to hold if presentation request was ProPresenter initiated
     var propresenterRequest = false;
     // Check if item is a header
-    var header = $(obj).children("div").hasClass("head");
+    header = $(obj).children("div").hasClass("head");
+    // Get the current presentation location from the ID
+    location = $(obj).children("div").attr("id");
     // Check the request origin
     if ($(obj).attr("onclick") == null) {
-        // Use the presentationPath as the location
-        location = obj.presentationPath;
         // Set presentation request to propresenter
         propresenterRequest = true;
-    } else {
-        // Get the current presentation location from the ID
-        location = $(obj).children("div").attr("id");
+        if (obj.action == "presentationSlideIndex") {
+            // Use the initial presentation location
+            location = initialPresentationLocation;
+            // Use the provided slide index
+            slideIndex = parseInt(obj.slideIndex);
+        } else if (obj.action == "presentationTriggerIndex"){
+            // Use the presentationPath as the location
+            location = obj.presentationPath;
+            // Use the provided slide index
+            slideIndex = obj.slideIndex
+        }
     }
     // Remove selected and highlighted from libraries and playlists
     $(".libraries").children("div").children("div").children("a").children("div").removeClass("selected").removeClass("highlighted");
@@ -1858,29 +1995,38 @@ function displayPresentation(obj) {
                 // For each Presentation in the playlist presentation array
                 $(playlistPresentationList).each (
                     function () {
-                        // If continuous playlists are enabled
-                        if (continuousPlaylist) {
-                            // If the presentation path matches the path of the selected presentation, set it as highlighted
-                            if (this.presentationPath == location) {
-                                // Iterate through each playlist item
-                                $("#playlist-items").children("a").each (
-                                    function () {
-                                        // If this presentation path matches the selected presentation's presentation path
-                                        if ($(this).children("div").attr("id") == location) {
+
+                        // If the presentation path matches the path of the selected presentation, set it as highlighted
+                        if (this.presentationPath == location) {
+                            // Iterate through each playlist item
+                            $("#playlist-items").children("a").each (
+                                function () {
+                                    // If this presentation path matches the selected presentation's presentation path
+                                    if ($(this).children("div").attr("id") == location) {
+                                        if (propresenterRequest && obj.slideIndex.toString() != "") {
+                                            // Set the presentation as highlighted
+                                            $(this).children("div").addClass("highlighted");
+                                        } else {
                                             // Set the presentation as selected
                                             $(this).children("div").addClass("selected");
                                         }
                                     }
-                                );
-                            }
+                                }
+                            );
+                        }
 
+                        // If continuous playlists are enabled
+                        if (continuousPlaylist) {
+                            console.log("insideContinuousPlaylists");
                             // If this presentation is part of the selected presentation's playlist
                             if (this.presentationPath.split(":")[0] == playlistLocation) {
+                                console.log("insidepresentationPathSplit");
                                 // Get the presentation path
                                 var presentationPath = this.presentationPath;
 
-                                // If the presentation is already displayed
+                                // If the presentation is not already displayed
                                 if (document.getElementById("presentation."+presentationPath) == null) {
+                                    console.log("insidePresentationNotAlreadyDisplayed");
                                     // Get the index of the presentation in the playlist
                                     var presentationIndex = parseInt(this.presentationPath.split(":")[1]);
                                     // Create the presentation container in the presentation data
@@ -1918,16 +2064,6 @@ function displayPresentation(obj) {
                         } else {
                             // If the presentation path matches the path of the selected presentation, set it as highlighted
                             if (this.presentationPath == location) {
-                                // Iterate through each playlist item
-                                $("#playlist-items").children("a").each (
-                                    function () {
-                                        // If this presentation path matches the selected presentation's presentation path
-                                        if ($(this).children("div").attr("id") == location) {
-                                            // Set the presentation as selected
-                                            $(this).children("div").addClass("selected");
-                                        }
-                                    }
-                                );
                                 // Get the presentation path
                                 var presentationPath = this.presentationPath;
                                 // If the presentation is already displayed
@@ -1973,6 +2109,19 @@ function displayPresentation(obj) {
                     function () {
                         // If continuous playlists are enabled
                         if (continuousPlaylist) {
+                            // If the presentation path matches the path of the selected presentation, set it as highlighted
+                            if (this.presentationPath == location) {
+                                // Iterate through each playlist item
+                                $("#playlist-items").children("a").each (
+                                    function () {
+                                        // If this presentation path matches the selected presentation's presentation path
+                                        if ($(this).children("div").attr("id") == location) {
+                                            // Set the presentation as selected
+                                            $(this).children("div").addClass("selected");
+                                        }
+                                    }
+                                );
+                            }
                             // If this header is part of the selected presentation's playlist
                             if (this.presentationPath.split(":")[0] == playlistLocation) {
                                 // Get the header path
@@ -1998,6 +2147,24 @@ function displayPresentation(obj) {
                     function () {
                         // If continuous playlists are enabled
                         if (continuousPlaylist) {
+                            // If the presentation path matches the path of the selected presentation, set it as highlighted
+                            if (this.presentationPath == location) {
+                                // Iterate through each playlist item
+                                $("#playlist-items").children("a").each (
+                                    function () {
+                                        // If this presentation path matches the selected presentation's presentation path
+                                        if ($(this).children("div").attr("id") == location) {
+                                            if (propresenterRequest && obj.slideIndex.toString() != "") {
+                                                // Set the presentation as highlighted
+                                                $(this).children("div").addClass("highlighted");
+                                            } else {
+                                                // Set the presentation as selected
+                                                $(this).children("div").addClass("selected");
+                                            }
+                                        }
+                                    }
+                                );
+                            }
                             // If this media item is part of the selected presentation's playlist
                             if (this.presentationPath.split(":")[0] == playlistLocation) {
                                 // Get the media item path
@@ -2020,9 +2187,9 @@ function displayPresentation(obj) {
                     }
                 );
 
+                console.log("PresentationDataArray: ", data);
+
                 if (data.length > 0 && data.length == playlistLength) {
-                    console.log("Data has data");
-                    console.log(data);
                     // Sort the playlist presentations
                     data.sort(SortPresentationByIndex);
                     // Empty the presentation content area
@@ -2084,10 +2251,20 @@ function displayPresentation(obj) {
                     );
                     // If we should retrieve the presentation
                     if (retrieve) {
+                        // Remove connected status
+                        $(".connected").hide();
+                        // Show downloading status
+                        $(".downloading-library").show();
+                        // Add this library item location to the requests array
+                        libraryRequests.push(location);
+                        // Empty the presentation display request list
+                        presentationDisplayRequest = [];
+                        // Add the location to the presentation display request list
+                        presentationDisplayRequest.push(location);
+                        // Add the index to the presentation display request list
+                        presentationDisplayRequest.push(slideIndex);
                         // Get the presentation from the library
                         getPresentation(location);
-                        // Set the presentation display request to this presentation
-                        presentationDisplayRequest = location;
                     }
                 }
 
@@ -2102,8 +2279,13 @@ function displayPresentation(obj) {
                                 function () {
                                     // If this presentation path matches the selected presentation's presentation path
                                     if ($(this).children("div").attr("id") == location) {
-                                        // Set the presentation as selected
-                                        $(this).children("div").addClass("selected");
+                                        if (propresenterRequest && obj.slideIndex.toString() != "") {
+                                            // Set the presentation as highlighted
+                                            $(this).children("div").addClass("highlighted");
+                                        } else {
+                                            // Set the presentation as selected
+                                            $(this).children("div").addClass("selected");
+                                        }
                                     }
                                 }
                             );
@@ -2164,8 +2346,17 @@ function displayPresentation(obj) {
     if (propresenterRequest) {
         // Remove selected from any previous slides
         $(".slide-container").removeClass("selected");
+        // Remove active from any previous media
+        $(".media").removeClass("active");
         // Set the current slide
-        setCurrentSlide(obj.slideIndex+1, location);
+        setCurrentSlide(parseInt(obj.slideIndex)+1, location);
+        // If there is a slide index
+        if (obj.slideIndex != "") {
+            // Set clear slide to active
+            $("#clear-slide").addClass("activated");
+            // Set clear all to active
+            $("#clear-all").addClass("activated");
+        }
     } else {
         // If this is a header
         if (header) {
@@ -2316,6 +2507,17 @@ function getEnabledValue(enabled) {
     } else {
         return "disabled";
     }
+}
+
+function removeArrayValue(arr) {
+    var what, a = arguments, L = a.length, ax;
+    while (L > 1 && arr.length) {
+        what = a[--L];
+        while ((ax= arr.indexOf(what)) !== -1) {
+            arr.splice(ax, 1);
+        }
+    }
+    return arr;
 }
 
 // End Utility Functions

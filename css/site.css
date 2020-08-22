@@ -247,13 +247,7 @@ select {
 }
 
 .item.head.selected {
-    background-color: #0e5ecd;
-}
-
-.item.head.highlighted {
-    border: 1px solid #6a6a6a;
-    background-color: #444444;
-    border-radius: 4px;
+    background-color: #504f50;
 }
 
 .item.lib {
@@ -1110,7 +1104,7 @@ div.timer-container.collapse .collapse-hide {
     right: 5px;
 }
 
-.disconnected, .connected {
+.sub-status {
     display: none;
 }
 
@@ -1119,8 +1113,8 @@ div.timer-container.collapse .collapse-hide {
     font-size: 13px
 }
 
-.text.disconnected {
-    vertical-align: super;
+.loader {
+    vertical-align: middle;
 }
 
 .text, .loader {
