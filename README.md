@@ -9,6 +9,7 @@ Ensure that prior to running that the _IP_, _Port_, and _Password_ have been cha
 
 ## Usage
 ProWebRemote is designed to pull in all Library Presentations, Playlist Presentations, Audio Playlists, Timers, and Messages from ProPresenter 7 upon launch.  While the interface is not 100% identical to ProPresenter 7, the general design is close enough to understand and utilise with no extra learning required.
+
 There are several features available under **Settings** (in the top right) to enhance the experience of ProWebRemote:
 * **Continuous Playlists** functions identically in ProWebRemote as it does in ProPresenter, allowing the entire playlist to scroll within the presentation slides area.
 * **Pull Entire Library On Load** allows ProWebRemote to retrieve the entire ibrary of presentations, rather than just retrieving the names of the presentations.  This feature will significantly speed up the usage of library presentations (this has no impact on playlist presentations as they are always retrieved), but may cause ProPresenter to crash if there are presentations with out-of-date cues attached.
@@ -18,6 +19,7 @@ There are several features available under **Settings** (in the top right) to en
 
 ## Troubleshooting
 ProWebRemote is not connecting to ProPresenter 7
+* If the library or playlists don't match up (e.g. a presentation has been edited or the playlist has changed), use the small refresh icon at the top right of the libraries/playlists section to force a refresh.
 * ProWebRemote currently only supports ProPresenter 7 on macOS, due to protocol differences on ProPresenter 7 between macOS and Windows.
 * Features were mainly developed on the Chromium platform (Google Chrome / Chromium Open Source Project) and may not work correctly in other browsers.
 * ProWebRemote must be run from either the index.html file or hosted on a non-HTTPS server as ProPresenter 7 uses WebSocket (WS) and not WebSocketSecure (WSS) for remote communication. HTTPS only supports WSS, and will not run a WS connection due to security requirements.
