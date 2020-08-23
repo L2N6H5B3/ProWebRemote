@@ -1,7 +1,7 @@
 // Variables
 
 // Connection
-var host = "10.1.1.33";
+var host = "172.16.101.32";
 var port = "50000";
 var pass = "control";
 var stagePass = "stage";
@@ -93,7 +93,7 @@ function onMessage(evt) {
         // Prevent disconnect auto-refresh
         clearTimeout(resetTimeout);
         // Start receiving clock times from ProPresenter
-        // startReceivingClockData();
+        startReceivingClockData();
     } else if (obj.action == "libraryRequest") {
         // Remove connected status
         $(".connected").hide();
@@ -189,6 +189,7 @@ function onMessage(evt) {
                     // Create a new audio playlist group
                     data += createAudioPlaylistGroup(this);
                 } else if (this.playlistType == "playlistTypePlaylist") {
+                    console.log("Creating audio playlist")
                     // Create a new audio playlist
                     data += createAudioPlaylist(this);
                 }
@@ -207,8 +208,9 @@ function onMessage(evt) {
         $("#timer-content").empty();
         // Create a variable to hold the clocks
         var data = "";
-        // For each clock in the data
+        // For each clock in the list
         obj.clockInfo.forEach(function (item, index) {
+            // Create the clock
             data += createClock(item, index);
         });
         // Add the clocks to the timer content area
@@ -218,6 +220,7 @@ function onMessage(evt) {
     } else if (obj.action == "messsageRequest") {
         // Create
         createMessages(obj);
+        // Prevent input fields from conflicting with slide progression
         preventInputInterference();
     } else if (obj.action == "stageDisplaySets") {
         // Create stage display screens
@@ -226,6 +229,7 @@ function onMessage(evt) {
         // Create presentation
         createPresentation(obj);
     } else if (obj.action == "presentationSlideIndex") {
+        // Display the current ProPresenter presentation
         displayPresentation(obj);
     } else if (obj.action == "presentationTriggerIndex") {
         // Display the current ProPresenter presentation
