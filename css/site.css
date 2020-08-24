@@ -309,7 +309,7 @@ select {
 }
 
 #library-items, #playlist-items, #audio-items {
-    height: calc(100% - 26px);
+    height: calc(100% - 25px);
 }
 
 .playback.segment {
