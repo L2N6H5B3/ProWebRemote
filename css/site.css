@@ -17,6 +17,27 @@ body {
     color: #e2e2e2;
 }
 
+/* Scrollbar Customisations */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgb(0 0 0); 
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
+    background:#bdbdbd;
+}
+
+* {
+  scrollbar-color: #bdbdbd #222222; /* thumb and track color */
+  scrollbar-width: thin;
+}
+
 h5 {
     padding: 0px;
     margin: 0px;
