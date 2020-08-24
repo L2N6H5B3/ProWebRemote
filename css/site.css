@@ -1136,6 +1136,7 @@ div.timer-container.collapse .collapse-hide {
 
 .loader {
     vertical-align: middle;
+    height: 20px;
 }
 
 .text, .loader {
@@ -1151,7 +1152,7 @@ div.timer-container.collapse .collapse-hide {
 }
 
 .lds-spinner div {
-    transform-origin: 10px 10px;
+    transform-origin: 10px 9px;
     animation: lds-spinner 1.2s linear infinite;
 }
 
