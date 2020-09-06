@@ -1962,16 +1962,13 @@ function displayPresentation(obj) {
                                         function() {
                                             // If the playlist's name matches the current playlist name
                                             if (playlistName == $(this).text()) {
-
+                                                // Get the playlist group's expander
                                                 var playlistGroupAnchor = $(this).parent().parent().parent().children(".expander");
-                                                $(playlistGroupAnchor).parent().children("a").children(".playlist").each(
-                                                    function() {
-                                                        $(this).show();
-                                                    }
-                                                );
-                                                $(playlistGroupAnchor).addClass("expanded");
+                                                // Set the playlist group to expanded
+                                                $(playlistGroupAnchor).removeClass("collapsed").addClass("expanded");
                                                 $(playlistGroupAnchor).children("i").removeClass("fa-caret-right");
                                                 $(playlistGroupAnchor).children("i").addClass("fa-caret-down");
+                                                // Display the playlist
                                                 displayPlaylist($(this).parent().parent());
                                                 // Add highlighted to playlist
                                                 $(this).parent().addClass("highlighted");
@@ -2541,9 +2538,13 @@ function closeSideMenu() {
 function initialise() {
 
     // If the window is likely on an iPad 2
-    if (document.height == 768) {
+    if (document.height == 768 || document.height == 1024) {
         // Hide the window title
         $('.window-title').hide();
+        // Adjust the logo padding
+        $('.logo').attr("style", "padding: 20px 10px 8px 10px;");
+        // Adjust the logo image height
+        $('.logo img').attr("style", "height: 33px;");
     }
 
     // Get Cookie Values

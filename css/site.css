@@ -472,9 +472,9 @@ select {
         font-size: 11px;
         padding-top: 10px;
     }
-    /* .disabled {
+    div.play .disabled {
         color: #636363;
-    } */
+    }
     .window-title {
         font-size: 12px;
         margin-top: 3px;
