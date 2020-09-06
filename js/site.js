@@ -1,7 +1,7 @@
 // Variables
 
 // Connection
-var host = "172.16.101.32";
+var host = "10.1.1.33";
 var port = "50000";
 var pass = "control";
 var stagePass = "stage";
@@ -31,8 +31,8 @@ var playlistRequests = [];
 var audioRequests = [];
 var initialPresentationLocation;
 var slideSize = 9;
-var wsUri = "ws://"+host+":"+port;
-var wsStageUri = "ws://"+host+":"+port;
+var wsUri = "ws://" + host + ":" + port;
+var wsStageUri = "ws://" + host + ":" + port;
 var resetTimeout;
 var refresh = true;
 var inputTyping = false;
@@ -41,11 +41,13 @@ var previousPresentationRequest = false;
 
 // End Variables
 
+
 // WebSocket Functions
 
 function connect() {
-    $(".disconnected").show();
-    remoteWebSocket = new WebSocket(wsUri+"/remote");
+    // Show disconnected status
+    $("#status").attr("class", "disconnected");
+    remoteWebSocket = new WebSocket(wsUri + "/remote");
     remoteWebSocket.onopen = function(evt) { onOpen(evt) };
     remoteWebSocket.onclose = function(evt) { onClose(evt) };
     remoteWebSocket.onmessage = function(evt) { onMessage(evt) };
@@ -59,14 +61,13 @@ function connect() {
 
 function onOpen(evt) {
     if (!authenticated) {
-        remoteWebSocket.send('{"action":"authenticate","protocol":"700","password":"'+pass+'"}');
-        console.log('Connected');
+        remoteWebSocket.send('{"action":"authenticate","protocol":"700","password":"' + pass + '"}');
     }
 }
 
 function onMessage(evt) {
     var obj = JSON.parse(evt.data);
-    console.log("Message: "+evt.data);
+    // console.log("Message: " + evt.data);
 
     if (obj.action == "authenticate" && obj.authenticated == "1" && authenticated == false) {
         // If the data is stale
@@ -86,19 +87,15 @@ function onMessage(evt) {
         }
         // Set as authenticated
         authenticated = true;
-        // Remove disconnected status
-        $(".disconnected").hide();
         // Show connected status
-        $(".connected").show();
+        $("#status").attr("class", "connected");
         // Prevent disconnect auto-refresh
         clearTimeout(resetTimeout);
         // Start receiving clock times from ProPresenter
         startReceivingClockData();
     } else if (obj.action == "libraryRequest") {
-        // Remove connected status
-        $(".connected").hide();
         // Show downloading status
-        $(".downloading-library").show();
+        $("#status").attr("class", "downloading-library");
         // Empty the library area
         $("#library-content").empty();
         // Empty the library list
@@ -112,7 +109,7 @@ function onMessage(evt) {
         // Create a variable to hold the libraries
         var data = "";
         // For each item in the libraries
-        obj.library.forEach(function (item, index) {
+        obj.library.forEach(function(item, index) {
             // Add the library if required
             data += createLibrary(item);
             // If set to only get names from ProPresenter libraries
@@ -128,17 +125,13 @@ function onMessage(evt) {
         });
         // Add the libraries to the library content area
         $("#library-content").append(data);
-        // Remove downloading status
-        $(".downloading-library").hide();
         // Show connected status
-        $(".connected").show();
+        $("#status").attr("class", "connected");
         // Get playlists
         getPlaylists();
     } else if (obj.action == "playlistRequestAll") {
-        // Remove connected status
-        $(".connected").hide();
         // Show downloading status
-        $(".downloading-playlist").show();
+        $("#status").attr("class", "downloading-playlist");
         // Empty the playlist area
         $("#playlist-content").empty();
         // Empty the playlist list
@@ -154,8 +147,8 @@ function onMessage(evt) {
         // Create a variable to hold the playlists
         var data = "";
         // For each playlist
-        $(obj.playlistAll).each (
-            function () {
+        $(obj.playlistAll).each(
+            function() {
                 // Check if this object is a playlist group or playlist
                 if (this.playlistType == "playlistTypeGroup") {
                     // Create a new playlist group
@@ -169,10 +162,8 @@ function onMessage(evt) {
         // Add the playlists to the playlist content area
         $("#playlist-content").append(data);
     } else if (obj.action == "audioRequest") {
-        // Remove connected status
-        $(".connected").hide();
         // Show downloading status
-        $(".downloading-audio").show();
+        $("#status").attr("class", "downloading-audio");
         // Empty the audio area
         $("#audio-content").empty();
         // Empty the audio playlist list
@@ -182,14 +173,13 @@ function onMessage(evt) {
         // Create a variable to hold the audio playlists
         var data = "";
         // For each audio playlist
-        $(obj.audioPlaylist).each (
-            function () {
+        $(obj.audioPlaylist).each(
+            function() {
                 // Check if this object is a audio playlist group or audio playlist
                 if (this.playlistType == "playlistTypeGroup") {
                     // Create a new audio playlist group
                     data += createAudioPlaylistGroup(this);
                 } else if (this.playlistType == "playlistTypePlaylist") {
-                    console.log("Creating audio playlist")
                     // Create a new audio playlist
                     data += createAudioPlaylist(this);
                 }
@@ -197,10 +187,8 @@ function onMessage(evt) {
         );
         // Add the audio playlists to the audio playlist content area
         $("#audio-content").append(data);
-        // Remove downloading status
-        $(".downloading-audio").hide();
         // Show connected status
-        $(".connected").show();
+        $("#status").attr("class", "connected");
         // Get the current audio status and song
         getAudioStatus();
     } else if (obj.action == "clockRequest") {
@@ -209,7 +197,7 @@ function onMessage(evt) {
         // Create a variable to hold the clocks
         var data = "";
         // For each clock in the list
-        obj.clockInfo.forEach(function (item, index) {
+        obj.clockInfo.forEach(function(item, index) {
             // Create the clock
             data += createClock(item, index);
         });
@@ -286,7 +274,7 @@ function onMessage(evt) {
 }
 
 function connectStage() {
-    stageWebSocket = new WebSocket(wsUri+"/stagedisplay");
+    stageWebSocket = new WebSocket(wsUri + "/stagedisplay");
     stageWebSocket.onopen = function(evt) { onStageOpen(evt) };
     stageWebSocket.onclose = function(evt) { onStageClose(evt) };
     stageWebSocket.onmessage = function(evt) { onStageMessage(evt) };
@@ -295,8 +283,7 @@ function connectStage() {
 
 function onStageOpen(evt) {
     if (!stageAuthenticated) {
-        stageWebSocket.send('{"pwd":"'+stagePass+'","ptl":610,"acn":"ath"}');
-        console.log('StageConnected');
+        stageWebSocket.send('{"pwd":"' + stagePass + '","ptl":610,"acn":"ath"}');
     }
 }
 
@@ -308,13 +295,11 @@ function onError(evt) {
 
 function onClose(evt) {
     authenticated = false;
-    // Remove connected status
-    $(".connected").hide();
     // Show disconnected status
-    $(".disconnected").show();
+    $("#status").attr("class", "disconnected");
     // Retry connection every second
     setTimeout(function() {
-      connect();
+        connect();
     }, 1000);
 
     // Refresh library after 5 minutes of disconnection
@@ -325,7 +310,6 @@ function onClose(evt) {
 
 function onStageMessage(evt) {
     var obj = JSON.parse(evt.data);
-    console.log("StageMessage: "+evt.data);
 
     if (obj.acn == "ath" && obj.ath == true && stageAuthenticated == false) {
         // Set as authenticated
@@ -347,7 +331,7 @@ function onStageClose(evt) {
     stageAuthenticated = false;
     // Retry connection every second
     setTimeout(function() {
-      connectStage();
+        connectStage();
     }, 1000);
 }
 
@@ -357,26 +341,26 @@ function onStageClose(evt) {
 // Cookie Functions
 
 function setCookie(cname, cvalue, exdays) {
-  var d = new Date();
-  d.setTime(d.getTime() + (exdays*24*60*60*1000));
-  var expires = "expires="+ d.toUTCString();
-  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+    var expires = "expires=" + d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
 }
 
 function getCookie(cname) {
-  var name = cname + "=";
-  var decodedCookie = decodeURIComponent(document.cookie);
-  var ca = decodedCookie.split(';');
-  for(var i = 0; i <ca.length; i++) {
-    var c = ca[i];
-    while (c.charAt(0) == ' ') {
-      c = c.substring(1);
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
     }
-    if (c.indexOf(name) == 0) {
-      return c.substring(name.length, c.length);
-    }
-  }
-  return "";
+    return "";
 }
 
 function checkCookie(cname) {
@@ -486,13 +470,13 @@ function createLibrary(obj) {
     // Variable to hold the data of the library
     var libraryData = "";
     // Iterate through each item in the split path to retrieve the library name
-    pathSplit.forEach(function (item, index) {
-      if (item == "Libraries") {
-          libraryName = pathSplit[index+1];
-      }
+    pathSplit.forEach(function(item, index) {
+        if (item == "Libraries") {
+            libraryName = pathSplit[index + 1];
+        }
     });
     // Check if the library is unique and can be added in the array
-    libraryList.forEach(function (item) {
+    libraryList.forEach(function(item) {
         if (item == libraryName) {
             unique = false;
         }
@@ -502,17 +486,17 @@ function createLibrary(obj) {
         // Add the library name to the library list
         libraryList.push(libraryName);
         // Create the library data
-        var libraryData = '<a onclick="displayLibrary(this);"><div class="item lib library"><img src="img/library.png" /><div class="name">'+libraryName+'</div></div></a>';
+        var libraryData = '<a onclick="displayLibrary(this);"><div class="item lib library"><img src="img/library.png" /><div class="name">' + libraryName + '</div></div></a>';
     }
     return libraryData;
 }
 
 function createPlaylistGroup(obj) {
     var groupData = "";
-    groupData += '<div class="playlist-group">'+
-                    '<a onclick="togglePlaylistVisibility(this)" class="expander"><i class="collapser fas fa-caret-right"></i><div class="item lib group"><img src="img/playlistgroup.png" />'+obj.playlistName+'</div></a>';
-    $(obj.playlist).each (
-        function () {
+    groupData += '<div class="playlist-group">' +
+        '<a onclick="togglePlaylistVisibility(this)" class="expander collapsed"><i class="collapser fas fa-caret-right"></i><div class="item lib group"><img src="img/playlistgroup.png" />' + obj.playlistName + '</div></a>';
+    $(obj.playlist).each(
+        function() {
             if (this.playlistType == "playlistTypeGroup") {
                 groupData += createPlaylistGroup(this);
             } else if (this.playlistType == "playlistTypePlaylist") {
@@ -525,15 +509,15 @@ function createPlaylistGroup(obj) {
 }
 
 function createPlaylist(obj) {
-    var playlistData = '<a onclick="displayPlaylist(this);"><div class="item lib playlist presentation"><img src="img/playlist.png"/><div class="name">'+obj.playlistName+'</div></div></a>';
+    var playlistData = '<a class="display-playlist" onclick="displayPlaylist(this);"><div class="item lib playlist presentation"><img src="img/playlist.png"/><div class="name">' + obj.playlistName + '</div></div></a>';
     playlistList.push(obj);
-    obj.playlist.forEach (
-        function (item, index) {
+    obj.playlist.forEach(
+        function(item, index) {
             if (item.playlistItemType == "playlistItemTypeHeader") {
-                var playlistHeader = {presentationPath: item.playlistItemLocation, presentation: {presentationName: item.playlistItemName}}
+                var playlistHeader = { presentationPath: item.playlistItemLocation, presentation: { presentationName: item.playlistItemName } }
                 playlistHeaderList.push(playlistHeader);
             } else if (item.playlistItemType == "playlistItemTypeVideo") {
-                var playlistVideo = {presentationPath: item.playlistItemLocation, presentation: {presentationName: item.playlistItemName}}
+                var playlistVideo = { presentationPath: item.playlistItemLocation, presentation: { presentationName: item.playlistItemName } }
                 playlistMediaList.push(playlistVideo);
             } else {
                 // Add this playlist item location to the requests array
@@ -548,10 +532,10 @@ function createPlaylist(obj) {
 
 function createAudioPlaylistGroup(obj) {
     var groupData = "";
-    groupData += '<div class="playlist-group">'+
-                    '<a onclick="togglePlaylistVisibility(this)" class="expander"><i class="collapser fas fa-caret-right"></i><div class="item lib group"><img src="img/playlistgroup.png" />'+obj.playlistName+'</div></a>';
-    $(obj.playlist).each (
-        function () {
+    groupData += '<div class="playlist-group">' +
+        '<a onclick="togglePlaylistVisibility(this)" class="expander collapsed"><i class="collapser fas fa-caret-right"></i><div class="item lib group"><img src="img/playlistgroup.png" />' + obj.playlistName + '</div></a>';
+    $(obj.playlist).each(
+        function() {
             if (this.playlistType == "playlistTypeGroup") {
                 groupData += createAudioPlaylistGroup(this);
             } else if (this.playlistType == "playlistTypePlaylist") {
@@ -564,24 +548,24 @@ function createAudioPlaylistGroup(obj) {
 }
 
 function createAudioPlaylist(obj) {
-    var playlistData = '<a onclick="displayAudioPlaylist(this);"><div class="item lib playlist audio"><img src="img/audio.png"/><div class="name">'+obj.playlistName+'</div></div></a>';
+    var playlistData = '<a class="display-playlist" onclick="displayAudioPlaylist(this);"><div class="item lib playlist audio"><img src="img/audio.png"/><div class="name">' + obj.playlistName + '</div></div></a>';
     audioPlaylistList.push(obj);
     return playlistData;
 }
 
 function createClock(obj, clockIndex) {
     var clockdata = "";
-    clockData = '<div id="clock-'+clockIndex+'" class="timer-container type-'+obj.clockType+'">'
-        + '<div class="timer-expand"><a onclick="toggleClockVisibility(this)" class="expander expanded"><i class="collapser fas fa-caret-down"></i></a></div>'
-        + '<div class="timer-name"><input id="clock-'+clockIndex+'-name" onchange="updateClock('+clockIndex+');" type="text" class="text-input collapse-hide" value="'+obj.clockName+'"/><div id="clock-'+clockIndex+'-name-text" class="timer-name-text collapse-show"></div></div>'
-        + '<div id="clock-'+clockIndex+'-type" class="timer-type collapse-hide">'+createClockTypeOptions(obj.clockType, clockIndex)+'</div>'
-        + '<div class="timer-timeOptions collapse-hide type-0"><div><div class="element-title">Duration</div><input id="clock-'+clockIndex+'-duration" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockDuration)+'"/></div><div></div></div>'
-        + '<div class="timer-timeOptions collapse-hide type-1"><div><div class="element-title">Time</div><input id="clock-'+clockIndex+'-time" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockEndTime)+'"/></div><div><div class="element-title">Format</div><select id="clock-'+clockIndex+'-format" onchange="updateClock('+clockIndex+');" class="text-input">'+createClockFormatOptions(obj.clockFormat.clockTimePeriodFormat)+'</select></div></div>'
-        + '<div class="timer-timeOptions collapse-hide type-2"><div><div class="element-title">Start</div><input id="clock-'+clockIndex+'-start" onchange="updateClock('+clockIndex+');" type="text" class="text-input" value="'+getClockSmallFormat(obj.clockDuration)+'"/></div><div><div class="element-title">End</div><input id="clock-'+clockIndex+'-end" onchange="updateClock('+clockIndex+');" type="text" class="text-input" placeholder="No Limit" value="'+getClockEndTimeFormat(obj.clockEndTime)+'"/></div></div>'
-        + '<div class="timer-overrun collapse-hide"><div class="element-title">Overrun</div><input id="clock-'+clockIndex+'-overrun" onchange="updateClock('+clockIndex+');" type="checkbox" class="checkbox text-input" '+getClockOverrun(obj.clockOverrun)+'/></div>'
-        + '<div class="timer-reset"><a onclick="resetClock('+clockIndex+');"><div class="option-button"><img src="img/reset.png" /></div></a></div>'
-        + '<div id="clock-'+clockIndex+'-currentTime" class="timer-currentTime">'+getClockSmallFormat(obj.clockTime)+'</div>'
-        + '<div class="timer-state"><a onclick="toggleClockState('+clockIndex+');"><div id="clock-'+clockIndex+'-state" class="option-button">Start</div></a></div></div>';
+    clockData = '<div id="clock-' + clockIndex + '" class="timer-container type-' + obj.clockType + '">' +
+        '<div class="timer-expand"><a onclick="toggleClockVisibility(this)" class="expander expanded"><i class="collapser fas fa-caret-down"></i></a></div>' +
+        '<div class="timer-name"><input id="clock-' + clockIndex + '-name" onchange="updateClock(' + clockIndex + ');" type="text" class="text-input collapse-hide" value="' + obj.clockName + '"/><div id="clock-' + clockIndex + '-name-text" class="timer-name-text collapse-show"></div></div>' +
+        '<div id="clock-' + clockIndex + '-type" class="timer-type collapse-hide">' + createClockTypeOptions(obj.clockType, clockIndex) + '</div>' +
+        '<div class="timer-timeOptions collapse-hide type-0"><div><div class="element-title">Duration</div><input id="clock-' + clockIndex + '-duration" onchange="updateClock(' + clockIndex + ');" type="text" class="text-input" value="' + getClockSmallFormat(obj.clockDuration) + '"/></div><div></div></div>' +
+        '<div class="timer-timeOptions collapse-hide type-1"><div><div class="element-title">Time</div><input id="clock-' + clockIndex + '-time" onchange="updateClock(' + clockIndex + ');" type="text" class="text-input" value="' + getClockSmallFormat(obj.clockEndTime) + '"/></div><div><div class="element-title">Format</div><select id="clock-' + clockIndex + '-format" onchange="updateClock(' + clockIndex + ');" class="text-input">' + createClockFormatOptions(obj.clockFormat.clockTimePeriodFormat) + '</select></div></div>' +
+        '<div class="timer-timeOptions collapse-hide type-2"><div><div class="element-title">Start</div><input id="clock-' + clockIndex + '-start" onchange="updateClock(' + clockIndex + ');" type="text" class="text-input" value="' + getClockSmallFormat(obj.clockDuration) + '"/></div><div><div class="element-title">End</div><input id="clock-' + clockIndex + '-end" onchange="updateClock(' + clockIndex + ');" type="text" class="text-input" placeholder="No Limit" value="' + getClockEndTimeFormat(obj.clockEndTime) + '"/></div></div>' +
+        '<div class="timer-overrun collapse-hide"><div class="element-title">Overrun</div><input id="clock-' + clockIndex + '-overrun" onchange="updateClock(' + clockIndex + ');" type="checkbox" class="checkbox text-input" ' + getClockOverrun(obj.clockOverrun) + '/></div>' +
+        '<div class="timer-reset"><a onclick="resetClock(' + clockIndex + ');"><div class="option-button"><img src="img/reset.png" /></div></a></div>' +
+        '<div id="clock-' + clockIndex + '-currentTime" class="timer-currentTime">' + getClockSmallFormat(obj.clockTime) + '</div>' +
+        '<div class="timer-state"><a onclick="toggleClockState(' + clockIndex + ');"><div id="clock-' + clockIndex + '-state" class="option-button">Start</div></a></div></div>';
 
     // If the clock is active
     if (obj.clockState == true) {
@@ -594,37 +578,37 @@ function createClock(obj, clockIndex) {
 
 function createClockTypeOptions(clockType, clockIndex) {
     var clockTypeData = "";
-    switch(clockType) {
+    switch (clockType) {
         case 0:
-            clockTypeData += '<a id="'+clockType+'" onclick="expandTypeList(this);"><div class="type-selected type-0"><img class="selected-img type-0" src="img/timer-countdown.png"><img class="selected-img type-1" src="img/timer-counttotime.png"><img class="selected-img type-2" src="img/timer-elapsedtime.png"><div class="selected-indicator"><i class="fas fa-angle-up"></i><i class="fas fa-angle-down"></i></div></div></a>'
-                + '<div class="type-dropdown">'
-                + '<a onclick="setClockType(this);"><div id="type-0" class="dropdown-row selected"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-countdown.png"><div class="row-name">Countdown</div></div></a>'
-                + '<a onclick="setClockType(this);"><div id="type-1" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-counttotime.png"><div class="row-name">Countdown to Time</div></div></a>'
-                + '<a onclick="setClockType(this);"><div id="type-2" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-elapsedtime.png"><div class="row-name">Elapsed Time</div></div></a>'
-                + '</div>';
-            break; '';
+            clockTypeData += '<a id="' + clockType + '" onclick="expandTypeList(this);"><div class="type-selected type-0"><img class="selected-img type-0" src="img/timer-countdown.png"><img class="selected-img type-1" src="img/timer-counttotime.png"><img class="selected-img type-2" src="img/timer-elapsedtime.png"><div class="selected-indicator"><i class="fas fa-angle-up"></i><i class="fas fa-angle-down"></i></div></div></a>' +
+                '<div class="type-dropdown">' +
+                '<a onclick="setClockType(this);"><div id="type-0" class="dropdown-row selected"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-countdown.png"><div class="row-name">Countdown</div></div></a>' +
+                '<a onclick="setClockType(this);"><div id="type-1" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-counttotime.png"><div class="row-name">Countdown to Time</div></div></a>' +
+                '<a onclick="setClockType(this);"><div id="type-2" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-elapsedtime.png"><div class="row-name">Elapsed Time</div></div></a>' +
+                '</div>';
+            break;
         case 1:
-            clockTypeData += '<a id="'+clockType+'" onclick="expandTypeList(this);"><div class="type-selected type-1"><img class="selected-img type-0" src="img/timer-countdown.png"><img class="selected-img type-1" src="img/timer-counttotime.png"><img class="selected-img type-2" src="img/timer-elapsedtime.png"><div class="selected-indicator"><i class="fas fa-angle-up"></i><i class="fas fa-angle-down"></i></div></div></a>'
-                + '<div class="type-dropdown">'
-                + '<a onclick="setClockType(this);"><div id="type-0" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-countdown.png"><div class="row-name">Countdown</div></div></a>'
-                + '<a onclick="setClockType(this);"><div id="type-1" class="dropdown-row selected"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-counttotime.png"><div class="row-name">Countdown to Time</div></div></a>'
-                + '<a onclick="setClockType(this);"><div id="type-2" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-elapsedtime.png"><div class="row-name">Elapsed Time</div></div></a>'
-                + '</div>';
+            clockTypeData += '<a id="' + clockType + '" onclick="expandTypeList(this);"><div class="type-selected type-1"><img class="selected-img type-0" src="img/timer-countdown.png"><img class="selected-img type-1" src="img/timer-counttotime.png"><img class="selected-img type-2" src="img/timer-elapsedtime.png"><div class="selected-indicator"><i class="fas fa-angle-up"></i><i class="fas fa-angle-down"></i></div></div></a>' +
+                '<div class="type-dropdown">' +
+                '<a onclick="setClockType(this);"><div id="type-0" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-countdown.png"><div class="row-name">Countdown</div></div></a>' +
+                '<a onclick="setClockType(this);"><div id="type-1" class="dropdown-row selected"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-counttotime.png"><div class="row-name">Countdown to Time</div></div></a>' +
+                '<a onclick="setClockType(this);"><div id="type-2" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-elapsedtime.png"><div class="row-name">Elapsed Time</div></div></a>' +
+                '</div>';
             break;
         default:
-            clockTypeData += '<a id="'+clockType+'" onclick="expandTypeList(this);"><div class="type-selected type-2"><img class="selected-img type-0" src="img/timer-countdown.png"><img class="selected-img type-1" src="img/timer-counttotime.png"><img class="selected-img type-2" src="img/timer-elapsedtime.png"><div class="selected-indicator"><i class="fas fa-angle-up"></i><i class="fas fa-angle-down"></i></div></div></a>'
-                + '<div class="type-dropdown">'
-                + '<a onclick="setClockType(this);"><div id="type-0" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-countdown.png"><div class="row-name">Countdown</div></div></a>'
-                + '<a onclick="setClockType(this);"><div id="type-1" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-counttotime.png"><div class="row-name">Countdown to Time</div></div></a>'
-                + '<a onclick="setClockType(this);"><div id="type-2" class="dropdown-row selected"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-elapsedtime.png"><div class="row-name">Elapsed Time</div></div></a>'
-                + '</div>';
+            clockTypeData += '<a id="' + clockType + '" onclick="expandTypeList(this);"><div class="type-selected type-2"><img class="selected-img type-0" src="img/timer-countdown.png"><img class="selected-img type-1" src="img/timer-counttotime.png"><img class="selected-img type-2" src="img/timer-elapsedtime.png"><div class="selected-indicator"><i class="fas fa-angle-up"></i><i class="fas fa-angle-down"></i></div></div></a>' +
+                '<div class="type-dropdown">' +
+                '<a onclick="setClockType(this);"><div id="type-0" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-countdown.png"><div class="row-name">Countdown</div></div></a>' +
+                '<a onclick="setClockType(this);"><div id="type-1" class="dropdown-row"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-counttotime.png"><div class="row-name">Countdown to Time</div></div></a>' +
+                '<a onclick="setClockType(this);"><div id="type-2" class="dropdown-row selected"><div class="row-indicator"><i class="fas fa-check"></i></div><img class="row-img" src="img/timer-elapsedtime.png"><div class="row-name">Elapsed Time</div></div></a>' +
+                '</div>';
             break;
     }
     return clockTypeData;
 }
 
 function createClockFormatOptions(formatType) {
-    switch(formatType) {
+    switch (formatType) {
         case 0:
             return '<option value="0" selected>AM</option><option value="1">PM</option><option value="2">24Hr</option>';
         case 1:
@@ -636,7 +620,7 @@ function createClockFormatOptions(formatType) {
 
 function createMessages(obj) {
     obj.messages.forEach(
-        function (item) {
+        function(item) {
 
         }
     );
@@ -646,15 +630,15 @@ function createMessages(obj) {
 function createStageScreens(obj) {
     var screenData = "";
     obj.stageScreens.forEach(
-        function (item) {
+        function(item) {
             var selectedLayout = item.stageLayoutSelectedLayoutUUID;
-            screenData += '<div class="stage-screen"><div class="screen-name">'+item.stageScreenName+'</div><div class="stage-layout"><select onchange="setStageLayout(this)" name="stage-layout" id="'+item.stageScreenUUID+'">';
+            screenData += '<div class="stage-screen"><div class="screen-name">' + item.stageScreenName + '</div><div class="stage-layout"><select onchange="setStageLayout(this)" name="stage-layout" id="' + item.stageScreenUUID + '">';
             obj.stageLayouts.forEach(
-                function (item) {
+                function(item) {
                     if (item.stageLayoutUUID == selectedLayout) {
-                        screenData += '<option value="'+item.stageLayoutUUID+'" selected>'+item.stageLayoutName+'</option>';
+                        screenData += '<option value="' + item.stageLayoutUUID + '" selected>' + item.stageLayoutName + '</option>';
                     } else {
-                        screenData += '<option value="'+item.stageLayoutUUID+'">'+item.stageLayoutName+'</option>';
+                        screenData += '<option value="' + item.stageLayoutUUID + '">' + item.stageLayoutName + '</option>';
                     }
                 }
             );
@@ -673,13 +657,13 @@ function createPresentationName(obj) {
     // Variable to hold the name of the presentation, retrieved from the presentation path
     var presentationName = "";
     // Iterate through each item in the split path to retrieve the library name
-    pathSplit.forEach(function (item, index) {
-      if (item == "Libraries") {
-          presentationName = pathSplit[index+2].replace(".pro", "");
-      }
+    pathSplit.forEach(function(item, index) {
+        if (item == "Libraries") {
+            presentationName = pathSplit[index + 2].replace(".pro", "");
+        }
     });
     // Check if the presentation is unique and can be added in the array
-    libraryPresentationNameList.forEach(function (item) {
+    libraryPresentationNameList.forEach(function(item) {
         if (item.presentationName == presentationName) {
             unique = false;
         }
@@ -687,8 +671,8 @@ function createPresentationName(obj) {
     // If the presentation is unique
     if (unique) {
         // Create object with presentation name and path
-        var presentationObj = {presentationName:presentationName, presentationPath:obj}
-        // Add the new presentation object to the library presentation name list
+        var presentationObj = { presentationName: presentationName, presentationPath: obj }
+            // Add the new presentation object to the library presentation name list
         libraryPresentationNameList.push(presentationObj);
     }
 }
@@ -705,12 +689,12 @@ function createPresentation(obj) {
     var unique = true;
     // Set the correct index for grouped slides
     $(obj.presentation.presentationSlideGroups).each(
-        function () {
+        function() {
             $(this.groupSlides).each(
-                function () {
+                function() {
                     // Set the current count as the slide index
                     this.slideIndex = count;
-                    count ++;
+                    count++;
                 }
             );
         }
@@ -720,7 +704,7 @@ function createPresentation(obj) {
         if (playlistRequests.includes(obj.presentationPath)) {
             // Check if the presentation is unique and can be added in the array
             $(playlistPresentationList).each(
-                function () {
+                function() {
                     if (this.presentationPath == obj.presentationPath) {
                         unique = false;
                     }
@@ -734,10 +718,8 @@ function createPresentation(obj) {
             if (playlistRequests.length == 0) {
                 // Get the current displayed presentation from ProPresenter
                 getCurrentPresentation();
-                // Remove downloading status
-                $(".downloading-playlist").hide();
                 // Show connected status
-                $(".connected").show();
+                $("#status").attr("class", "connected");
             }
         } else {
             // Set the initial presentation location
@@ -749,7 +731,7 @@ function createPresentation(obj) {
         if (libraryRequests.includes(obj.presentationPath)) {
             // Check if the presentation is unique and can be added in the array
             $(libraryPresentationList).each(
-                function () {
+                function() {
                     if (this.presentationPath == obj.presentationPath) {
                         unique = false;
                     }
@@ -772,15 +754,13 @@ function createPresentation(obj) {
         // Display this presentation if requested
         if (presentationDisplayRequest[0] == obj.presentationPath) {
             // Create an object to hold the presentation data
-            var presentationObject = {action:"presentationTriggerIndex", presentationPath:presentationDisplayRequest[0], slideIndex:presentationDisplayRequest[1]};
+            var presentationObject = { action: "presentationTriggerIndex", presentationPath: presentationDisplayRequest[0], slideIndex: presentationDisplayRequest[1] };
             // Display the presentation
             displayPresentation(presentationObject);
             // Set the presentation display request to empty
             presentationDisplayRequest = [];
-            // Remove downloading status
-            $(".downloading-library").hide();
             // Show connected status
-            $(".connected").show();
+            $("#status").attr("class", "connected");
         }
     }
 }
@@ -818,7 +798,7 @@ function setClearAudio() {
     $(".playing-audio").empty();
     $("#audio-status").addClass("disabled");
     $("#audio-items").children("a").children("div").removeClass("highlighted");
-    if ($(".icons div.activated").length < 1) {
+    if ($(".icons a.activated").length < 2) {
         $("#clear-all").removeClass("activated");
     }
 }
@@ -826,7 +806,7 @@ function setClearAudio() {
 function clearMessages() {
     remoteWebSocket.send('{"action":"clearMessages"}');
     $("#clear-messages").removeClass("activated");
-    if ($(".icons div.activated").length < 1) {
+    if ($(".icons a.activated").length < 2) {
         $("#clear-all").removeClass("activated");
     }
 }
@@ -834,7 +814,7 @@ function clearMessages() {
 function clearProps() {
     remoteWebSocket.send('{"action":"clearProps"}');
     $("#clear-props").removeClass("activated");
-    if ($(".icons div.activated").length < 1) {
+    if ($(".icons a.activated").length < 2) {
         $("#clear-all").removeClass("activated");
     }
 }
@@ -842,7 +822,7 @@ function clearProps() {
 function clearAnnouncements() {
     remoteWebSocket.send('{"action":"clearAnnouncements"}');
     $("#clear-announcements").removeClass("activated");
-    if ($(".icons div.activated").length < 1) {
+    if ($(".icons a.activated").length < 2) {
         $("#clear-all").removeClass("activated");
     }
 }
@@ -851,7 +831,7 @@ function clearSlide() {
     $('#live').empty();
     remoteWebSocket.send('{"action":"clearText"}');
     $("#clear-slide").removeClass("activated");
-    if ($(".icons div.activated").length < 1) {
+    if ($(".icons a.activated").length < 2) {
         $("#clear-all").removeClass("activated");
     }
 }
@@ -860,7 +840,7 @@ function clearMedia() {
     remoteWebSocket.send('{"action":"clearVideo"}');
     $("#clear-media").removeClass("activated");
     $(".playing-timeline").empty();
-    if ($(".icons div.activated").length < 1) {
+    if ($(".icons a.activated").length < 2) {
         $("#clear-all").removeClass("activated");
     }
 }
@@ -873,15 +853,15 @@ function clearMedia() {
 function setCurrentSlide(index, location) {
     // Iterate over each slide number
     $(".slide-number").each(
-        function () {
+        function() {
             // If this slide number and location match the requested slide
             if ($(this).text() == index && $(this).parent().parent().parent().attr("id") == location) {
                 // Set the slide as selected
                 $(this).parent().parent().parent().parent().addClass("selected");
                 // If the slide is not currently visible
-                if (!isElementInViewport(document.getElementById("slide"+index+"."+location))) {
+                if (!isElementInViewport(document.getElementById("slide" + index + "." + location))) {
                     // Scroll to place the slide in view
-                    document.getElementById("slide"+index+"."+location).scrollIntoView();
+                    document.getElementById("slide" + index + "." + location).scrollIntoView();
                     // Get the presentation container
                     var presentationContainer = document.getElementById("presentations");
                     // If the presentation container is not scrolled all the way to the bottom
@@ -896,16 +876,16 @@ function setCurrentSlide(index, location) {
     // Check if this is a playlist or library presentation
     if (location.charAt(0) == '0') {
         // Set the current live slide image
-        $(playlistPresentationList).each (
-            function () {
+        $(playlistPresentationList).each(
+            function() {
                 if (this.presentationPath == location) {
-                    $(this.presentation.presentationSlideGroups).each (
-                        function () {
-                            $(this.groupSlides).each (
-                                function () {
-                                    if (this.slideIndex == index-1) {
+                    $(this.presentation.presentationSlideGroups).each(
+                        function() {
+                            $(this.groupSlides).each(
+                                function() {
+                                    if (this.slideIndex == index - 1) {
                                         var image = new Image();
-                                        image.src = 'data:image/png;base64,'+this.slideImage;
+                                        image.src = 'data:image/png;base64,' + this.slideImage;
                                         $('#live').empty();
                                         $('#live').append(image);
                                     }
@@ -918,16 +898,16 @@ function setCurrentSlide(index, location) {
         );
     } else {
         // Set the current live slide image
-        $(libraryPresentationList).each (
-            function () {
+        $(libraryPresentationList).each(
+            function() {
                 if (this.presentationPath == location) {
-                    $(this.presentation.presentationSlideGroups).each (
-                        function () {
-                            $(this.groupSlides).each (
-                                function () {
-                                    if (this.slideIndex == index-1) {
+                    $(this.presentation.presentationSlideGroups).each(
+                        function() {
+                            $(this.groupSlides).each(
+                                function() {
+                                    if (this.slideIndex == index - 1) {
                                         var image = new Image();
-                                        image.src = 'data:image/png;base64,'+this.slideImage;
+                                        image.src = 'data:image/png;base64,' + this.slideImage;
                                         $('#live').empty();
                                         $('#live').append(image);
                                     }
@@ -947,57 +927,77 @@ function setCurrentSlide(index, location) {
 // Get Data Functions
 
 function getCurrentPresentation() {
+    // Send the request to ProPresenter
     remoteWebSocket.send('{"action":"presentationCurrent", "presentationSlideQuality": 25}');
 }
 
 function getCurrentSlide() {
+    // Send the request to ProPresenter
     remoteWebSocket.send('{"action":"presentationSlideIndex"}');
 }
 
 function getCurrentAudio() {
+    // Send the request to ProPresenter
     remoteWebSocket.send('{"action":"audioCurrentSong"}');
 }
 
 function getAudioStatus() {
+    // Send the request to ProPresenter
     remoteWebSocket.send('{"action":"audioIsPlaying"}');
 }
 
 function getClocks() {
+    // Send the request to ProPresenter
     remoteWebSocket.send('{"action":"clockRequest"}');
 }
 
 function getMessages() {
+    // Send the request to ProPresenter
     remoteWebSocket.send('{"action":"messageRequest"}');
 }
 
 function getStageLayouts() {
+    // Send the request to ProPresenter
     remoteWebSocket.send('{"action":"stageDisplaySets"}');
 }
 
 function getPresentation(location) {
     // Send the request to ProPresenter
-    remoteWebSocket.send('{"action": "presentationRequest","presentationPath": "'+location+'"}');
+    remoteWebSocket.send('{"action": "presentationRequest","presentationPath": "' + location + '"}');
 }
 
 function getLibrary() {
+    // Send the request to ProPresenter
     remoteWebSocket.send('{"action":"libraryRequest"}');
+    // Empty the library presentation list
     libraryPresentationList = [];
+    // Empty the library items area
     $("#library-items").empty();
+    // Empty the left count
     $("#left-count").empty();
+    // Empty the presentations area
     $("#presentations").empty();
 }
 
 function getPlaylists() {
+    // Send the request to ProPresenter
     remoteWebSocket.send('{"action":"playlistRequestAll"}');
+    // Empty the playlist presentation list
     playlistPresentationList = [];
+    // Empty the playlist list
     playlistList = [];
+    // Empty the playlist items area
     $("#playlist-items").empty();
 }
 
 function getAudioPlaylists() {
+    // Send the request to ProPresenter
     remoteWebSocket.send('{"action":"audioRequest"}');
+    // Empty the audio playlist list
     audioPlaylistList = [];
+    // Empty the audio items area
     $("#audio-items").empty();
+    // Empty the right count
     $("#right-count").empty();
 }
 
@@ -1048,31 +1048,21 @@ function toggleTimelinePlayPause() {
 }
 
 function togglePlaylistVisibility(obj) {
-    if($(obj).hasClass("expanded")) {
-        $(obj).parent().children("a").children(".playlist").each(
-            function () {
-                $(this).hide();
-            }
-        );
-        $(obj).removeClass("expanded")
-        $(obj).children("i").removeClass("fa-caret-down");
-        $(obj).children("i").addClass("fa-caret-right");
-    } else {
-        $(obj).parent().children("a").children(".playlist").each(
-            function () {
-                $(this).show();
-            }
-        );
-        $(obj).addClass("expanded")
+    if ($(obj).hasClass("collapsed")) {
+        $(obj).removeClass("collapsed")
         $(obj).children("i").removeClass("fa-caret-right");
         $(obj).children("i").addClass("fa-caret-down");
+    } else {
+        $(obj).addClass("collapsed")
+        $(obj).children("i").removeClass("fa-caret-down");
+        $(obj).children("i").addClass("fa-caret-right");
     }
 }
 
 function toggleClockVisibility(obj) {
-    if($(obj).hasClass("expanded")) {
+    if ($(obj).hasClass("expanded")) {
         var index = $(obj).parent().parent().attr("id");
-        $("#"+index+"-name-text").text($("#"+index+"-name").val());
+        $("#" + index + "-name-text").text($("#" + index + "-name").val());
         $(obj).parent().parent().addClass("collapse");
         $(obj).removeClass("expanded")
         $(obj).children("i").removeClass("fa-caret-down");
@@ -1087,14 +1077,14 @@ function toggleClockVisibility(obj) {
 
 function toggleClockState(int) {
     // If the clock is not started
-    if ($("#clock-"+int+"-state").text() == "Start") {
+    if ($("#clock-" + int + "-state").text() == "Start") {
         // Start receiving clock times from ProPresenter
         startReceivingClockData();
         // Start the clock
-        remoteWebSocket.send('{"action":"clockStart","clockIndex":"'+int+'"}');
+        remoteWebSocket.send('{"action":"clockStart","clockIndex":"' + int + '"}');
     } else {
         // Stop the clock
-        remoteWebSocket.send('{"action":"clockStop","clockIndex":"'+int+'"}');
+        remoteWebSocket.send('{"action":"clockStop","clockIndex":"' + int + '"}');
     }
 }
 
@@ -1102,10 +1092,9 @@ function expandTypeList(obj) {
     // Show the dropdown
     $(obj).parent("div").children(".type-dropdown").show();
     // Create a element click handler to allow the opening of the custom dropdown
-    window.addEventListener('click', function(e){
+    window.addEventListener('click', function(e) {
         // If the clicked element is contained within the dropdown
-        if (document.getElementById(obj.parentNode.id).contains(e.target)){
-        } else {
+        if (document.getElementById(obj.parentNode.id).contains(e.target)) {} else {
             // Hide the dropdown
             $(obj).parent("div").children(".type-dropdown").hide();
         }
@@ -1119,31 +1108,31 @@ function expandTypeList(obj) {
 
 function updateClock(clockIndex) {
     // Get the clock name
-    var clockName = document.getElementById("clock-"+clockIndex+"-name").value;
+    var clockName = document.getElementById("clock-" + clockIndex + "-name").value;
     // Get the clock type
-    var clockType = document.getElementById("clock-"+clockIndex+"-type").firstElementChild.id;
+    var clockType = document.getElementById("clock-" + clockIndex + "-type").firstElementChild.id;
     // Get the clock overrun setting
-    var clockOverrun = document.getElementById("clock-"+clockIndex+"-overrun").checked;
+    var clockOverrun = document.getElementById("clock-" + clockIndex + "-overrun").checked;
     // Send the request according to the clock type
     if (clockType == 0) {
         // Get the clock duration / start time / count to time
-        var clockDuration = document.getElementById("clock-"+clockIndex+"-duration").value;
+        var clockDuration = document.getElementById("clock-" + clockIndex + "-duration").value;
         // Send the change to ProPresenter
-        remoteWebSocket.send('{"action":"clockUpdate","clockIndex":"'+clockIndex+'","clockType":"0","clockName":"'+clockName+'","clockTime":"'+clockDuration+'","clockOverrun":"'+clockOverrun+'"}');
+        remoteWebSocket.send('{"action":"clockUpdate","clockIndex":"' + clockIndex + '","clockType":"0","clockName":"' + clockName + '","clockTime":"' + clockDuration + '","clockOverrun":"' + clockOverrun + '"}');
     } else if (clockType == 1) {
         // Get the clock count to time
-        var clockTime = document.getElementById("clock-"+clockIndex+"-time").value;
+        var clockTime = document.getElementById("clock-" + clockIndex + "-time").value;
         // Get the clock format
-        var clockFormat = document.getElementById("clock-"+clockIndex+"-format").value;
+        var clockFormat = document.getElementById("clock-" + clockIndex + "-format").value;
         // Send the change to ProPresenter
-        remoteWebSocket.send('{"action":"clockUpdate","clockIndex":"'+clockIndex+'","clockType":"1","clockName":"'+clockName+'","clockElapsedTime":"'+clockTime+'","clockOverrun":"'+clockOverrun+'","clockTimePeriodFormat":"'+clockFormat+'"}');
+        remoteWebSocket.send('{"action":"clockUpdate","clockIndex":"' + clockIndex + '","clockType":"1","clockName":"' + clockName + '","clockElapsedTime":"' + clockTime + '","clockOverrun":"' + clockOverrun + '","clockTimePeriodFormat":"' + clockFormat + '"}');
     } else {
         // Get the clock start time
-        var clockStart = document.getElementById("clock-"+clockIndex+"-start").value;
+        var clockStart = document.getElementById("clock-" + clockIndex + "-start").value;
         // Get the clock end time
-        var clockEndTime = getClockEndTimeFormat(document.getElementById("clock-"+clockIndex+"-end").value);
+        var clockEndTime = getClockEndTimeFormat(document.getElementById("clock-" + clockIndex + "-end").value);
         // Send the change to ProPresenter
-        remoteWebSocket.send('{"action":"clockUpdate","clockIndex":"'+clockIndex+'","clockType":"2","clockName":"'+clockName+'","clockTime":"'+clockStart+'","clockOverrun":"'+clockOverrun+'","clockElapsedTime":"'+clockEndTime+'"}');
+        remoteWebSocket.send('{"action":"clockUpdate","clockIndex":"' + clockIndex + '","clockType":"2","clockName":"' + clockName + '","clockTime":"' + clockStart + '","clockOverrun":"' + clockOverrun + '","clockElapsedTime":"' + clockEndTime + '"}');
     }
 }
 
@@ -1200,10 +1189,10 @@ function setAudioSong(obj) {
     var isAudio = false;
     // Iterate through each audio playlist
     audioPlaylistList.forEach(
-        function (item) {
+        function(item) {
             // Iterate through each audio item
             item.playlist.forEach(
-                function (item) {
+                function(item) {
                     // If the audio item name matches the current playing item
                     if (item.playlistItemName == obj.audioName) {
                         // Set the current playing item as audio
@@ -1235,12 +1224,12 @@ function hideStageMessage() {
 
 function showStageMessage() {
     var message = document.getElementById("stage-message").value;
-    remoteWebSocket.send('{"action":"stageDisplaySendMessage","stageDisplayMessage":"'+message+'"}');
+    remoteWebSocket.send('{"action":"stageDisplaySendMessage","stageDisplayMessage":"' + message + '"}');
 }
 
 function setStageLayout(obj) {
     // Send the change stage layout request to ProPresenter
-    remoteWebSocket.send('{"action":"stageDisplayChangeLayout","stageLayoutUUID":"'+$(obj).val()+'","stageScreenUUID":"'+$(obj).attr("id")+'"}');
+    remoteWebSocket.send('{"action":"stageDisplayChangeLayout","stageLayoutUUID":"' + $(obj).val() + '","stageScreenUUID":"' + $(obj).attr("id") + '"}');
 }
 
 function stopAllClocks() {
@@ -1278,20 +1267,20 @@ function resetClock(index, type) {
     // Start receiving clock times from ProPresenter
     startReceivingClockData();
     // Send the reset clock command
-    remoteWebSocket.send('{"action":"clockReset","clockIndex":"'+index+'"}');
+    remoteWebSocket.send('{"action":"clockReset","clockIndex":"' + index + '"}');
 }
 
 
 function setClockName(obj) {
     // Set the clock name in the input
-    document.getElementById("clock-"+obj.clockIndex+"-name").value = obj.clockName;
+    document.getElementById("clock-" + obj.clockIndex + "-name").value = obj.clockName;
     // Set the clock name in the div
-    document.getElementById("clock-"+obj.clockIndex+"-name-text").innerHTML = obj.clockName;
+    document.getElementById("clock-" + obj.clockIndex + "-name-text").innerHTML = obj.clockName;
 }
 
 function setClockType(obj) {
     // Array of supported clock types
-    var types = ["type-0","type-1","type-2"];
+    var types = ["type-0", "type-1", "type-2"];
     // Get the clock type
     var type = $(obj).children("div").attr("id");
     // Get the clock index
@@ -1312,45 +1301,45 @@ function setClockType(obj) {
 
 function setClockTypePP(obj) {
     // Array of supported clock types
-    var types = ["type-0","type-1","type-2"];
+    var types = ["type-0", "type-1", "type-2"];
     // Remove all clock types
-    $("#clock-"+obj.clockIndex).removeClass(types);
+    $("#clock-" + obj.clockIndex).removeClass(types);
     // Add the clock type
-    $("#clock-"+obj.clockIndex).addClass("type-"+obj.clockType);
+    $("#clock-" + obj.clockIndex).addClass("type-" + obj.clockType);
 }
 
 function setClockFormat(obj) {
-    document.getElementById("clock-"+obj.clockIndex+"-format").value = obj.clockFormat.clockTimePeriodFormat;
+    document.getElementById("clock-" + obj.clockIndex + "-format").value = obj.clockFormat.clockTimePeriodFormat;
 }
 
 function setClockDuration(obj) {
-    document.getElementById("clock-"+obj.clockIndex+"-duration").value = getClockSmallFormat(obj.clockDuration);
-    document.getElementById("clock-"+obj.clockIndex+"-start").value = getClockSmallFormat(obj.clockDuration);
+    document.getElementById("clock-" + obj.clockIndex + "-duration").value = getClockSmallFormat(obj.clockDuration);
+    document.getElementById("clock-" + obj.clockIndex + "-start").value = getClockSmallFormat(obj.clockDuration);
 }
 
 function setClockEndTime(obj) {
-    document.getElementById("clock-"+obj.clockIndex+"-time").value = getClockSmallFormat(obj.clockEndTime);
-    document.getElementById("clock-"+obj.clockIndex+"-end").value = getClockEndTimeFormat(obj.clockEndTime);
+    document.getElementById("clock-" + obj.clockIndex + "-time").value = getClockSmallFormat(obj.clockEndTime);
+    document.getElementById("clock-" + obj.clockIndex + "-end").value = getClockEndTimeFormat(obj.clockEndTime);
 }
 
 function setClockOverrun(obj) {
-    document.getElementById("clock-"+obj.clockIndex+"-overrun").checked = obj.clockOverrun;
+    document.getElementById("clock-" + obj.clockIndex + "-overrun").checked = obj.clockOverrun;
 }
 
 function setClockTimes(obj) {
     obj.clockTimes.forEach(
-        function (item, index) {
-            document.getElementById("clock-"+index+"-currentTime").innerHTML = getClockSmallFormat(item);
+        function(item, index) {
+            document.getElementById("clock-" + index + "-currentTime").innerHTML = getClockSmallFormat(item);
         }
     );
 }
 
 function setClockState(obj) {
-    document.getElementById("clock-"+obj.clockIndex+"-currentTime").innerHTML = getClockSmallFormat(obj.clockTime);
+    document.getElementById("clock-" + obj.clockIndex + "-currentTime").innerHTML = getClockSmallFormat(obj.clockTime);
     if (obj.clockState == true) {
-        document.getElementById("clock-"+obj.clockIndex+"-state").innerHTML = "Stop";
+        document.getElementById("clock-" + obj.clockIndex + "-state").innerHTML = "Stop";
     } else {
-        document.getElementById("clock-"+obj.clockIndex+"-state").innerHTML = "Start";
+        document.getElementById("clock-" + obj.clockIndex + "-state").innerHTML = "Start";
     }
 }
 
@@ -1362,7 +1351,7 @@ function triggerSlide(obj) {
     // Check if this is a playlist or library presentation
     if (location.charAt(0) == '0') {
         // Sent the request to ProPresenter
-        remoteWebSocket.send('{"action":"presentationTriggerIndex","slideIndex":"'+index+'","presentationPath":"'+location+'"}');
+        remoteWebSocket.send('{"action":"presentationTriggerIndex","slideIndex":"' + index + '","presentationPath":"' + location + '"}');
         // Check if we should follow ProPresenter
         if (followProPresenter) {
             // Remove selected from all playlist items
@@ -1372,7 +1361,7 @@ function triggerSlide(obj) {
         }
     } else {
         // Sent the request to ProPresenter
-        remoteWebSocket.send('{"action":"presentationTriggerIndex","slideIndex":"'+index+'","presentationPath":"'+location.replace(/\//g, "\\/")+'"}');
+        remoteWebSocket.send('{"action":"presentationTriggerIndex","slideIndex":"' + index + '","presentationPath":"' + location.replace(/\//g, "\\/") + '"}');
         // Check if we should follow ProPresenter
         if (followProPresenter) {
             // Remove selected from all library items
@@ -1385,8 +1374,8 @@ function triggerSlide(obj) {
     // Check if we should follow ProPresenter
     if (followProPresenter) {
         // Iterate through each item in the library / playlist area
-        $(".item.con").each (
-            function () {
+        $(".item.con").each(
+            function() {
                 // If the current item matches the slide presentation location
                 if ($(this).attr("id") == location) {
                     // Highlight the current item
@@ -1436,9 +1425,9 @@ function triggerPreviousSlide() {
             // If the current slide is at least the first
             if (currentSlideNumber > 1) {
                 // Decrease the slide number
-                currentSlideNumber --;
+                currentSlideNumber--;
                 // Create the next slide id
-                var nextSlideId = "slide"+currentSlideNumber+"."+currentLocation;
+                var nextSlideId = "slide" + currentSlideNumber + "." + currentLocation;
                 // If the next slide is not disabled
                 if (!$(document.getElementById(nextSlideId)).hasClass("disabled")) {
                     // Trigger the next slide
@@ -1460,7 +1449,7 @@ function triggerPreviousSlide() {
                     // If the current presentation is at least the first
                     if (currentPresentationNumber > 1) {
                         // Decrease the presentation number
-                        currentPresentationNumber --;
+                        currentPresentationNumber--;
                         // Create the next presentation id
                         var nextPresentationId = currentPresentationLocation.split(":")[0] + ":" + currentPresentationNumber;
                         // Get the next presentation
@@ -1495,7 +1484,7 @@ function triggerPreviousSlide() {
             // If the current presentation is at least the first
             if (currentPresentationNumber > 1) {
                 // Decrease the presentation number
-                currentPresentationNumber --;
+                currentPresentationNumber--;
                 // Create the next presentation id
                 var nextPresentationId = currentPresentationLocation.split(":")[0] + ":" + currentPresentationNumber;
                 // Get the next presentation
@@ -1529,19 +1518,19 @@ function triggerNextSlide() {
         var currentSlideNumber = parseInt($(currentSlide).find(".slide-number").text());
         // Get the total slide count
         var totalSlideCount = parseInt($(currentSlide).parent("div").children("div").length)
-        // Check if this is a playlist or library presentation
+            // Check if this is a playlist or library presentation
         if (currentLocation.charAt(0) == '0') {
             var nextPresentation
-            // Create variable to determine loop status
+                // Create variable to determine loop status
             var loop = true;
             // Loop until a slide is found or the slides are exhausted
             while (loop) {
                 // If the current slide is at least the first, but is not the last
                 if (currentSlideNumber > 0 && currentSlideNumber < totalSlideCount) {
                     // Increase the slide number
-                    currentSlideNumber ++;
+                    currentSlideNumber++;
                     // Create the next slide id
-                    var nextSlideId = "slide"+currentSlideNumber+"."+currentLocation;
+                    var nextSlideId = "slide" + currentSlideNumber + "." + currentLocation;
                     // If the next slide is not disabled
                     if (!$(document.getElementById(nextSlideId)).hasClass("disabled")) {
                         // Trigger the next slide
@@ -1558,14 +1547,14 @@ function triggerNextSlide() {
                     var currentPresentationNumber = parseInt(currentPresentationLocation.split(":")[1]);
                     // Get the total presentation count
                     var totalPresentationCount = parseInt($(currentPresentation).parent("div").children("div").length)
-                    // Create variable to determine loop status
+                        // Create variable to determine loop status
                     var presentationLoop = true;
                     // Loop until a presentation is found or the presentations are exhausted
                     while (presentationLoop) {
                         // If the current presentation is at least the first, but is not the last
                         if (currentPresentationNumber > 0 && currentPresentationNumber < totalPresentationCount) {
                             // Increase the presentation number
-                            currentPresentationNumber ++;
+                            currentPresentationNumber++;
                             // Create the next presentation id
                             var nextPresentationId = currentPresentationLocation.split(":")[0] + ":" + currentPresentationNumber;
                             // Get the next presentation
@@ -1594,9 +1583,9 @@ function triggerNextSlide() {
                 // If the current slide is at least the first, but is not the last
                 if (currentSlideNumber > 0 && currentSlideNumber < totalSlideCount) {
                     // Increase the slide number
-                    currentSlideNumber ++;
+                    currentSlideNumber++;
                     // Create the next slide id
-                    var nextSlideId = "slide"+currentSlideNumber+"."+currentLocation;
+                    var nextSlideId = "slide" + currentSlideNumber + "." + currentLocation;
                     // If the next slide is not disabled
                     if (!$(document.getElementById(nextSlideId)).hasClass("disabled")) {
                         // Trigger the next slide
@@ -1611,7 +1600,6 @@ function triggerNextSlide() {
             }
         }
     } else if (currentMedia.length > 0) {
-        console.log("currentMediaHasElements");
         // Get the current presentation
         var currentPresentation = $(".media.active").parent("a").parent("div").parent("div").parent("div");
         // Get the current presentation location
@@ -1620,14 +1608,14 @@ function triggerNextSlide() {
         var currentPresentationNumber = parseInt(currentPresentationLocation.split(":")[1]);
         // Get the total presentation count
         var totalPresentationCount = parseInt($(currentPresentation).parent("div").children("div").length)
-        // Create variable to determine loop status
+            // Create variable to determine loop status
         var presentationLoop = true;
         // Loop until a presentation is found or the presentations are exhausted
         while (presentationLoop) {
             // If the current presentation is at least the first, but is not the last
             if (currentPresentationNumber > 0 && currentPresentationNumber < totalPresentationCount) {
                 // Increase the presentation number
-                currentPresentationNumber ++;
+                currentPresentationNumber++;
                 // Create the next presentation id
                 var nextPresentationId = currentPresentationLocation.split(":")[0] + ":" + currentPresentationNumber;
                 // Get the next presentation
@@ -1651,13 +1639,13 @@ function triggerNextSlide() {
 function triggerAudio(obj) {
     var location = ($(obj).children("div").attr("id"));
     if (location.charAt(0) == '0') {
-        remoteWebSocket.send('{"action":"audioStartCue","audioChildPath":"'+location+'"}');
+        remoteWebSocket.send('{"action":"audioStartCue","audioChildPath":"' + location + '"}');
         $("#audio-items").children("a").children("div").removeClass("selected");
         $("#audio-items").children("a").children("div").removeClass("highlighted");
     }
 
-    $(".item.con").each (
-        function () {
+    $(".item.con").each(
+        function() {
             if ($(this).attr("id") == location) {
                 $(this).addClass("highlighted");
             }
@@ -1665,7 +1653,7 @@ function triggerAudio(obj) {
     );
 
     $(".item.lib.playlist.audio").each(
-        function () {
+        function() {
             if ($(this).hasClass("selected")) {
                 $(this).removeClass("selected")
                 $(this).addClass("highlighted")
@@ -1680,7 +1668,7 @@ function triggerAudio(obj) {
 // Page Display Functions
 
 function displayTimerOptions() {
-    if($("#timerOptions:visible").length == 0) {
+    if ($("#timerOptions:visible").length == 0) {
         $("#messageOptions").hide();
         $("#stageOptions").hide();
         $("#settings").hide();
@@ -1694,7 +1682,7 @@ function displayTimerOptions() {
 }
 
 function displayMessageOptions() {
-    if($("#messageOptions:visible").length == 0) {
+    if ($("#messageOptions:visible").length == 0) {
         $("#timerOptions").hide();
         $("#stageOptions").hide();
         $("#settings").hide();
@@ -1708,7 +1696,7 @@ function displayMessageOptions() {
 }
 
 function displayStageOptions() {
-    if($("#stageOptions:visible").length == 0) {
+    if ($("#stageOptions:visible").length == 0) {
         $("#timerOptions").hide();
         $("#messageOptions").hide();
         $("#settings").hide();
@@ -1722,7 +1710,7 @@ function displayStageOptions() {
 }
 
 function displaySettings() {
-    if($("#settings:visible").length == 0) {
+    if ($("#settings:visible").length == 0) {
         $("#timerOptions").hide();
         $("#messageOptions").hide();
         $("#stageOptions").hide();
@@ -1751,47 +1739,47 @@ function displayLibrary(obj) {
     if (!retrieveEntireLibrary) {
         // Set the library item count
         if (libraryPresentationNameList.length == 1) {
-            $("#left-count").append(libraryPresentationNameList.length+" Item");
+            $("#left-count").append(libraryPresentationNameList.length + " Item");
         } else {
-            $("#left-count").append(libraryPresentationNameList.length+" Items");
+            $("#left-count").append(libraryPresentationNameList.length + " Items");
         }
         // Sort the presentations in the library by name
         libraryPresentationNameList.sort(SortPresentationByName);
         // For each Presentation Name in the array
-        libraryPresentationNameList.forEach(function (item) {
+        libraryPresentationNameList.forEach(function(item) {
             // Variable to hold the split string of the presentation path
             var pathSplit = item.presentationPath.split("/");
             // Iterate through each item in the split path to retrieve the library name
-            pathSplit.forEach(function (element, index) {
-              if (element == "Libraries") {
-                  // If this presentation is from this library, add the data
-                  if (pathSplit[index+1] == current) {
-                      data += '<a onclick="displayPresentation(this);"><div id="'+item.presentationPath+'" class="item con"><img src="img/presentation.png" /><div class="name">'+item.presentationName+'</div></div></a>';
-                  }
-              }
+            pathSplit.forEach(function(element, index) {
+                if (element == "Libraries") {
+                    // If this presentation is from this library, add the data
+                    if (pathSplit[index + 1] == current) {
+                        data += '<a onclick="displayPresentation(this);"><div id="' + item.presentationPath + '" class="item con"><img src="img/presentation.png" /><div class="name">' + item.presentationName + '</div></div></a>';
+                    }
+                }
             });
         });
     } else {
         // Set the library item count
         if (libraryPresentationList.length == 1) {
-            $("#left-count").append(libraryPresentationList.length+" Item");
+            $("#left-count").append(libraryPresentationList.length + " Item");
         } else {
-            $("#left-count").append(libraryPresentationList.length+" Items");
+            $("#left-count").append(libraryPresentationList.length + " Items");
         }
         // Sort the presentations in the library by name
         libraryPresentationList.sort(SortPresentationByName);
         // For each Presentation in the array
-        libraryPresentationList.forEach(function (item) {
+        libraryPresentationList.forEach(function(item) {
             // Variable to hold the split string of the presentation path
             var pathSplit = item.presentationPath.split("/");
             // Iterate through each item in the split path to retrieve the library name
-            pathSplit.forEach(function (element, index) {
-              if (element == "Libraries") {
-                  // If this presentation is from this library, add the data
-                  if (pathSplit[index+1] == current) {
-                      data += '<a onclick="displayPresentation(this);"><div id="'+item.presentationPath+'" class="item con"><img src="img/presentation.png" /><div class="name">'+item.presentation.presentationName+'</div></div></a>';
-                  }
-              }
+            pathSplit.forEach(function(element, index) {
+                if (element == "Libraries") {
+                    // If this presentation is from this library, add the data
+                    if (pathSplit[index + 1] == current) {
+                        data += '<a onclick="displayPresentation(this);"><div id="' + item.presentationPath + '" class="item con"><img src="img/presentation.png" /><div class="name">' + item.presentation.presentationName + '</div></div></a>';
+                    }
+                }
             });
         });
     }
@@ -1820,26 +1808,26 @@ function displayPlaylist(obj) {
     // Sort presentations in the playlist presentation list
     playlistPresentationList.sort(SortPresentationByPath);
     // Find the playlist in the array
-    $(playlistList).each (
-        function () {
+    $(playlistList).each(
+        function() {
             if (this.playlistName == current) {
                 // Reset the item count
                 $("#left-count").empty();
                 // Get the new item count
                 if (this.playlist.length == 1) {
-                    $("#left-count").append((this.playlist).length+" Item");
+                    $("#left-count").append((this.playlist).length + " Item");
                 } else {
-                    $("#left-count").append((this.playlist).length+" Items");
+                    $("#left-count").append((this.playlist).length + " Items");
                 }
                 // Add the presentations in the playlist
-                $(this.playlist).each (
-                    function () {
+                $(this.playlist).each(
+                    function() {
                         if (this.playlistItemType == "playlistItemTypeHeader") {
-                            data += '<a onclick="displayPresentation(this);"><div id="'+this.playlistItemLocation+'" class="item head"><div class="name">'+this.playlistItemName+'</div></div></a>'
+                            data += '<a onclick="displayPresentation(this);"><div id="' + this.playlistItemLocation + '" class="item head"><div class="name">' + this.playlistItemName + '</div></div></a>'
                         } else if (this.playlistItemType == "playlistItemTypeVideo") {
-                            data += '<a onclick="displayPresentation(this);"><div id="'+this.playlistItemLocation+'" class="item con"><img src="img/media.png" /><div class="name">'+this.playlistItemName+'</div></div></a>'
+                            data += '<a onclick="displayPresentation(this);"><div id="' + this.playlistItemLocation + '" class="item con"><img src="img/media.png" /><div class="name">' + this.playlistItemName + '</div></div></a>'
                         } else if (this.playlistItemType == "playlistItemTypePresentation") {
-                            data += '<a onclick="displayPresentation(this);"><div id="'+this.playlistItemLocation+'" class="item con"><img src="img/presentation.png" /><div class="name">'+this.playlistItemName+'</div></div></a>'
+                            data += '<a onclick="displayPresentation(this);"><div id="' + this.playlistItemLocation + '" class="item con"><img src="img/presentation.png" /><div class="name">' + this.playlistItemName + '</div></div></a>'
                         }
                     }
                 );
@@ -1873,20 +1861,20 @@ function displayAudioPlaylist(obj) {
     // Reset the item count
     $("#right-count").empty();
     // Find the playlist in the array
-    $(audioPlaylistList).each (
-        function () {
+    $(audioPlaylistList).each(
+        function() {
             if (this.playlistName == current) {
 
                 // Get the new item count
                 if (this.playlist.length == 1) {
-                    $("#right-count").append((this.playlist).length+" Item");
+                    $("#right-count").append((this.playlist).length + " Item");
                 } else {
-                    $("#right-count").append((this.playlist).length+" Items");
+                    $("#right-count").append((this.playlist).length + " Items");
                 }
                 // Add the presentations in the playlist
-                $(this.playlist).each (
-                    function () {
-                        data += '<a onclick="triggerAudio(this);"><div id="'+this.playlistItemLocation+'" class="item con"><img src="img/clearaudio.png" /><div class="name">'+this.playlistItemName+'</div></div></a>'
+                $(this.playlist).each(
+                    function() {
+                        data += '<a onclick="triggerAudio(this);"><div id="' + this.playlistItemLocation + '" class="item con"><img src="img/clearaudio.png" /><div class="name">' + this.playlistItemName + '</div></div></a>'
                     }
                 );
             }
@@ -1928,7 +1916,7 @@ function displayPresentation(obj) {
             location = initialPresentationLocation;
             // Use the provided slide index
             slideIndex = parseInt(obj.slideIndex);
-        } else if (obj.action == "presentationTriggerIndex"){
+        } else if (obj.action == "presentationTriggerIndex") {
             // Use the presentationPath as the location
             location = obj.presentationPath;
             // Use the provided slide index
@@ -1956,28 +1944,28 @@ function displayPresentation(obj) {
                 var playlistLength = "";
                 // Iterate through each playlist in the array
                 $(playlistList).each(
-                    function () {
+                    function() {
                         // Get the playlist name
                         var playlistName = this.playlistName;
                         // Get the current playlist
                         var currentPlaylist = this;
                         // Iterate through each element in the playlist
-                        $(this.playlist).each (
-                            function () {
+                        $(this.playlist).each(
+                            function() {
                                 if (this.playlistItemLocation == location) {
                                     // Set the playlist location
                                     playlistLocation = currentPlaylist.playlistLocation
-                                    // Set the playlist location
+                                        // Set the playlist location
                                     playlistLength = currentPlaylist.playlist.length;
                                     // Iterate through each playlist name
                                     $(".playlist").children(".name").each(
-                                        function () {
+                                        function() {
                                             // If the playlist's name matches the current playlist name
-                                            if (playlistName == $(this).text()){
+                                            if (playlistName == $(this).text()) {
 
                                                 var playlistGroupAnchor = $(this).parent().parent().parent().children(".expander");
                                                 $(playlistGroupAnchor).parent().children("a").children(".playlist").each(
-                                                    function () {
+                                                    function() {
                                                         $(this).show();
                                                     }
                                                 );
@@ -1997,14 +1985,14 @@ function displayPresentation(obj) {
                 );
 
                 // For each Presentation in the playlist presentation array
-                $(playlistPresentationList).each (
-                    function () {
+                $(playlistPresentationList).each(
+                    function() {
 
                         // If the presentation path matches the path of the selected presentation, set it as highlighted
                         if (this.presentationPath == location) {
                             // Iterate through each playlist item
-                            $("#playlist-items").children("a").each (
-                                function () {
+                            $("#playlist-items").children("a").each(
+                                function() {
                                     // If this presentation path matches the selected presentation's presentation path
                                     if ($(this).children("div").attr("id") == location) {
                                         if (propresenterRequest && obj.slideIndex.toString() != "") {
@@ -2021,38 +2009,35 @@ function displayPresentation(obj) {
 
                         // If continuous playlists are enabled
                         if (continuousPlaylist) {
-                            console.log("insideContinuousPlaylists");
                             // If this presentation is part of the selected presentation's playlist
                             if (this.presentationPath.split(":")[0] == playlistLocation) {
-                                console.log("insidepresentationPathSplit");
                                 // Get the presentation path
                                 var presentationPath = this.presentationPath;
 
                                 // If the presentation is not already displayed
-                                if (document.getElementById("presentation."+presentationPath) == null) {
-                                    console.log("insidePresentationNotAlreadyDisplayed");
+                                if (document.getElementById("presentation." + presentationPath) == null) {
                                     // Get the index of the presentation in the playlist
                                     var presentationIndex = parseInt(this.presentationPath.split(":")[1]);
                                     // Create the presentation container in the presentation data
-                                    var presentationData = '<div id="presentation.'+presentationPath+'" class="presentation">'
-                                        + '<div class="presentation-header padded">'+this.presentation.presentationName+'</div>'
-                                        + '<div class="presentation-content padded">';
+                                    var presentationData = '<div id="presentation.' + presentationPath + '" class="presentation">' +
+                                        '<div class="presentation-header padded">' + this.presentation.presentationName + '</div>' +
+                                        '<div class="presentation-content padded">';
                                     // Create a variable to hold the slide count
                                     var count = 1;
                                     // Iterate through each slide group in the presentation
-                                    $(this.presentation.presentationSlideGroups).each (
-                                        function () {
+                                    $(this.presentation.presentationSlideGroups).each(
+                                        function() {
                                             // Get the slide group color
                                             var colorArray = this.groupColor.split(" ");
                                             // Get the slide group name
                                             var groupName = this.groupName;
                                             // Iterate through each slide in the slide group
-                                            $(this.groupSlides).each (
-                                                function () {
+                                            $(this.groupSlides).each(
+                                                function() {
                                                     // Add the slide to the presentation data
-                                                    presentationData += '<div id="slide'+count+'.'+presentationPath+'" class="slide-container '+getEnabledValue(this.slideEnabled)+'"><a id="'+presentationPath+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
+                                                    presentationData += '<div id="slide' + count + '.' + presentationPath + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + presentationPath + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div>';
                                                     // Increase the slide count
-                                                    count ++;
+                                                    count++;
                                                 }
                                             );
                                         }
@@ -2061,7 +2046,7 @@ function displayPresentation(obj) {
                                     // Add the close tags to the presentation data
                                     presentationData += '</div></div>';
                                     // Add the presentation data to the array
-                                    data.push({presentationIndex:presentationIndex, presentationData:presentationData});
+                                    data.push({ presentationIndex: presentationIndex, presentationData: presentationData });
                                 }
                             }
 
@@ -2071,29 +2056,29 @@ function displayPresentation(obj) {
                                 // Get the presentation path
                                 var presentationPath = this.presentationPath;
                                 // If the presentation is already displayed
-                                if (document.getElementById("presentation."+presentationPath) == null) {
+                                if (document.getElementById("presentation." + presentationPath) == null) {
                                     // Get the index of the presentation in the playlist
                                     var presentationIndex = parseInt(this.presentationPath.split(":")[1]);
                                     // Create the presentation container in the presentation data
-                                    var presentationData = '<div id="presentation.'+presentationPath+'" class="presentation">'
-                                        + '<div class="presentation-header padded">'+this.presentation.presentationName+'</div>'
-                                        + '<div class="presentation-content padded">';
+                                    var presentationData = '<div id="presentation.' + presentationPath + '" class="presentation">' +
+                                        '<div class="presentation-header padded">' + this.presentation.presentationName + '</div>' +
+                                        '<div class="presentation-content padded">';
                                     // Create a variable to hold the slide count
                                     var count = 1;
                                     // Iterate through each slide group in the presentation
-                                    $(this.presentation.presentationSlideGroups).each (
-                                        function () {
+                                    $(this.presentation.presentationSlideGroups).each(
+                                        function() {
                                             // Get the slide group color
                                             var colorArray = this.groupColor.split(" ");
                                             // Get the slide group name
                                             var groupName = this.groupName;
                                             // Iterate through each slide in the slide group
-                                            $(this.groupSlides).each (
-                                                function () {
+                                            $(this.groupSlides).each(
+                                                function() {
                                                     // Add the slide to the presentation data
-                                                    presentationData += '<div id="slide'+count+'.'+presentationPath+'" class="slide-container '+getEnabledValue(this.slideEnabled)+'"><a id="'+presentationPath+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
+                                                    presentationData += '<div id="slide' + count + '.' + presentationPath + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + presentationPath + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div>';
                                                     // Increase the slide count
-                                                    count ++;
+                                                    count++;
                                                 }
                                             );
                                         }
@@ -2101,7 +2086,7 @@ function displayPresentation(obj) {
                                     // Add the close tags to the presentation data
                                     presentationData += '</div></div>';
                                     // Add the presentation data to the array
-                                    data.push({presentationIndex:presentationIndex, presentationData:presentationData});
+                                    data.push({ presentationIndex: presentationIndex, presentationData: presentationData });
                                 }
                             }
                         }
@@ -2109,15 +2094,15 @@ function displayPresentation(obj) {
                 );
 
                 // Iterate through each header in the playlist header list
-                $(playlistHeaderList).each (
-                    function () {
+                $(playlistHeaderList).each(
+                    function() {
                         // If continuous playlists are enabled
                         if (continuousPlaylist) {
                             // If the presentation path matches the path of the selected presentation, set it as highlighted
                             if (this.presentationPath == location) {
                                 // Iterate through each playlist item
-                                $("#playlist-items").children("a").each (
-                                    function () {
+                                $("#playlist-items").children("a").each(
+                                    function() {
                                         // If this presentation path matches the selected presentation's presentation path
                                         if ($(this).children("div").attr("id") == location) {
                                             // Set the presentation as selected
@@ -2131,15 +2116,15 @@ function displayPresentation(obj) {
                                 // Get the header path
                                 var headerPath = this.presentationPath;
                                 // If the header is already displayed
-                                if (document.getElementById("header."+headerPath) == null) {
+                                if (document.getElementById("header." + headerPath) == null) {
                                     // Get the index of the header in the playlist
                                     var headerIndex = parseInt(this.presentationPath.split(":")[1]);
                                     // Create the presentation container in the presentation data
-                                    var headerData = '<div id="header.'+headerPath+'">'
-                                        + '<div class="header-header padded">'+this.presentation.presentationName+'</div>'
-                                        + '</div>';
+                                    var headerData = '<div id="header.' + headerPath + '">' +
+                                        '<div class="header-header padded">' + this.presentation.presentationName + '</div>' +
+                                        '</div>';
                                     // Add the header data to the array
-                                    data.push({presentationIndex:headerIndex, presentationData:headerData});
+                                    data.push({ presentationIndex: headerIndex, presentationData: headerData });
                                 }
                             }
                         }
@@ -2147,15 +2132,15 @@ function displayPresentation(obj) {
                 );
 
                 // Iterate through each media item in the playlist media list
-                $(playlistMediaList).each (
-                    function () {
+                $(playlistMediaList).each(
+                    function() {
                         // If continuous playlists are enabled
                         if (continuousPlaylist) {
                             // If the presentation path matches the path of the selected presentation, set it as highlighted
                             if (this.presentationPath == location) {
                                 // Iterate through each playlist item
-                                $("#playlist-items").children("a").each (
-                                    function () {
+                                $("#playlist-items").children("a").each(
+                                    function() {
                                         // If this presentation path matches the selected presentation's presentation path
                                         if ($(this).children("div").attr("id") == location) {
                                             if (propresenterRequest && obj.slideIndex.toString() != "") {
@@ -2174,24 +2159,22 @@ function displayPresentation(obj) {
                                 // Get the media item path
                                 var mediaPath = this.presentationPath;
                                 // If the media item is already displayed
-                                if (document.getElementById("presentation."+mediaPath) == null) {
+                                if (document.getElementById("presentation." + mediaPath) == null) {
                                     // Get the index of the media item in the playlist
                                     var mediaIndex = parseInt(this.presentationPath.split(":")[1]);
                                     // Create the presentation container in the presentation data
-                                    var mediaData = '<div id="presentation.'+mediaPath+'">'
-                                        + '<div class="presentation-header padded">'+this.presentation.presentationName+'</div>'
-                                        + '<div class="presentation-content padded">'
-                                        + '<div id="media.'+mediaPath+'" class="media-container "><a id="'+mediaPath+'" onclick="triggerSlide(this);"><div class="media"><i class="far fa-play-circle"></i></div><div class="media-name">'+this.presentation.presentationName+'</div></a></div>'
-                                        + '</div></div>';
+                                    var mediaData = '<div id="presentation.' + mediaPath + '">' +
+                                        '<div class="presentation-header padded">' + this.presentation.presentationName + '</div>' +
+                                        '<div class="presentation-content padded">' +
+                                        '<div id="media.' + mediaPath + '" class="media-container "><a id="' + mediaPath + '" onclick="triggerSlide(this);"><div class="media"><i class="far fa-play-circle"></i></div><div class="media-name">' + this.presentation.presentationName + '</div></a></div>' +
+                                        '</div></div>';
                                     // Add the media data to the array
-                                    data.push({presentationIndex:mediaIndex, presentationData:mediaData});
+                                    data.push({ presentationIndex: mediaIndex, presentationData: mediaData });
                                 }
                             }
                         }
                     }
                 );
-
-                console.log("PresentationDataArray: ", data);
 
                 if (data.length > 0 && data.length == playlistLength) {
                     // Sort the playlist presentations
@@ -2200,7 +2183,7 @@ function displayPresentation(obj) {
                     $("#presentations").empty();
                     // For each presentation in the presentation data array
                     data.forEach(
-                        function (item) {
+                        function(item) {
                             // Add the presentation data to the presentations section
                             $("#presentations").append(item.presentationData);
                         }
@@ -2210,20 +2193,20 @@ function displayPresentation(obj) {
                 // Get the library
                 var library;
                 // Iterate through each library
-                $(".libraries").children("div").children("a").each (
-                    function () {
+                $(".libraries").children("div").children("a").each(
+                    function() {
                         var libraryName = $(this).text();
                         // Split the string of the presentation path
                         var pathSplit = location.split("/");
                         // Iterate through each item in the split path to retrieve the library name
                         pathSplit.forEach(
-                            function (pathElement, index) {
+                            function(pathElement, index) {
                                 if (pathElement == "Libraries") {
                                     // If this presentation is from this library
-                                    if (pathSplit[index+1] == libraryName) {
+                                    if (pathSplit[index + 1] == libraryName) {
                                         // Highlight the library
                                         $(".library").children(".name").each(
-                                            function () {
+                                            function() {
                                                 if (libraryName == $(this).text()) {
                                                     // Display the library
                                                     displayLibrary($(this).parent().parent());
@@ -2245,7 +2228,7 @@ function displayPresentation(obj) {
                     var retrieve = true;
                     // Check if the presentation currently exists in the list
                     libraryPresentationList.forEach(
-                        function (item) {
+                        function(item) {
                             // If the presentation exists
                             if (item.presentationPath == location) {
                                 // Do not retrieve it
@@ -2255,10 +2238,8 @@ function displayPresentation(obj) {
                     );
                     // If we should retrieve the presentation
                     if (retrieve) {
-                        // Remove connected status
-                        $(".connected").hide();
                         // Show downloading status
-                        $(".downloading-library").show();
+                        $("#status").attr("class", "downloading-library");
                         // Add this library item location to the requests array
                         libraryRequests.push(location);
                         // Empty the presentation display request list
@@ -2274,13 +2255,13 @@ function displayPresentation(obj) {
 
 
                 // For each Presentation in the array
-                $(libraryPresentationList).each (
-                    function () {
+                $(libraryPresentationList).each(
+                    function() {
                         // If the presentation path matches the path of the selected presentation, set it as highlighted
                         if (this.presentationPath == location) {
                             // Iterate through each library item
-                            $("#library-items").children("a").each (
-                                function () {
+                            $("#library-items").children("a").each(
+                                function() {
                                     // If this presentation path matches the selected presentation's presentation path
                                     if ($(this).children("div").attr("id") == location) {
                                         if (propresenterRequest && obj.slideIndex.toString() != "") {
@@ -2296,27 +2277,27 @@ function displayPresentation(obj) {
                             // Get the presentation path
                             var presentationPath = this.presentationPath;
                             // If the presentation is already displayed
-                            if (document.getElementById("presentation."+presentationPath) == null) {
+                            if (document.getElementById("presentation." + presentationPath) == null) {
                                 // Create the presentation container in the presentation data
-                                var presentationData = '<div id="presentation.'+presentationPath+'" class="presentation">'
-                                    + '<div class="presentation-header padded">'+this.presentation.presentationName+'</div>'
-                                    + '<div class="presentation-content padded">';
+                                var presentationData = '<div id="presentation.' + presentationPath + '" class="presentation">' +
+                                    '<div class="presentation-header padded">' + this.presentation.presentationName + '</div>' +
+                                    '<div class="presentation-content padded">';
                                 // Create a variable to hold the slide count
                                 var count = 1;
                                 // Iterate through each slide group in the presentation
-                                $(this.presentation.presentationSlideGroups).each (
-                                    function () {
+                                $(this.presentation.presentationSlideGroups).each(
+                                    function() {
                                         // Get the slide group color
                                         var colorArray = this.groupColor.split(" ");
                                         // Get the slide group name
                                         var groupName = this.groupName;
                                         // Iterate through each slide in the slide group
-                                        $(this.groupSlides).each (
-                                            function () {
+                                        $(this.groupSlides).each(
+                                            function() {
                                                 // Add the slide to the presentation data
-                                                presentationData += '<div id="slide'+count+'.'+location+'" class="slide-container '+getEnabledValue(this.slideEnabled)+'"><a id="'+location+'" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><img src="data:image/png;base64,'+this.slideImage+'" draggable="false"/><div class="slide-info" style="background-color: rgb('+getRGBValue(colorArray[0])+','+getRGBValue(colorArray[1])+','+getRGBValue(colorArray[2])+');"><div class="slide-number">'+count+'</div><div class="slide-name">'+this.slideLabel+'</div></div></div></a></div>';
+                                                presentationData += '<div id="slide' + count + '.' + location + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + location + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div>';
                                                 // Increase the slide count
-                                                count ++;
+                                                count++;
                                             }
                                         );
                                     }
@@ -2337,10 +2318,13 @@ function displayPresentation(obj) {
         }
 
         // If the presentation exists in the middle segment
-        if (document.getElementById("presentation."+location) != null) {
+        if (document.getElementById("presentation." + location) != null) {
             // Scroll the presentation into view
-            document.getElementById("presentation."+location).scrollIntoView();
+            document.getElementById("presentation." + location).scrollIntoView();
         }
+
+        // Hide the left menu - MOBILE ONLY
+        document.getElementById("sections").style.width = "0";
 
         // Set the slide size
         setSlideSize(slideSize);
@@ -2353,7 +2337,7 @@ function displayPresentation(obj) {
         // Remove active from any previous media
         $(".media").removeClass("active");
         // Set the current slide
-        setCurrentSlide(parseInt(obj.slideIndex)+1, location);
+        setCurrentSlide(parseInt(obj.slideIndex) + 1, location);
         // If there is a slide index
         if (obj.slideIndex != "") {
             // Set clear slide to active
@@ -2365,7 +2349,7 @@ function displayPresentation(obj) {
         // If this is a header
         if (header) {
             // Scroll the header into view
-            document.getElementById("header."+location).scrollIntoView();
+            document.getElementById("header." + location).scrollIntoView();
         }
 
         // Remove selected and highlighted from all playlist/library items
@@ -2381,7 +2365,7 @@ function displayPresentation(obj) {
 // Utility Functions
 
 function getRGBValue(int) {
-    return 255 * int;
+    return Math.round(255 * int);
 }
 
 function setSlideSize(int) {
@@ -2446,7 +2430,7 @@ function getClockEndTimeFormat(obj) {
 function clockMilisecondsCountdown(obj) {
     var ms = parseInt($(obj).text().split(".")[1]);
     var millisecondCount = setInterval(
-        function () {
+        function() {
             if (ms > 0) {
                 ms -= 1;
             } else {
@@ -2454,15 +2438,15 @@ function clockMilisecondsCountdown(obj) {
             }
             var msString = ms.toString();
             if (msString.length < 2) {
-                msString = "0"+msString;
+                msString = "0" + msString;
             }
             time = $(obj).text().split(".")[0];
-            $(obj).text(time+"."+msString);
+            $(obj).text(time + "." + msString);
         },
         10
     );
     setTimeout(
-        function () {
+        function() {
             clearInterval(millisecondCount);
         },
         1000
@@ -2470,28 +2454,28 @@ function clockMilisecondsCountdown(obj) {
 }
 
 function webMessages() {
-    window.open("http://"+host+":"+port+"/html/pages/messages", '_blank');
+    window.open("http://" + host + ":" + port + "/html/pages/messages", '_blank');
 }
 
 // Prevent input fields from affecting slide progression
 function preventInputInterference() {
     // When an input is in focus
     $("input").focus(
-        function () {
+        function() {
             // Set input typing as active
             inputTyping = true;
         }
     );
     // When an input is out of focus
     $("input").focusout(
-        function () {
+        function() {
             // Set input typing as inactive
             inputTyping = false;
         }
     );
 }
 
-function isElementInViewport (el) {
+function isElementInViewport(el) {
     // Special bonus for those using jQuery
     if (typeof jQuery === "function" && el instanceof jQuery) {
         el = el[0];
@@ -2514,10 +2498,12 @@ function getEnabledValue(enabled) {
 }
 
 function removeArrayValue(arr) {
-    var what, a = arguments, L = a.length, ax;
+    var what, a = arguments,
+        L = a.length,
+        ax;
     while (L > 1 && arr.length) {
         what = a[--L];
-        while ((ax= arr.indexOf(what)) !== -1) {
+        while ((ax = arr.indexOf(what)) !== -1) {
             arr.splice(ax, 1);
         }
     }
@@ -2527,9 +2513,38 @@ function removeArrayValue(arr) {
 // End Utility Functions
 
 
+// Navigation Functions
+
+function openSideMenu() {
+    // Increase the width of the side menu to display it
+    document.getElementById("sections").style.width = "250px";
+    // // Create a element click handler to allow the opening of the custom dropdown
+    // window.addEventListener('click', function(e) {
+    //     // If the clicked element is contained within the dropdown
+    //     if (document.getElementById(obj.parentNode.id).contains(e.target)) {} else {
+    //         // Hide the dropdown
+    //         $(obj).parent("div").children(".type-dropdown").hide();
+    //     }
+    // });
+}
+
+function closeSideMenu() {
+    // Decrease the width of the side menu to display it
+    document.getElementById("sections").style.width = "0";
+}
+
+// End Navigation Functions
+
+
 // Initialisation Functions
 
 function initialise() {
+
+    // If the window is likely on an iPad 2
+    if (document.height == 768) {
+        // Hide the window title
+        $('.window-title').hide();
+    }
 
     // Get Cookie Values
     getContinuousPlaylistCookie();
@@ -2615,12 +2630,12 @@ function initialise() {
 
     // Add listener for slide size slider
     document.getElementById("slide-size").addEventListener('input',
-        function (s) {
+        function(s) {
             // Get proper size
             slideSize = parseInt(this.value);
             // Check if size is large enough to enlargen at a higher rate
             if (slideSize > 18) {
-                slideSize = slideSize + (slideSize-18);
+                slideSize = slideSize + (slideSize - 18);
             }
             // Set slide size
             setSlideSize(slideSize);

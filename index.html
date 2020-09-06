@@ -1,303 +1,413 @@
 <!DOCTYPE HTML>
+
 <head>
-	<!-- Load Font Awesome -->
-	<link rel="stylesheet" href="fa/css/all.css">
-	<!-- Load Roboto Font -->
-	<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
-	<!-- Load Site CSS -->
-	<link rel="stylesheet" href="css/site.css?v=1.0">
-	<!-- Load JQuery -->
-	<script type="application/javascript" src="js/jquery-3.5.1.min.js"></script>
-	<!-- Load Site JS -->
-	<script type="application/javascript" src="js/site.js?v=1.0"></script>
+    <!-- Set UTF-8 Character Set -->
+    <meta charset="utf-8" />
+    <!-- Set Not-User Scalable -->
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <!-- Set Web App Capable -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <!-- Set App Name -->
+    <meta name="application-name" content="ProRemote">
+    <meta name="apple-mobile-web-app-title" content="ProRemote">
+    <!-- Set Theme Colour -->
+    <meta name="theme-color" content="#000000">
+    <meta name="msapplication-navbutton-color" content="#000000">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Set App Start Path-->
+    <meta name="msapplication-starturl" content="/">
 
-	<link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
-	<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
-	<link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png">
-	<link rel="manifest" href="img/site.webmanifest">
+    <!-- Load Font Awesome -->
+    <link rel="stylesheet" href="fa/css/all.css">
+    <!-- Load Roboto Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+    <!-- Load Site CSS -->
+    <link rel="stylesheet" href="css/site.css?v=1.8">
+    <!-- Load JQuery -->
+    <script type="application/javascript" src="js/jquery-3.5.1.min.js"></script>
+    <!-- Load Site JS -->
+    <script type="application/javascript" src="js/site.js?v=1.8"></script>
 
-	<title>ProPresenter Web Remote</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png">
+    <link rel="manifest" href="img/site.webmanifest">
+
+    <title>ProPresenter Web Remote</title>
 </head>
+
 <body>
-	<div class="container">
-		<div class="main">
-			<div class="left">
-				<div class="library segment">
-					<div class="top light">
-						<div class="libraries">
-							<div class="segment-header padded">
-								<h5>Library</h5>
-								<a onclick="getLibrary();"><i class="fas fa-redo-alt"></i></a>
-							</div>
-							<div id="library-content" class="content">
-								<h5 style="margin-left: 20px">Connect to ProPresenter to see Libraries</h5>
-							</div>
-						</div>
-						<div class="playlists">
-							<div class="segment-header padded">
-								<h5>Playlist</h5>
-							</div>
-							<div id="playlist-content" class="content">
-								<h5 style="margin-left: 20px">Connect to ProPresenter to see Playlists</h5>
-							</div>
-						</div>
-					</div>
-					<div class="bottom dark">
-						<div class="segment-header padded segment">
-							<h5 id="left-count" class="count"></h5>
+    <div class="container">
+        <div class="main">
+            <div class="sections" id="sections">
+                <div class="section-1" id="section-1">
+                    <div class="library segment">
+                        <div class="top light">
+                            <div class="libraries">
+                                <div class="segment-header padded">
+                                    <h5>Library</h5>
+                                    <a onclick="getLibrary();"><i class="fas fa-redo-alt"></i></a>
+                                </div>
+                                <div id="library-content" class="content">
+                                    <h5 style="margin-left: 20px">Connect to ProPresenter to see Libraries</h5>
+                                </div>
+                            </div>
+                            <div class="playlists">
+                                <div class="segment-header padded">
+                                    <h5>Playlist</h5>
+                                </div>
+                                <div id="playlist-content" class="content">
+                                    <h5 style="margin-left: 20px">Connect to ProPresenter to see Playlists</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bottom dark">
+                            <div class="segment-header padded segment">
+                                <h5 id="left-count" class="count"></h5>
 
-						</div>
-						<div id="library-items" class="content">
+                            </div>
+                            <div id="library-items" class="content">
 
-						</div>
-						<div id="playlist-items" class="content">
+                            </div>
+                            <div id="playlist-items" class="content">
 
-						</div>
-					</div>
-				</div>
-			</div>
-			<div id="presentations" class="middle">
-			</div>
-			<div class="middle-footer">
-				<div class="slide-size">
-					<input id="slide-size" type="range" min="0" max="28">
-				</div>
-			</div>
-			<div class="right">
-				<div class="screens">
-					<div class="preview">
-						<div class="content">
-							<div id="live" class="live">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-2" id="section-2">
+                    <div class="screens">
+                        <div class="preview">
+                            <div class="content">
+                                <div id="live" class="live"></div>
+                                <div class="clear">
+                                    <div class="icons">
+                                        <a id="clear-all" onclick="clearAll();">
+                                            <div class="clear-all-container"><i class="clear-icon fas fa-times-circle"></i>
+                                                <div class="clear-all">Clear All</div>
+                                            </div>
+                                        </a>
+                                        <a id="clear-audio" onclick="clearAudio();">
+                                            <div><img src="img/clearaudio.png" />
+                                                <div class="clear-name">Clear Audio</div>
+                                            </div>
 
-							</div>
-							<div class="clear">
-								<a onclick="clearAll();"><div id="clear-all" class="all">Clear All</div></a>
-								<div class="icons">
-									<a onclick="clearAudio();"><div id="clear-audio"><img src="img/clearaudio.png"/></div></a>
-									<a onclick="clearMessages();"><div id="clear-messages" class="bordered"><img src="img/clearmessage.png"/></div></a>
-									<a onclick="clearProps();"><div id="clear-props" class="bordered"><img src="img/clearprops.png"/></div></a>
-									<a onclick="clearAnnouncements();"><div id="clear-announcements" class="bordered"><img src="img/clearannouncements.png"/></div></a>
-									<a onclick="clearSlide();"><div id="clear-slide" class="bordered"><img src="img/clearslide.png"/></div></a>
-									<a onclick="clearMedia();"><div id="clear-media" class="bordered"><img src="img/clearmedia.png"/></div></a>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="right-sub">
-					<div class="playback segment">
-						<div class="bottom dark">
-							<div class="segment-header padded segment">
-								<div class="playback-controls">
-									<a onclick="focusTimelineControls();"><img id="control-slide" src="img/slideblue.png"/></a>
-									<a onclick="focusAudioControls();"><img id="control-audio" src="img/clearaudio.png"/></a>
-								</div>
-							</div>
-							<div class="content">
-								<div id="timeline-controls" class="timeline-controls">
-									<div class="current playing-timeline"></div>
-									<a onclick="toggleTimelinePlayPause();"><div class="play"><i id="timeline-status" class="disabled fas fa-play"></i></div></a>
-								</div>
-								<div id="audio-controls" class="audio-controls">
-									<div class="current playing-audio"></div>
-									<a onclick="toggleAudioPlayPause();"><div class="play"><i id="audio-status" class="disabled fas fa-play"></i></div></a>
-								</div>
-							</div>
-						</div>
-					</div>
-					<div class="audio segment">
-						<div class="top light">
-							<div class="audio">
-								<div class="segment-header padded">
-									<h5>Audio</h5>
-									<a onclick="getAudioPlaylists();"><i class="fas fa-redo-alt"></i></a>
-								</div>
-								<div id="audio-content" class="content">
-									<h5 style="margin-left: 20px">Connect to ProPresenter to see Audio Playlists</h5>
-								</div>
-							</div>
-						</div>
-						<div class="bottom dark">
-							<div class="segment-header padded segment">
-								<h5 id="right-count" class="count"></h5>
-							</div>
-							<div id="audio-items" class="content">
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="header">
-			<div class="logo">
-				<a onclick="window.location.reload()"><img src="img/logo.png"/></a>
-			</div>
-			<div class="window-title">ProPresenter Web Remote</div>
-			<div class="producer-controls">
-				<div class="control-container"><a onclick="displayTimerOptions();"><div class="control-button"><img src="img/timers.png" /></div></a><div class="control-text">Timers</div></div>
-				<div class="control-container"><a onclick="displayMessageOptions();"><div class="control-button"><img src="img/messages.png" /></div></a><div class="control-text">Messages</div></div>
-				<div class="control-container"><a onclick="displayStageOptions();"><div class="control-button"><img src="img/stage.png" /></div></a><div class="control-text">Stage</div></div>
-			</div>
-			<div id="timerOptions" class="options-container timers">
-				<div class="options-header">
-					<a onclick="$('#timerOptions').hide();"><div class="options-close"><i class="fas fa-times-circle"></i></div></a>
-					<div class="options-name">Timers</div>
-					<a onclick="getClocks();"><i class="refresh fas fa-redo-alt"></i></a>
-				</div>
-				<div id="timer-content" class="options-content">
-					<h3 style="margin: 0px; padding: 20px;">Connect to ProPresenter to see Timers</h3>
-				</div>
-				<div class="options-footer">
-					<a onclick="stopAllClocks();"><div class="option-button">Stop All</div></a>
-					<a onclick="resetAllClocks();"><div class="option-button">Reset All</div></a>
-					<a onclick="startAllClocks();"><div class="option-button">Start All</div></a>
-				</div>
-			</div>
-			<div id="messageOptions" class="options-container messages">
-				<div class="options-header">
-					<a onclick="$('#messageOptions').hide();"><div class="options-close"><i class="fas fa-times-circle"></i></div></a>
-					<div class="options-name">Messages</div>
-				</div>
-				<div id="message-content" class="options-content">
-					<div class="message name-container">
-						<a onclick="displayMessage(this);"><div class="message-name">Child Needs Attention</div></a>
-						<a onclick="displayMessage(this);"><div class="message-name">Countdown to Service</div></a>
-					</div>
-					<div class="message attribute-container">
-						<div class="message-attribute">
-							<div class="attribute-name">Name</div>
-							<input class="text-input attribute-data" />
-						</div>
-						<div class="message-attribute">
-							<div class="attribute-name">Room</div>
-							<input class="text-input attribute-data" />
-						</div>
-					</div>
-				</div>
-				<div class="options-footer">
-					<div class="message name-footer">
-						<a onclick="webMessages();"><div class="option-button messages-share"><i class="fas fa-share-alt"></i></div></a>
-					</div>
-					<div class="right-buttons">
-						<a onclick="showMessage();"><div class="option-button">Show</div></a>
-					</div>
-				</div>
-			</div>
-			<div id="stageOptions" class="options-container stage">
-				<div class="options-header">
-					<a onclick="$('#stageOptions').hide();"><div class="options-close"><i class="fas fa-times-circle"></i></div></a>
-					<div class="options-name">Stage</div>
-				</div>
-				<div class="options-content">
-					<div id="stage-screens" class="stage-screen-container">
-					</div>
-					<div class="stage-message-title">Stage Message</div>
-					<input id="stage-message" class="text-input stage-message" type="text" />
-				</div>
-				<div class="options-footer">
-					<div class="left-buttons">
-						<a onclick="clearStageMessage();"><div class="option-button">Clear</div></a>
-					</div>
-					<div class="right-buttons">
-						<a onclick="hideStageMessage();"><div class="option-button">Hide</div></a>
-						<a onclick="showStageMessage();"><div class="option-button">Show</div></a>
-					</div>
-				</div>
-			</div>
-			<div class="settings-controls">
-				<div class="control-container"><a onclick="displaySettings();"><div class="control-button"><i class="fas fa-cog"></i></div></a><div class="control-text">Settings</div></div>
-			</div>
-			<div id="settings" class="options-container settings">
-				<div class="options-header">
-					<a onclick="$('#settings').hide();"><div class="options-close"><i class="fas fa-times-circle"></i></div></a>
-					<div class="options-name">Settings</div>
-				</div>
-				<div class="options-content">
-					<div class="settings-row">
-						<div class="row-action"><input id="continuousPlaylist-checkbox" onchange="toggleContinuousPlaylist(this);" type="checkbox"/></div>
-						<div class="row-name">
-							<div class="row-text">Continuous Playlist</div>
-							<div class="row-desc">Allow continuous scroll through playlist items.</div>
-						</div>
-					</div>
-					<div class="settings-row">
-						<div class="row-action"><input id="retrieveEntireLibrary-checkbox" onchange="toggleRetrieveEntireLibrary(this);" type="checkbox"/></div>
-						<div class="row-name">
-							<div class="row-text">Retrieve Entire Library on Load</div>
-							<div class="row-desc">If ticked, entire Library will be downloaded upon connection to speed up the experience.  If you are having issues with ProPresenter crashing on connection, uncheck this feature.</div>
-						</div>
-					</div>
-					<div class="settings-row">
-						<div class="row-action"><input id="forceSlides-checkbox" onchange="toggleForceSlides(this);" type="checkbox"/></div>
-						<div class="row-name">
-							<div class="row-text">Force Next/Previous Slide</div>
-							<div class="row-desc">If a presentation from a different location (Library/Playlist) than the previous presentation is selected remotely, ProPresenter will default to the previous presentation on next/previous slide.  Check this feature to force progression using the remotely-selected presentation.</div>
-						</div>
-					</div>
-					<div style="display: none;" class="settings-row">
-						<div class="row-action"><input id="followProPresenter-checkbox" onchange="toggleFollowProPresenter(this);" type="checkbox"/></div>
-						<div class="row-name">
-							<div class="row-text">Follow ProPresenter Presentation</div>
-							<div class="row-desc">By default, presentations will be automatically changed to follow along with ProPresenter.  Uncheck this feature to ignore presentation changes in ProPresenter.</div>
-						</div>
-					</div>
-					<div style="display: none;" class="settings-row">
-						<div class="row-action"><input id="advancedLiveDisplay-checkbox" onchange="toggleAdvancedLiveDisplay(this);" type="checkbox"/></div>
-						<div class="row-name">
-							<div class="row-text">Enable Advanced Live Display</div>
-							<div class="row-desc">By default, the live display only displays a static image representing the presentation.  Check this feature to utilise ProPresenter's network Stage Display protocol to show a current stream of the live slide as the live display.</div>
-						</div>
-					</div>
-					<div class="settings-row">
-						<div class="row-action"><input id="useCookies-checkbox" onchange="toggleUseCookies(this);" type="checkbox"/></div>
-						<div class="row-name">
-							<div class="row-text">Save Browser Cookies</div>
-							<div class="row-desc">If ticked, browser cookies will be saved to retain user preferences between sessions.  If you do not want to retain user preferences, uncheck this feature.</div>
-						</div>
-					</div>
-					<div class="settings-separator"></div>
-					<div class="settings-row">
-						<div class="row-name">
-							<div class="row-text">About ProWebRemote</div>
-							<div class="row-desc">Ver 1.2 | by Luke Bradtke<br><br>ProWebRemote is a web-based ProPresenter remote access tool that allows for simple control of ProPresenter from anywhere on the network.</div>
-						</div>
-					</div>
-				</div>
-				<div class="options-footer">
-					<a onclick="window.location.reload();"><div class="option-button">Restart ProWebRemote</div></a>
-				</div>
-			</div>
-		</div>
-		<div class="footer">
-			<div class="status">
-				<div class="connected sub-status">
-					<div class="text">Connected</div>
-				</div>
-				<div class="disconnected sub-status">
-					<div class="text">Connecting</div>
-					<div class="loader">
-						<div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
-					</div>
-				</div>
-				<div class="downloading-library sub-status">
-					<div class="text">Downloading Library Data</div>
-					<div class="loader">
-						<div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
-					</div>
-				</div>
-				<div class="downloading-playlist sub-status">
-					<div class="text">Downloading Playlist Data</div>
-					<div class="loader">
-						<div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
-					</div>
-				</div>
-				<div class="downloading-audio sub-status">
-					<div class="text">Downloading Audio Data</div>
-					<div class="loader">
-						<div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+                                        </a>
+                                        <a id="clear-messages" onclick="clearMessages();">
+                                            <div class="bordered"><img src="img/clearmessage.png" />
+                                                <div class="clear-name">Clear Messages</div>
+                                            </div>
+                                        </a>
+                                        <a id="clear-props" onclick="clearProps();">
+                                            <div class="bordered"><img src="img/clearprops.png" />
+                                                <div class="clear-name">Clear Props</div>
+                                            </div>
+                                        </a>
+                                        <a id="clear-announcements" onclick="clearAnnouncements();">
+                                            <div class="bordered"><img src="img/clearannouncements.png" />
+                                                <div class="clear-name">Clear Announcements</div>
+                                            </div>
+
+                                        </a>
+                                        <a id="clear-slide" onclick="clearSlide();">
+                                            <div class="bordered"><img src="img/clearslide.png" />
+                                                <div class="clear-name">Clear Slide</div>
+                                            </div>
+
+                                        </a>
+                                        <a id="clear-media" onclick="clearMedia();">
+                                            <div class="bordered"><img src="img/clearmedia.png" />
+                                                <div class="clear-name">Clear Media</div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="right-sub">
+                        <div class="playback segment">
+                            <div class="bottom dark">
+                                <div class="segment-header padded segment">
+                                    <div class="playback-controls">
+                                        <a onclick="focusTimelineControls();"><img id="control-slide" src="img/slideblue.png" /></a>
+                                        <a onclick="focusAudioControls();"><img id="control-audio" src="img/clearaudio.png" /></a>
+                                    </div>
+                                </div>
+                                <div class="content">
+                                    <div id="timeline-controls" class="timeline-controls">
+                                        <div class="current playing-timeline"></div>
+                                        <a onclick="toggleTimelinePlayPause();">
+                                            <div class="play"><i id="timeline-status" class="disabled fas fa-play"></i></div>
+                                        </a>
+                                    </div>
+                                    <div id="audio-controls" class="audio-controls">
+                                        <div class="current playing-audio"></div>
+                                        <a onclick="toggleAudioPlayPause();">
+                                            <div class="play"><i id="audio-status" class="disabled fas fa-play"></i></div>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="audio segment">
+                            <div class="top light">
+                                <div class="audio">
+                                    <div class="segment-header padded">
+                                        <h5>Audio</h5>
+                                        <a onclick="getAudioPlaylists();"><i class="fas fa-redo-alt"></i></a>
+                                    </div>
+                                    <div id="audio-content" class="content">
+                                        <h5 style="margin-left: 20px">Connect to ProPresenter to see Audio Playlists</h5>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bottom dark">
+                                <div class="segment-header padded segment">
+                                    <h5 id="right-count" class="count"></h5>
+                                </div>
+                                <div id="audio-items" class="content">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="presentations" class="middle">
+            </div>
+            <div class="middle-footer">
+                <div class="slide-size">
+                    <input id="slide-size" type="range" min="0" max="28">
+                </div>
+            </div>
+        </div>
+        <div class="header">
+            <div class="menu-opener"><a onclick="openSideMenu();"><i class="fas fa-bars"></i></a></div>
+            <div class="logo">
+                <a onclick="window.location.reload()"><img src="img/logo.png" /></a>
+            </div>
+            <div class="window-title">ProPresenter Web Remote</div>
+            <div class="producer-controls">
+                <div class="control-container">
+                    <a onclick="displayTimerOptions();">
+                        <div class="control-button"><img src="img/timers.png" /></div>
+                    </a>
+                    <div class="control-text">Timers</div>
+                </div>
+                <div class="control-container">
+                    <a onclick="displayMessageOptions();">
+                        <div class="control-button"><img src="img/messages.png" /></div>
+                    </a>
+                    <div class="control-text">Messages</div>
+                </div>
+                <div class="control-container">
+                    <a onclick="displayStageOptions();">
+                        <div class="control-button"><img src="img/stage.png" /></div>
+                    </a>
+                    <div class="control-text">Stage</div>
+                </div>
+            </div>
+            <div id="timerOptions" class="options-container timers">
+                <div class="options-header">
+                    <a onclick="$('#timerOptions').hide();">
+                        <div class="options-close"><i class="fas fa-times-circle"></i></div>
+                    </a>
+                    <div class="options-name">Timers</div>
+                    <a onclick="getClocks();"><i class="refresh fas fa-redo-alt"></i></a>
+                </div>
+                <div id="timer-content" class="options-content">
+                    <h3 style="margin: 0px; padding: 20px;">Connect to ProPresenter to see Timers</h3>
+                </div>
+                <div class="options-footer">
+                    <a onclick="stopAllClocks();">
+                        <div class="option-button">Stop All</div>
+                    </a>
+                    <a onclick="resetAllClocks();">
+                        <div class="option-button">Reset All</div>
+                    </a>
+                    <a onclick="startAllClocks();">
+                        <div class="option-button">Start All</div>
+                    </a>
+                </div>
+            </div>
+            <div id="messageOptions" class="options-container messages">
+                <div class="options-header">
+                    <a onclick="$('#messageOptions').hide();">
+                        <div class="options-close"><i class="fas fa-times-circle"></i></div>
+                    </a>
+                    <div class="options-name">Messages</div>
+                </div>
+                <div id="message-content" class="options-content">
+                    <div class="message name-container">
+                        <a onclick="displayMessage(this);">
+                            <div class="message-name">Child Needs Attention</div>
+                        </a>
+                        <a onclick="displayMessage(this);">
+                            <div class="message-name">Countdown to Service</div>
+                        </a>
+                    </div>
+                    <div class="message attribute-container">
+                        <div class="message-attribute">
+                            <div class="attribute-name">Name</div>
+                            <input class="text-input attribute-data" />
+                        </div>
+                        <div class="message-attribute">
+                            <div class="attribute-name">Room</div>
+                            <input class="text-input attribute-data" />
+                        </div>
+                    </div>
+                </div>
+                <div class="options-footer">
+                    <div class="message name-footer">
+                        <a onclick="webMessages();">
+                            <div class="option-button messages-share"><i class="fas fa-share-alt"></i></div>
+                        </a>
+                    </div>
+                    <div class="right-buttons">
+                        <a onclick="showMessage();">
+                            <div class="option-button">Show</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div id="stageOptions" class="options-container stage">
+                <div class="options-header">
+                    <a onclick="$('#stageOptions').hide();">
+                        <div class="options-close"><i class="fas fa-times-circle"></i></div>
+                    </a>
+                    <div class="options-name">Stage</div>
+                </div>
+                <div class="options-content">
+                    <div id="stage-screens" class="stage-screen-container">
+                    </div>
+                    <div class="stage-message-title">Stage Message</div>
+                    <input id="stage-message" class="text-input stage-message" type="text" />
+                </div>
+                <div class="options-footer">
+                    <div class="left-buttons">
+                        <a onclick="clearStageMessage();">
+                            <div class="option-button">Clear</div>
+                        </a>
+                    </div>
+                    <div class="right-buttons">
+                        <a onclick="hideStageMessage();">
+                            <div class="option-button">Hide</div>
+                        </a>
+                        <a onclick="showStageMessage();">
+                            <div class="option-button">Show</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="settings-controls">
+                <div class="control-container">
+                    <a onclick="displaySettings();">
+                        <div class="control-button"><i class="fas fa-cog"></i></div>
+                    </a>
+                    <div class="control-text">Settings</div>
+                </div>
+            </div>
+            <div id="settings" class="options-container settings">
+                <div class="options-header">
+                    <a onclick="$('#settings').hide();">
+                        <div class="options-close"><i class="fas fa-times-circle"></i></div>
+                    </a>
+                    <div class="options-name">Settings</div>
+                </div>
+                <div class="options-content">
+                    <div class="settings-row">
+                        <div class="row-action"><input id="continuousPlaylist-checkbox" onchange="toggleContinuousPlaylist(this);" type="checkbox" /></div>
+                        <div class="row-name">
+                            <div class="row-text">Continuous Playlist</div>
+                            <div class="row-desc">Allow continuous scroll through playlist items.</div>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="row-action"><input id="retrieveEntireLibrary-checkbox" onchange="toggleRetrieveEntireLibrary(this);" type="checkbox" /></div>
+                        <div class="row-name">
+                            <div class="row-text">Retrieve Entire Library on Load</div>
+                            <div class="row-desc">If ticked, entire Library will be downloaded upon connection to speed up the experience. If you are having issues with ProPresenter crashing on connection, uncheck this feature.</div>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="row-action"><input id="forceSlides-checkbox" onchange="toggleForceSlides(this);" type="checkbox" /></div>
+                        <div class="row-name">
+                            <div class="row-text">Force Next/Previous Slide</div>
+                            <div class="row-desc">If a presentation from a different location (Library/Playlist) than the previous presentation is selected remotely, ProPresenter will default to the previous presentation on next/previous slide. Check this feature to force
+                                progression using the remotely-selected presentation.</div>
+                        </div>
+                    </div>
+                    <div style="display: none;" class="settings-row">
+                        <div class="row-action"><input id="followProPresenter-checkbox" onchange="toggleFollowProPresenter(this);" type="checkbox" /></div>
+                        <div class="row-name">
+                            <div class="row-text">Follow ProPresenter Presentation</div>
+                            <div class="row-desc">By default, presentations will be automatically changed to follow along with ProPresenter. Uncheck this feature to ignore presentation changes in ProPresenter.</div>
+                        </div>
+                    </div>
+                    <div style="display: none;" class="settings-row">
+                        <div class="row-action"><input id="advancedLiveDisplay-checkbox" onchange="toggleAdvancedLiveDisplay(this);" type="checkbox" /></div>
+                        <div class="row-name">
+                            <div class="row-text">Enable Advanced Live Display</div>
+                            <div class="row-desc">By default, the live display only displays a static image representing the presentation. Check this feature to utilise ProPresenter's network Stage Display protocol to show a current stream of the live slide as the live display.</div>
+                        </div>
+                    </div>
+                    <div class="settings-row">
+                        <div class="row-action"><input id="useCookies-checkbox" onchange="toggleUseCookies(this);" type="checkbox" /></div>
+                        <div class="row-name">
+                            <div class="row-text">Save Browser Cookies</div>
+                            <div class="row-desc">If ticked, browser cookies will be saved to retain user preferences between sessions. If you do not want to retain user preferences, uncheck this feature.</div>
+                        </div>
+                    </div>
+                    <div class="settings-separator"></div>
+                    <div class="settings-row">
+                        <div class="row-name">
+                            <div class="row-text">About ProWebRemote</div>
+                            <div class="row-desc">Ver 1.2 | by Luke Bradtke<br><br>ProWebRemote is a web-based ProPresenter remote access tool that allows for simple control of ProPresenter from anywhere on the network.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="options-footer">
+                    <a onclick="window.location.reload();">
+                        <div class="option-button">Restart ProWebRemote</div>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="footer">
+            <div id="status">
+                <div class="connected sub-status">
+                    <div class="text">Connected</div>
+                </div>
+                <div class="disconnected sub-status">
+                    <div class="text">Connecting</div>
+                </div>
+                <div class="downloading-library sub-status">
+                    <div class="text">Downloading Library Data</div>
+                </div>
+                <div class="downloading-playlist sub-status">
+                    <div class="text">Downloading Playlist Data</div>
+                </div>
+                <div class="downloading-audio sub-status">
+                    <div class="text">Downloading Audio Data</div>
+                </div>
+                <div class="loader">
+                    <div class="lds-spinner">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
