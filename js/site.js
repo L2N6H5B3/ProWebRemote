@@ -30,7 +30,7 @@ var libraryRequests = [];
 var playlistRequests = [];
 var audioRequests = [];
 var initialPresentationLocation;
-var slideSize = 9;
+var slideCols = 3;
 var wsUri = "ws://" + host + ":" + port;
 var wsStageUri = "ws://" + host + ":" + port;
 var resetTimeout;
@@ -442,17 +442,17 @@ function setUseCookiesCookie(boolean) {
     setCookie("useCookies", boolean, 90);
 }
 
-function getSlideSizeCookie() {
-    if (checkCookie("slideSize") && useCookies) {
-        slideSize = parseInt(getCookie("slideSize"));
-        document.getElementById("slide-size").value = parseInt(getCookie("slideSize"));
+function getslideColsCookie() {
+    if (checkCookie("slideCols") && useCookies) {
+        slideCols = parseInt(getCookie("slideCols"));
+        document.getElementById("slide-cols").value = (parseInt(document.getElementById("slide-cols").max)+1) - parseInt(getCookie("slideCols"));
     } else {
-        document.getElementById("slide-size").value = slideSize;
+        document.getElementById("slide-cols").value = (parseInt(document.getElementById("slide-cols").max)+1) - slideCols;
     }
 }
 
-function setSlideSizeCookie(int) {
-    setCookie("slideSize", int, 90);
+function setslideColsCookie(int) {
+    setCookie("slideCols", int, 90);
 }
 
 // End Settings Functions
@@ -2032,7 +2032,7 @@ function displayPresentation(obj) {
                                             $(this.groupSlides).each(
                                                 function() {
                                                     // Add the slide to the presentation data
-                                                    presentationData += '<div id="slide' + count + '.' + presentationPath + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + presentationPath + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div>';
+                                                    presentationData += '<div class="slide-sizer"><div id="slide' + count + '.' + presentationPath + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + presentationPath + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div></div>';
                                                     // Increase the slide count
                                                     count++;
                                                 }
@@ -2073,7 +2073,7 @@ function displayPresentation(obj) {
                                             $(this.groupSlides).each(
                                                 function() {
                                                     // Add the slide to the presentation data
-                                                    presentationData += '<div id="slide' + count + '.' + presentationPath + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + presentationPath + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div>';
+                                                    presentationData += '<div class="slide-sizer"><div id="slide' + count + '.' + presentationPath + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + presentationPath + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div></div>';
                                                     // Increase the slide count
                                                     count++;
                                                 }
@@ -2292,7 +2292,7 @@ function displayPresentation(obj) {
                                         $(this.groupSlides).each(
                                             function() {
                                                 // Add the slide to the presentation data
-                                                presentationData += '<div id="slide' + count + '.' + location + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + location + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div>';
+                                                presentationData += '<div class="slide-sizer"><div id="slide' + count + '.' + location + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + location + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div></div>';
                                                 // Increase the slide count
                                                 count++;
                                             }
@@ -2323,8 +2323,8 @@ function displayPresentation(obj) {
         // Hide the left menu - MOBILE ONLY
         document.getElementById("sections").style.width = "0";
 
-        // Set the slide size
-        setSlideSize(slideSize);
+        // Set the slide columns
+        setslideCols(slideCols);
     }
 
     // If the request is from ProPresenter
@@ -2365,8 +2365,8 @@ function getRGBValue(int) {
     return Math.round(255 * int);
 }
 
-function setSlideSize(int) {
-    $(".slide img").width((int + 8) + "em");
+function setslideCols(int) {
+    $(".slide-sizer").width("calc(calc(100% - 2px) / "+int+")");
 }
 
 function SortPresentationByName(a, b) {
@@ -2553,7 +2553,7 @@ function initialise() {
     getForceSlidesCookie();
     getFollowProPresenterCookie();
     getUseCookiesCookie();
-    getSlideSizeCookie();
+    getslideColsCookie();
 
     // Add listener for action keys
     window.addEventListener('keydown', function(e) {
@@ -2629,19 +2629,15 @@ function initialise() {
     // Make images non-draggable
     $("img").attr('draggable', false);
 
-    // Add listener for slide size slider
-    document.getElementById("slide-size").addEventListener('input',
+    // Add listener for slide columns slider
+    document.getElementById("slide-cols").addEventListener('input',
         function(s) {
-            // Get proper size
-            slideSize = parseInt(this.value);
-            // Check if size is large enough to enlargen at a higher rate
-            if (slideSize > 18) {
-                slideSize = slideSize + (slideSize - 18);
-            }
-            // Set slide size
-            setSlideSize(slideSize);
-            // Set slide size cookie
-            setSlideSizeCookie(slideSize);
+            // Get slide columns
+            slideCols = (parseInt(document.getElementById("slide-cols").max)+1) - parseInt(this.value);
+            // Set slide columns
+            setslideCols(slideCols);
+            // Set slide columns cookie
+            setslideColsCookie(slideCols);
         }, false
     );
     // Prevent typing into inputs from affecting the slide progression
