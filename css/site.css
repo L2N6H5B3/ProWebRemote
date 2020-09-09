@@ -58,6 +58,45 @@ select {
     transform: translate(-50%, -50%);
 }
 
+.host-container {
+    display: none;
+}
+
+.authenticate div {
+    margin: 10px auto;
+}
+
+.authenticate a {
+    display: inline-block;
+    background-image: linear-gradient(to bottom right, #fec730, #fa8c3d);
+    padding: 4px 6px;
+    border-radius: 4px;
+    color: #fff;
+    font-weight: 500;
+    margin-top: 10px;
+}
+
+.authenticate label {
+    width: 80px;
+    display: inline-block;
+    text-align: right;
+    font-size: 14px;
+    color: #DDD;
+}
+
+.authenticate input {
+    background-color: #262626;
+    border: 1px solid #363636;
+    color: #e4e4e4;
+}
+
+.connecting-loader a {
+    display: inline-block;
+    font-size: 12px;
+    color: #999;
+    padding: 10px 14px;
+}
+
 .container {
     position: relative;
     height: 100%;

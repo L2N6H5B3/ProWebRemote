@@ -13,6 +13,8 @@ var forceSlides = false;
 var followProPresenter = true;
 var advancedLiveDisplay = false;
 var useCookies = true;
+var mustAuthenticate = true;
+var changeHost = true;
 
 // Application
 var authenticated = false;
@@ -32,7 +34,7 @@ var audioRequests = [];
 var messageList = [];
 var initialPresentationLocation;
 var slideCols = 3;
-var wsUri = "ws://" + host + ":" + port;
+var wsUri;
 var wsStageUri = "ws://" + host + ":" + port;
 var resetTimeout;
 var refresh = true;
@@ -47,8 +49,16 @@ var previousPresentationRequest = false;
 // WebSocket Functions
 
 function connect() {
+    // Hide authenticate segment
+    $("#authenticate").hide();
+    // Display connecting to host text
+    $("#connecting-to").text("Connecting to "+host);
+    // Fade-in the loader and text
+    $("#connecting-loader").fadeIn();
     // Show disconnected status
     $("#status").attr("class", "disconnected");
+    // Set WebSocket uri
+    wsUri = "ws://"+host+":"+port;
     remoteWebSocket = new WebSocket(wsUri + "/remote");
     remoteWebSocket.onopen = function(evt) { onOpen(evt) };
     remoteWebSocket.onclose = function(evt) { onClose(evt) };
@@ -2930,12 +2940,19 @@ function closeSideMenu() {
 
 // Initialisation Functions
 
-function initialise() {
+function authenticate() {
+    host = document.getElementById("host").value;
+    pass = document.getElementById("password").value;
+    connect();
+}
 
-    // Display connecting to host text
-    $("#connecting-to").text("Connecting to "+host);
+function cancelAuthenticate() {
     // Fade-in the loader and text
-    $("#connecting-loader").fadeIn();
+    $("#connecting-loader").hide();
+    $("#authenticate").fadeIn("200");
+}
+
+function initialise() {
 
     // Check if device is running iOS
     checkIOS();
@@ -3045,7 +3062,31 @@ function initialise() {
 // When document is ready
 $(document).ready(function() {
     initialise();
-    connect();
+    // If user must authenticate
+    if (mustAuthenticate) {
+        if (changeHost) {
+            $(".host-container").show();
+        }
+        document.getElementById("host").value = host;
+        document.getElementById("password").value = pass;
+        document.getElementById("host").addEventListener('keypress',
+            function (e) {
+                if (e.key === 'Enter') {
+                    authenticate();
+                }
+            }
+        );
+        document.getElementById("password").addEventListener('keypress',
+            function (e) {
+                if (e.key === 'Enter') {
+                    authenticate();
+                }
+            }
+        );
+        $("#authenticate").show();
+    } else {
+        connect();
+    }
 });
 
 // End Initialisation Functions
