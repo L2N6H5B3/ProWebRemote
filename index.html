@@ -1,5 +1,4 @@
 <!DOCTYPE HTML>
-
 <head>
     <!-- Set UTF-8 Character Set -->
     <meta charset="utf-8" />
@@ -18,26 +17,42 @@
     <!-- Set App Start Path-->
     <meta name="msapplication-starturl" content="/">
 
+    <!-- Set App Manifest -->
+    <link rel="manifest" href="img/site.webmanifest">
+    <!-- Set App Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="img/android-chrome-192x192.png">
+    <link rel="apple-touch-icon" type="image/png" sizes="192x192" href="img/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="img/android-chrome-512x512.png">
+    <link rel="apple-touch-icon" type="image/png" sizes="512x512" href="img/android-chrome-512x512.png">
+    <link rel="icon" type="image/png" sizes="180x180" href="img/apple-touch-icon.png">
+    <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="img/apple-touch-icon.png">
+
     <!-- Load Font Awesome -->
     <link rel="stylesheet" href="fa/css/all.css">
     <!-- Load Roboto Font -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
     <!-- Load Site CSS -->
-    <link rel="stylesheet" href="css/site.css?v=2.4">
+    <link rel="stylesheet" href="css/site.css?v=4.3">
     <!-- Load JQuery -->
     <script type="application/javascript" src="js/jquery-3.5.1.min.js"></script>
     <!-- Load Site JS -->
-    <script type="application/javascript" src="js/site.js?v=2.4"></script>
-
-    <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png">
-    <link rel="manifest" href="img/site.webmanifest">
+    <script type="application/javascript" src="js/site.js?v=4.3"></script>
 
     <title>ProPresenter Web Remote</title>
 </head>
 
 <body>
+    <div class="loading">
+        <div class="loading-internal animated animatedFadeInUp fadeInUp">
+            <div class="loading-img">
+                <img src="img/logo.png">
+                <div id="connecting-loader" class="connecting-loader">
+                    <div class="connecting-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+                    <div class="connecting-to" id="connecting-to"></div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="container">
         <div class="main">
             <div class="sections" id="sections">
@@ -80,7 +95,9 @@
                     <div class="screens">
                         <div class="preview">
                             <div class="content">
-                                <div id="live" class="live"></div>
+                                <div class="live-container">
+                                    <div id="live"></div>
+                                </div>
                                 <div class="clear">
                                     <div class="icons">
                                         <a id="clear-all" onclick="clearAll();">
@@ -189,24 +206,24 @@
             </div>
             <div class="window-title">ProPresenter Web Remote</div>
             <div class="producer-controls">
-                <div class="control-container">
-                    <a onclick="displayTimerOptions();">
+                <a onclick="displayTimerOptions();">
+                    <div class="control-container">
                         <div class="control-button"><img src="img/timers.png" /></div>
-                    </a>
-                    <div class="control-text">Timers</div>
-                </div>
-                <div class="control-container">
-                    <a onclick="displayMessageOptions();">
+                        <div class="control-text">Timers</div>
+                    </div>
+                </a>
+                <a onclick="displayMessageOptions();">
+                    <div class="control-container">
                         <div class="control-button"><img src="img/messages.png" /></div>
-                    </a>
-                    <div class="control-text">Messages</div>
-                </div>
-                <div class="control-container">
-                    <a onclick="displayStageOptions();">
+                        <div class="control-text">Messages</div>
+                    </div>
+                </a>
+                <a onclick="displayStageOptions();">
+                    <div class="control-container">
                         <div class="control-button"><img src="img/stage.png" /></div>
-                    </a>
-                    <div class="control-text">Stage</div>
-                </div>
+                        <div class="control-text">Stage</div>
+                    </div>
+                </a>
             </div>
             <div id="timerOptions" class="options-container timers">
                 <div class="options-header">
@@ -238,16 +255,22 @@
                     </a>
                     <div class="options-name">Messages</div>
                 </div>
-                <div id="message-content" class="options-content">
-                    <div class="message name-container">
+                <div class="options-content">
+                    <div id="messages" class="message name-container">
                         <a onclick="displayMessage(this);">
-                            <div class="message-name">Child Needs Attention</div>
+                            <div id="message.1" class="message-info">
+                                <div class="message-name">Child Needs Attention</div>
+                                <a onclick="hideMessage(this);"><div class="message-clear"><i class="fas fa-times-circle"></i></div></a>
+                            </div>
                         </a>
                         <a onclick="displayMessage(this);">
-                            <div class="message-name">Countdown to Service</div>
+                            <div id="message.2" class="message-info displayed">
+                                <div class="message-name">Countdown to Service</div>
+                                <a onclick="hideMessage(this);"><div class="message-clear"><i class="fas fa-times-circle"></i></div></a>
+                            </div>
                         </a>
                     </div>
-                    <div class="message attribute-container">
+                    <div id="message-content" class="message attribute-container">
                         <div class="message-attribute">
                             <div class="attribute-name">Name</div>
                             <input class="text-input attribute-data" />
@@ -301,12 +324,12 @@
                 </div>
             </div>
             <div class="settings-controls">
-                <div class="control-container">
-                    <a onclick="displaySettings();">
+                <a onclick="displaySettings();">
+                    <div class="control-container">
                         <div class="control-button"><i class="fas fa-cog"></i></div>
-                    </a>
-                    <div class="control-text">Settings</div>
-                </div>
+                        <div class="control-text">Settings</div>
+                    </div>
+                </a>
             </div>
             <div id="settings" class="options-container settings">
                 <div class="options-header">
@@ -377,7 +400,7 @@
         <div class="footer">
             <div id="status">
                 <div class="connected sub-status">
-                    <div class="text">Connected</div>
+                    <div class="text">Connected <i class="fas fa-check-circle"></i></div>
                 </div>
                 <div class="disconnected sub-status">
                     <div class="text">Connecting</div>

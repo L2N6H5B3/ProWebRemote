@@ -34,10 +34,162 @@ select {
     color: #e5e5e5;
 }
 
+.loading {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    background-color: #000000;
+    text-align: center;
+    z-index: 1006;
+}
+
+.loading-internal {
+    width: 100%;
+    height: 100%;
+}
+
+.loading-img {
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
 .container {
     position: relative;
     height: 100%;
     min-height: 100%;
+}
+
+/* Animation */
+@keyframes fadeInUp {
+    from {
+        transform: translate3d(0,40px,0)
+    }
+
+    to {
+        transform: translate3d(0,0,0);
+        opacity: 1
+    }
+}
+
+@-webkit-keyframes fadeInUp {
+    from {
+        transform: translate3d(0,40px,0)
+    }
+
+    to {
+        transform: translate3d(0,0,0);
+        opacity: 1
+    }
+}
+
+.animated {
+    animation-duration: 1s;
+    animation-fill-mode: both;
+    -webkit-animation-duration: 1s;
+    -webkit-animation-fill-mode: both
+}
+
+.animatedFadeInUp {
+    opacity: 0
+}
+
+.fadeInUp {
+    opacity: 0;
+    animation-name: fadeInUp;
+    -webkit-animation-name: fadeInUp;
+}
+
+.connecting-loader {
+    display:none;
+}
+
+.connecting-to {
+    padding-top: 20px;
+    font-weight: 500;
+}
+
+.connecting-spinner {
+  color: official;
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.connecting-spinner div {
+  transform-origin: 40px 40px;
+  animation: connecting-spinner 1.2s linear infinite;
+}
+.connecting-spinner div:after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 3px;
+  left: 37px;
+  width: 6px;
+  height: 18px;
+  border-radius: 20%;
+  background: #fff;
+}
+.connecting-spinner div:nth-child(1) {
+  transform: rotate(0deg);
+  animation-delay: -1.1s;
+}
+.connecting-spinner div:nth-child(2) {
+  transform: rotate(30deg);
+  animation-delay: -1s;
+}
+.connecting-spinner div:nth-child(3) {
+  transform: rotate(60deg);
+  animation-delay: -0.9s;
+}
+.connecting-spinner div:nth-child(4) {
+  transform: rotate(90deg);
+  animation-delay: -0.8s;
+}
+.connecting-spinner div:nth-child(5) {
+  transform: rotate(120deg);
+  animation-delay: -0.7s;
+}
+.connecting-spinner div:nth-child(6) {
+  transform: rotate(150deg);
+  animation-delay: -0.6s;
+}
+.connecting-spinner div:nth-child(7) {
+  transform: rotate(180deg);
+  animation-delay: -0.5s;
+}
+.connecting-spinner div:nth-child(8) {
+  transform: rotate(210deg);
+  animation-delay: -0.4s;
+}
+.connecting-spinner div:nth-child(9) {
+  transform: rotate(240deg);
+  animation-delay: -0.3s;
+}
+.connecting-spinner div:nth-child(10) {
+  transform: rotate(270deg);
+  animation-delay: -0.2s;
+}
+.connecting-spinner div:nth-child(11) {
+  transform: rotate(300deg);
+  animation-delay: -0.1s;
+}
+.connecting-spinner div:nth-child(12) {
+  transform: rotate(330deg);
+  animation-delay: 0s;
+}
+@keyframes connecting-spinner {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 @media only screen and (min-width: 710px) {
@@ -88,14 +240,13 @@ select {
         position: relative;
     }
     .slide-size {
-        position: absolute;
-        right: 2px;
-        bottom: 5px;
+        float: right;
     }
     .slide-size input {
         height: 3px;
         background-color: #3b3b3b;
         border-radius: 5px;
+        vertical-align: middle;
     }
     .slide-size input:focus {
         border: none;
@@ -144,6 +295,7 @@ select {
         background-color: #404344;
         color: #c1c1c1;
         text-align: center;
+        z-index: 1;
     }
     .footer {
         position: absolute;
@@ -178,18 +330,16 @@ select {
     }
     .segment-header i {
         position: absolute;
-        top: 7px;
-        right: 5px;
+        top: 2px;
+        right: 0px;
         font-size: 12px;
         color: #acacac;
+        margin: 5px;
     }
     .segment-header.count {
         font-weight: normal;
         text-transform: uppercase;
         color: #e2e2e2;
-    }
-    .padded {
-        padding: 6px 10px 6px 10px;
     }
     .content {
         color: #e2e2e2;
@@ -293,14 +443,15 @@ select {
     .playlists {
         padding-bottom: 10px;
     }
-    .live {
+    .live-container {
         height: 200px;
-        padding-right: 70px;
+        padding-right: 68px;
         background-color: #2f2f2f;
+        display: flex;
+        align-items: center;
     }
-    .live img {
-        width: 216px;
-        margin-top: 38px;
+    .live-container img {
+        width: 100%;
     }
     .clear {
         display: inline-block;
@@ -359,6 +510,11 @@ select {
         font-size: 13px;
         border-bottom: 1px solid #333333;
         background-color: #121212;
+        width: 100%;
+        position: -webkit-sticky;
+        position: sticky;
+        top: 0px;
+        z-index: 1;
     }
     .presentation-content div {
         display: inline-block;
@@ -368,7 +524,8 @@ select {
         border: 1px solid #4e4e4e;
         border-radius: 2px;
         margin: 2px 2px 2px 2px;
-        width: calc(100% - 2px);
+        width: calc(100% - 6px);
+        background-color: #000000;
     }
     .slide img {
         width: 100%;
@@ -383,6 +540,10 @@ select {
     }
     .slide-sizer {
         width: calc(calc(100% - 2px) / 3);
+    }
+    .padded {
+        padding: 6px 10px 6px 10px;
+        width: calc(100% - 20px);
     }
     .media {
         font-size: 90px;
@@ -422,10 +583,10 @@ select {
         height: 150px;
     }
     .slide-container {
-        border: 2px solid #1e1e1e;
+        border: 2px solid transparent;
         border-radius: 4px;
         margin: 1px 1px 1px 1px;
-        width: calc(100% - 10px);
+        width: calc(100% - 6px);
     }
     .slide-container.selected {
         border: 2px solid #d4722b;
@@ -477,6 +638,11 @@ select {
         font-size: 11px;
         padding-top: 10px;
     }
+    .play {
+        display: inline-block;
+        padding: 6px 8px;
+        margin-top: -6px;
+    }
     div.play .disabled {
         color: #636363;
     }
@@ -490,7 +656,10 @@ select {
     }
     .producer-controls {
         width: 300px;
-        margin-top: 21px;
+        padding-top: 21px;
+        display: inline-block;
+    }
+    .producer-controls a {
         display: inline-block;
     }
     .control-container {
@@ -581,7 +750,7 @@ select {
         max-height: 16px;
     }
     .option-button:active,
-    .control-button:active {
+    .control-container:active .control-button {
         background-color: #2a7bec;
     }
     div.stage-message-title {
@@ -618,7 +787,7 @@ select {
     .timer-container div {
         display: inline-block;
     }
-    .timer-expand {
+    .timer-container .timer-expand {
         position: absolute;
         left: 0px;
         width: 20px;
@@ -626,7 +795,7 @@ select {
     .timer-expand .collapser {
         top: 18px;
     }
-    .timer-name {
+    .timer-container .timer-name {
         position: absolute;
         left: 20px;
         width: 170px;
@@ -643,12 +812,12 @@ select {
         overflow: hidden;
         text-overflow: ellipsis;
     }
-    .timer-type {
+    .timer-container .timer-type {
         position: absolute;
         left: 190px;
         width: 40px;
     }
-    .type-selected {
+    .timer-container .timer-type .type-selected {
         width: 40px;
         padding: 16px 0px;
     }
@@ -682,7 +851,7 @@ select {
         bottom: 2px;
         right: 2px;
     }
-    div.type-dropdown {
+    .timer-container div.type-dropdown {
         display: none;
         width: fit-content;
         padding: 5px 0px;
@@ -713,17 +882,22 @@ select {
         margin: 0px 4px 0px 4px;
         width: 14px;
     }
-    .row-name {
+    .dropdown-row .row-name {
         vertical-align: super;
         font-size: 15px;
         padding: 0px 4px;
+        white-space: nowrap;
+        color: #e7e7e7;
     }
-    div.timer-timeOptions {
+    .timer-container div.timer-timeOptions {
         position: absolute;
         left: 230px;
         width: 132px;
         padding: 13px 4px;
         text-align: left;
+        display: none;
+    }
+    .timer-container .timer-type .type-selected .row-name {
         display: none;
     }
     .timer-container.type-0 .type-0,
@@ -740,7 +914,7 @@ select {
         width: 62px;
         margin: 0px 2px;
     }
-    .timer-overrun {
+    .timer-container .timer-overrun {
         position: absolute;
         left: 370px;
         width: 60px;
@@ -751,7 +925,7 @@ select {
         font-size: 12px;
         text-align: center;
     }
-    .timer-reset {
+    .timer-container .timer-reset {
         position: absolute;
         left: 430px;
         width: 50px;
@@ -763,14 +937,14 @@ select {
     .timer-reset div {
         padding: 2px 1px;
     }
-    .timer-currentTime {
+    .timer-container .timer-currentTime {
         position: absolute;
         left: 480px;
         width: 90px;
         padding: 22px 0px;
         font-size: 14px;
     }
-    .timer-state {
+    .timer-container .timer-state {
         position: absolute;
         left: 570px;
         width: 80px;
@@ -806,24 +980,39 @@ select {
         width: 200px;
         height: 200px;
         background-color: #353635;
-        color: #ffffff
+        color: #ffffff;
+        overflow-y: auto;
     }
-    .message-name {
+    .message-info {
         text-align: left;
         font-size: 14px;
         padding: 5px 8px 5px 8px;
     }
-    .message-name.selected {
+    .message-info.selected {
         background-color: #2a7bec;
     }
-    .message-name.highlighted {
+    .message-info.highlighted {
         background-color: #595a59;
+    }
+    .message-name {
+        width: 166px;
+        display: inline-block;
+        text-overflow: ellipsis;
+    }
+    .message-clear {
+        float: right;
+        color: #a7a7a7;
+        display: none;
+    }
+    .message-info.displayed .message-clear {
+        display: block;
     }
     .message.attribute-container {
         background-color: #282828;
         float: right;
         width: 400px;
         height: 200px;
+        overflow-y: auto;
     }
     .message-attribute {
         border: 1px solid #808080;
@@ -840,20 +1029,140 @@ select {
         margin: 0px 7px;
         width: 100px;
         text-align: right;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        vertical-align: top;
+    }
+    .message-attribute.timer .attribute-name {
+        padding-top: 8px;
     }
     .message-attribute .attribute-data {
         width: 240px;
         border: 1px solid #434343;
         background-color: #333333;
     }
+    .message-attribute .attribute-timer {
+        width: 56px;
+        margin: 0px 2px;
+        text-align: center;
+        border: 1px solid #434343;
+        background-color: #333333;
+    }
+    .message-timer-container {
+        width: 250px;
+    }
+    .message-timer-container div.type-dropdown {
+        display: none;
+        width: min-content;
+        padding: 5px 0px;
+        border-radius: 10px;
+        border: 1px solid #4e4c50;
+        background-color: #353336;
+        position: absolute;
+        top: 0px;
+        left: -23px;
+        z-index: 999;
+        text-align: left;
+    }
+    .message-timer-container .timer-type {
+        position: relative;
+        display: block;
+    }
+
+    .message-timer-container .timer-type a {
+        display: inline-block;
+    }
+    .message-timer-container .timer-type .type-selected {
+        background-color: #5e5e5e;
+        border-radius: 4px;
+        color: #e7e7e7;
+        white-space: nowrap;
+    }
+    .message-timer-container .type-selected .row-name {
+        display:none;
+        vertical-align: super;
+        font-size: 13px;
+        padding: 0px 4px;
+        white-space: nowrap;
+    }
+    .message-timer-container .timer-type .selected-img,
+    .message-timer-container .timer-type .row-img {
+        width: 18px;
+        margin: 2px 2px 2px 6px;
+        vertical-align: top;
+    }
+    .message-timer-container .type-selected .selected-indicator {
+        color: #e7e7e7;
+        width: 10px;
+        height: 24px;
+        position: relative;
+        font-size: 12px;
+        vertical-align: text-bottom;
+    }
+    .message-timer-container div.timer-timeOptions {
+        padding: 4px 0px;
+        text-align: left;
+        display: none;
+    }
+    .message-timer-container.type-0 .type-0,
+    .message-timer-container.type-1 .type-1,
+    .message-timer-container.type-2 .type-2 {
+        display: inline-block;
+    }
+    .message-timer-container .element-title {
+        display: block;
+        font-size: 12px;
+        text-align: center;
+    }
+    .message-timer-container .timer-overrun input {
+        vertical-align: middle;
+    }
+    .message-timer-container .timer-timeOptions input {
+        width: 56px;
+        margin: 0px;
+        text-align: center;
+    }
+    div.message-timer-controls {
+        display: none;
+    }
+    div.message-timer-controls div {
+        text-align: center;
+    }
+    .message-timer-controls .timer-reset {
+        vertical-align: bottom;
+    }
+    .message-timer-controls .timer-state div {
+        padding: 2px 1px;
+    }
     .message-attribute:first-child {
         border-radius: 3px 3px 0px 0px;
-        border-bottom: 0px;
         margin-top: 6px;
     }
-    .message-attribute:last-child {
+    .message-preview {
         border-radius: 0px 0px 3px 3px;
-        margin-bottom: 6px;
+        border: 1px solid #808080;
+        padding: 11px 6px;
+        font-size: 13px;
+        margin-left: 6px;
+        margin-right: 6px;
+        text-align: left;
+    }
+    .message-preview div {
+        display: inline-block;
+    }
+    .message-preview .attribute-name {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    .message-preview .attribute-data {
+        margin: 10px;
+        display: block;
+        text-align: center;
+    }
+    .message-preview .attribute-item {
+        display: contents;
     }
     .message.name-footer {
         position: absolute;
@@ -892,6 +1201,9 @@ select {
         position: absolute;
         top: 22px;
         right: 10px;
+        display: inline-block;
+    }
+    .settings-controls a {
         display: inline-block;
     }
     .settings {
@@ -939,7 +1251,7 @@ select {
     }
     #status {
         position: absolute;
-        top: 2px;
+        top: 0px;
         right: 4px;
         white-space: nowrap;
     }
@@ -965,10 +1277,9 @@ select {
     }
     .text {
         position: relative;
-        font-size: 13px
-    }
-    .text {
+        font-size: 13px;
         display: inline-block;
+        vertical-align: bottom;
     }
     .lds-spinner {
         color: official;
@@ -1083,18 +1394,16 @@ select {
     }
     .segment-header i {
         position: absolute;
-        top: 7px;
-        right: 5px;
+        top: 2px;
+        right: 0px;
         font-size: 12px;
         color: #acacac;
+        margin: 5px;
     }
     .segment-header.count {
         font-weight: normal;
         text-transform: uppercase;
         color: #e2e2e2;
-    }
-    .padded {
-        padding: 6px 10px 6px 10px;
     }
     .content {
         color: #e2e2e2;
@@ -1172,12 +1481,16 @@ select {
     .playlists {
         padding-bottom: 10px;
     }
-    .live {
+    .live-container {
         display: none;
+        height: 200px;
+        padding-right: 68px;
+        background-color: #2f2f2f;
+        display: flex;
+        align-items: center;
     }
-    .live img {
-        width: 216px;
-        margin-top: 38px;
+    .live-container img {
+        width: 100%;
     }
     .clear {
         display: inline-block;
@@ -1232,6 +1545,11 @@ select {
         font-size: 13px;
         border-bottom: 1px solid #333333;
         background-color: #121212;
+        width: 100%;
+        position: -webkit-sticky;
+        position: sticky;
+        top: 0px;
+        z-index: 1;
     }
     .presentation-content div {
         display: inline-block;
@@ -1241,7 +1559,8 @@ select {
         border: 1px solid #4e4e4e;
         border-radius: 2px;
         margin: 2px 2px 2px 2px;
-        width: calc(100% - 2px);
+        width: calc(100% - 6px);
+        background-color: #000000;
     }
     .slide img {
         width: 100%;
@@ -1256,6 +1575,10 @@ select {
     }
     .slide-sizer {
         width: calc(calc(100% - 2px) / 3);
+    }
+    .padded {
+        padding: 6px 10px 6px 10px;
+        width: calc(100% - 20px);
     }
     .media {
         font-size: 90px;
@@ -1289,10 +1612,10 @@ select {
         height: 150px;
     }
     .slide-container {
-        border: 2px solid #1e1e1e;
+        border: 2px solid transparent;
         border-radius: 4px;
         margin: 1px 1px 1px 1px;
-        width: calc(100% - 10px);
+        width: calc(100% - 6px);
     }
     .slide-container.selected {
         border: 2px solid #d4722b;
@@ -1344,6 +1667,11 @@ select {
         font-size: 11px;
         padding-top: 10px;
     }
+    .play {
+        display: inline-block;
+        padding: 6px 8px;
+        margin-top: -6px;
+    }
     .disabled {
         color: #636363;
     }
@@ -1353,6 +1681,9 @@ select {
     .producer-controls {
         width: 300px;
         margin-top: 5px;
+        display: inline-block;
+    }
+    .producer-controls a {
         display: inline-block;
     }
     .control-container {
@@ -1401,6 +1732,7 @@ select {
         background-color: #404344;
         color: #c1c1c1;
         text-align: center;
+        z-index: 1;
     }
     .options-container {
         display: none;
@@ -1471,7 +1803,7 @@ select {
         max-height: 16px;
     }
     .option-button:active,
-    .control-button:active {
+    .control-container:active .control-button {
         background-color: #2a7bec;
     }
     div.stage-message-title {
@@ -1698,15 +2030,15 @@ select {
         background-color: #353635;
         color: #ffffff
     }
-    .message-name {
+    .message-info {
         text-align: left;
         font-size: 14px;
         padding: 5px 8px 5px 8px;
     }
-    .message-name.selected {
+    .message-info.selected {
         background-color: #2a7bec;
     }
-    .message-name.highlighted {
+    .message-info.highlighted {
         background-color: #595a59;
     }
     .message.attribute-container {
@@ -1784,6 +2116,9 @@ select {
         right: 10px;
         display: inline-block;
     }
+    .settings-controls a {
+        display: inline-block;
+    }
     .settings {
         width: 250px;
         position: absolute;
@@ -1840,7 +2175,7 @@ select {
     }
     #status {
         position: absolute;
-        top: 2px;
+        top: 0px;
         right: 4px;
         white-space: nowrap;
     }
@@ -1866,9 +2201,8 @@ select {
     }
     .text {
         position: relative;
-        font-size: 13px
-    }
-    .text {
+        font-size: 13px;
         display: inline-block;
+        vertical-align: bottom;
     }
 }
