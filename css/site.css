@@ -58,6 +58,10 @@ select {
     transform: translate(-50%, -50%);
 }
 
+.loading-img img {
+    width: 100%;
+}
+
 .host-container {
     display: none;
 }
@@ -68,7 +72,7 @@ select {
 
 .authenticate a {
     display: inline-block;
-    background-image: linear-gradient(to bottom right, #fec730, #fa8c3d);
+    background-image: linear-gradient(to bottom right, #3d88f9, #565eed);
     padding: 4px 6px;
     border-radius: 4px;
     color: #fff;
@@ -281,8 +285,28 @@ select {
         margin-right: 285px;
         position: relative;
     }
-    .slide-size {
+    .preview-options {
         float: right;
+    }
+    .preview-options div {
+        display: inline-block;
+    }
+    .preview-options div a {
+        padding: 0px 4px;
+        font-weight: 500;
+        color: #9a9a9a;
+    }
+    .display-options i {
+        border: 1px solid;
+        border-radius: 10px;
+        font-size: 14px;
+        padding: 1px;
+    }
+    .slide-display.view-1 .view-1, .slide-display.view-2 .view-2 {
+        color: #0e5ecd;
+    }
+    .preview-options div a:hover {
+        filter: brightness(150%);
     }
     .slide-size input {
         height: 3px;
@@ -571,6 +595,13 @@ select {
     }
     .slide img {
         width: 100%;
+        display: block;
+    }
+    .slide.imgView .slide-text {
+        display: none;
+    }
+    .slide.txtView img {
+        display: none;
     }
     .slide div {
         background-color: #6f6f6f;
@@ -579,6 +610,17 @@ select {
         display: block;
         font-weight: bold;
         position: relative;
+        overflow: hidden;
+        height: 18px;
+    }
+    .slide .slide-text {
+        min-height: 60px;
+        background-color: #000000;
+        font-size: 13px;
+        width: calc(100% - 2px);
+    }
+    .slide .slide-info {
+        white-space: nowrap;
     }
     .slide-sizer {
         width: calc(calc(100% - 2px) / 3);
@@ -2246,5 +2288,13 @@ select {
         font-size: 13px;
         display: inline-block;
         vertical-align: bottom;
+    }
+}
+
+@media only screen and (max-width: 580px) {
+    .authenticate label {
+        width: auto;
+        display: block;
+        text-align: center;]
     }
 }

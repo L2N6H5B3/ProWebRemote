@@ -19,7 +19,7 @@ var changeHost = true;
 // Application
 var authenticated = false;
 var stageAuthenticated = false;
-
+var retryConnection = true;
 var libraryList = [];
 var playlistList = [];
 var audioPlaylistList = [];
@@ -33,6 +33,7 @@ var playlistRequests = [];
 var audioRequests = [];
 var messageList = [];
 var initialPresentationLocation;
+var slideView = 1;
 var slideCols = 3;
 var wsUri;
 var wsStageUri = "ws://" + host + ":" + port;
@@ -97,6 +98,8 @@ function onMessage(evt) {
         }
         // Set as authenticated
         authenticated = true;
+        // Set retry connection to enabled
+        retryConnection = true;
         // Set loading data status
         $("#connecting-to").text("Loading Data");
         // Show connected status
@@ -332,10 +335,13 @@ function onClose(evt) {
     authenticated = false;
     // Show disconnected status
     $("#status").attr("class", "disconnected");
-    // Retry connection every second
-    setTimeout(function() {
-        connect();
-    }, 1000);
+    // If retry connection is enabled
+    if (retryConnection) {
+        // Retry connection every second
+        setTimeout(function() {
+            connect();
+        }, 1000);
+    }
 
     // Refresh library after 5 minutes of disconnection
     resetTimeout = setTimeout(function() {
@@ -477,7 +483,18 @@ function setUseCookiesCookie(boolean) {
     setCookie("useCookies", boolean, 90);
 }
 
-function getslideColsCookie() {
+function getSlideViewCookie() {
+    if (checkCookie("slideView") && useCookies) {
+        slideView = parseInt(getCookie("slideView"));
+    }
+    setSlideView(slideView);
+}
+
+function setSlideViewCookie(int) {
+    setCookie("slideView", int, 90);
+}
+
+function getSlideColsCookie() {
     if (checkCookie("slideCols") && useCookies) {
         slideCols = parseInt(getCookie("slideCols"));
         document.getElementById("slide-cols").value = (parseInt(document.getElementById("slide-cols").max)+1) - parseInt(getCookie("slideCols"));
@@ -486,7 +503,7 @@ function getslideColsCookie() {
     }
 }
 
-function setslideColsCookie(int) {
+function setSlideColsCookie(int) {
     setCookie("slideCols", int, 90);
 }
 
@@ -2384,7 +2401,7 @@ function displayPresentation(obj) {
                                             $(this.groupSlides).each(
                                                 function() {
                                                     // Add the slide to the presentation data
-                                                    presentationData += '<div class="slide-sizer"><div id="slide' + count + '.' + presentationPath + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + presentationPath + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div></div>';
+                                                    presentationData += '<div class="slide-sizer"><div id="slide' + count + '.' + presentationPath + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + presentationPath + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-text">'+this.slideText.replace(/[\r\n\x0B\x0C\u0085\u2028\u2029]+/g, "<br>")+'</div><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div></div>';
                                                     // Increase the slide count
                                                     count++;
                                                 }
@@ -2543,7 +2560,7 @@ function displayPresentation(obj) {
                                             $(this.groupSlides).each(
                                                 function() {
                                                     // Add the slide to the presentation data
-                                                    presentationData += '<div class="slide-sizer"><div id="slide' + count + '.' + presentationPath + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + presentationPath + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div></div>';
+                                                    presentationData += '<div class="slide-sizer"><div id="slide' + count + '.' + presentationPath + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + presentationPath + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-text">'+this.slideText.replace(/[\r\n\x0B\x0C\u0085\u2028\u2029]+/g, "<br>")+'</div><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div></div>';
                                                     // Increase the slide count
                                                     count++;
                                                 }
@@ -2668,7 +2685,7 @@ function displayPresentation(obj) {
                                         $(this.groupSlides).each(
                                             function() {
                                                 // Add the slide to the presentation data
-                                                presentationData += '<div class="slide-sizer"><div id="slide' + count + '.' + location + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + location + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div></div>';
+                                                presentationData += '<div class="slide-sizer"><div id="slide' + count + '.' + location + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + location + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-text">'+this.slideText.replace(/[\r\n\x0B\x0C\u0085\u2028\u2029]+/g, "<br>")+'</div><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div></div>';
                                                 // Increase the slide count
                                                 count++;
                                             }
@@ -2698,6 +2715,9 @@ function displayPresentation(obj) {
 
         // Hide the left menu - MOBILE ONLY
         document.getElementById("sections").style.width = "0";
+
+        // Set the slide view
+        setSlideView();
 
         // Set the slide columns
         setslideCols(slideCols);
@@ -2757,6 +2777,34 @@ function checkIOS() {
 
 function getRGBValue(int) {
     return Math.round(255 * int);
+}
+
+function setSlideView(int) {
+    // If this is a request including a new view
+    if (int != null) {
+        // Array of supported view types
+        var types = ["view-1", "view-2"];
+        // Remove all view types
+        $(".slide-display").removeClass(types);
+        // Add this view type
+        $(".slide-display").addClass("view-"+int);
+        // Set the slide view
+        slideView = int;
+        // Set the slide view cookie
+        setSlideViewCookie(int);
+    }
+
+    // Show the correct slide view
+    switch(slideView) {
+        case 1:
+            // Show the grid view
+            $(".slide").addClass("imgView").removeClass("txtView");
+            break;
+        case 2:
+            // Show the text view
+            $(".slide").addClass("txtView").removeClass("imgView");
+            break;
+    }
 }
 
 function setslideCols(int) {
@@ -2941,14 +2989,22 @@ function closeSideMenu() {
 // Initialisation Functions
 
 function authenticate() {
+    // Get the host from the input field
     host = document.getElementById("host").value;
+    // Get the host from the input field
     pass = document.getElementById("password").value;
+    // Try connecting
     connect();
 }
 
 function cancelAuthenticate() {
-    // Fade-in the loader and text
+    // Set retry connection to disabled
+    retryConnection = false;
+    // End the WebSocket connection
+    remoteWebSocket.close();
+    // Fade-out the loader and text
     $("#connecting-loader").hide();
+    // Fade-in authenticate segment
     $("#authenticate").fadeIn("200");
 }
 
@@ -2963,7 +3019,8 @@ function initialise() {
     getForceSlidesCookie();
     getFollowProPresenterCookie();
     getUseCookiesCookie();
-    getslideColsCookie();
+    getSlideViewCookie();
+    getSlideColsCookie();
 
     // Add listener for action keys
     window.addEventListener('keydown', function(e) {
@@ -3054,7 +3111,7 @@ function initialise() {
             // Set slide columns
             setslideCols(slideCols);
             // Set slide columns cookie
-            setslideColsCookie(slideCols);
+            setSlideColsCookie(slideCols);
         }, false
     );
 }
