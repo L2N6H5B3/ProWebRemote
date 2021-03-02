@@ -1,10 +1,9 @@
 // Variables
 
 // Connection
-var host = "10.1.1.33";
+var host = "10.1.1.63";
 var port = "50000";
 var pass = "control";
-var stagePass = "stage";
 
 // User Preference
 var continuousPlaylist = true;
@@ -36,6 +35,7 @@ var slideView = 1;
 var slideCols = 3;
 var wsUri;
 var resetTimeout;
+var serverIsWindows;
 var refresh = true;
 var inputTyping = false;
 var stageMessageTyping = false;
@@ -73,7 +73,7 @@ function onOpen(evt) {
 
 function onMessage(evt) {
     var obj = JSON.parse(evt.data);
-    // console.log("Message: " + evt.data);
+    console.log(evt.data);
 
     if (obj.action == "authenticate" && obj.authenticated == "1" && authenticated == false) {
         // If the data is stale
@@ -102,6 +102,14 @@ function onMessage(evt) {
         // Start receiving clock times from ProPresenter
         startReceivingClockData();
     } else if (obj.action == "libraryRequest") {
+        // Check if this is a Windows ProPresenter instance
+        if (obj.library[0]?.includes(":")) {
+            console.log("Connected to ProPresenter on Windows");
+            serverIsWindows = true;
+        } else {
+            console.log("Connected to ProPresenter on Mac");
+            serverIsWindows = false;
+        }
         // Show downloading status
         $("#status").attr("class", "downloading-library");
         // Empty the library area
@@ -531,7 +539,7 @@ function createPlaylistGroup(obj) {
 }
 
 function createPlaylist(obj) {
-    var playlistData = '<a class="display-playlist" onclick="displayPlaylist(this);"><div class="item lib playlist presentation '+getNestedOption(obj)+'"><img src="img/playlist.png"/><div class="name">' + obj.playlistName + '</div></div></a>';
+    var playlistData = '<a class="display-playlist" onclick="displayPlaylist(this);"><div class="item lib playlist presentation '+getNestedOption(obj)+'"><img src="img/playlist.png"/><div class="name" id="pp-'+obj.playlistLocation+'">' + obj.playlistName + '</div></div></a>';
     playlistList.push(obj);
     obj.playlist.forEach(
         function(item, index) {
@@ -539,11 +547,14 @@ function createPlaylist(obj) {
                 var playlistHeader = { presentationPath: item.playlistItemLocation, presentation: { presentationName: item.playlistItemName } }
                 playlistHeaderList.push(playlistHeader);
             } else if (item.playlistItemType == "playlistItemTypeVideo") {
-                var playlistVideo = { presentationPath: item.playlistItemLocation, presentation: { presentationName: item.playlistItemName } }
+                var playlistVideo = { presentationPath: item.playlistItemLocation, presentation: { presentationName: item.playlistItemName, presentationItemType: item.playlistItemType, presentationThumbnail: item.playlistItemThumbnail } }
                 playlistMediaList.push(playlistVideo);
+            } else if (item.playlistItemType == "playlistItemTypeAudio") {
+                var playlistAudio = { presentationPath: item.playlistItemLocation, presentation: { presentationName: item.playlistItemName, presentationItemType: item.playlistItemType, presentationThumbnail: item.playlistItemThumbnail } }
+                playlistMediaList.push(playlistAudio);
             } else {
                 // Add this playlist item location to the requests array
-                playlistRequests.push(item.playlistItemLocation);
+                playlistRequests.push({name:item.playlistItemName, location:item.playlistItemLocation});
                 // Get the presentation in the playlist from ProPresenter
                 getPresentation(item.playlistItemLocation);
             }
@@ -570,7 +581,7 @@ function createAudioPlaylistGroup(obj) {
 }
 
 function createAudioPlaylist(obj) {
-    var playlistData = '<a class="display-playlist" onclick="displayAudioPlaylist(this);"><div class="item lib playlist audio '+getNestedOption(obj)+'"><img src="img/audio.png"/><div class="name">' + obj.playlistName + '</div></div></a>';
+    var playlistData = '<a class="display-playlist" onclick="displayAudioPlaylist(this);"><div class="item lib playlist audio '+getNestedOption(obj)+'"><img src="img/audio.png"/><div class="name" id="ap-'+obj.playlistLocation+'">' + obj.playlistName + '</div></div></a>';
     audioPlaylistList.push(obj);
     return playlistData;
 }
@@ -791,6 +802,20 @@ function createPresentationName(obj) {
 function createPresentation(obj) {
     // Variable to hold the correct index
     var count = 0;
+
+    // Variable to hold the playlist request
+    var playlistRequest;
+    // Check if this is a Windows ProPresenter instance 
+    if (serverIsWindows & libraryRequests.length == 0) {
+        // Find the playlist request by name
+        playlistRequest = playlistRequests.find(request => request.name == obj.presentation.presentationName);
+        // set the correct presentation path
+        obj.presentationPath = playlistRequest?.location;
+    } else {
+        // Find the playlist request by presentation path
+        playlistRequest = playlistRequests.find(request => request.location == obj.presentationPath);
+    }
+    
     // Set the correct index for grouped slides
     obj.presentation.presentationSlideGroups.forEach(
         function(presentationSlideGroup) {
@@ -803,18 +828,20 @@ function createPresentation(obj) {
             );
         }
     );
+
     // Add this presentation to either the playlist or library presentation list
     if (obj.presentationPath.charAt(0) == '0') {
-        // Get the presentation from the playlist presentation list 
+        // Get the presentation from the playlist presentation list
         item = playlistPresentationList.find(presentation => presentation.presentationPath == obj.presentationPath);
+        
         // If this is a playlist item request
-        if (playlistRequests.includes(obj.presentationPath)) {
+        if (playlistRequest != null) {
             // Check if the presentation is unique and should be added to the end of the array
             if (item == null) {
                 // Add presentation to end of array
                 playlistPresentationList.push(obj);
                 // Remove the request from the array
-                removeArrayValue(playlistRequests, obj.presentationPath);
+                removeArrayValue(playlistRequests, playlistRequest);
             }
             if (playlistRequests.length == 0) {
                 // Get the current displayed presentation from ProPresenter
@@ -902,6 +929,9 @@ function setClearAll() {
     $(".current").empty();
     $("#audio-status").addClass("disabled");
     $("#audio-items").children("a").children("div").removeClass("highlighted");
+
+    $("#audio-status").removeClass("fa-pause");
+    $("#audio-status").addClass("fa-play").addClass("disabled");
 }
 
 function clearAudio() {
@@ -1438,16 +1468,20 @@ function setAudioStatus(obj) {
 function setAudioSong(obj) {
     // Create variable to hold if audio
     var isAudio = false;
+    var playlistLocation;
+    var playlistItemLocation;
     // Iterate through each audio playlist
     audioPlaylistList.forEach(
-        function(item) {
+        function(playlist) {
             // Iterate through each audio item
-            item.playlist.forEach(
-                function(item) {
+            playlist.playlist.forEach(
+                function(playlistItem) {
                     // If the audio item name matches the current playing item
-                    if (item.playlistItemName == obj.audioName) {
+                    if (playlistItem.playlistItemName == obj.audioName) {
                         // Set the current playing item as audio
                         isAudio = true;
+                        playlistLocation = playlist.playlistLocation;
+                        playlistItemLocation = playlistItem.playlistItemLocation;
                     }
                 }
             );
@@ -1460,6 +1494,7 @@ function setAudioSong(obj) {
         $(".playing-audio").text(obj.audioName);
         // Set the playing audio tooltip
         $(".playing-audio").prop('title', obj.audioName+" - "+obj.audioArtist);
+
         // Remove the disabled class from audio status
         $("#audio-status").removeClass("disabled");
         // Set clear audio to active
@@ -1468,6 +1503,7 @@ function setAudioSong(obj) {
         $("#clear-all").addClass("activated");
         // Check if there is currently an element with selected class
         var currentlySelected = $(".item.con.aud.selected").length > 0;
+
         // Iterate through each audio playlist item
         $(".item.con.aud").each(
             function () {
@@ -1481,15 +1517,32 @@ function setAudioSong(obj) {
                 }
             }
         );
-        // Remove selected from audio playlists
-        $(".item.lib.playlist.audio").each(
-            function() {
-                if ($(this).hasClass("selected")) {
-                    $(this).removeClass("selected");
-                    $(this).addClass("highlighted");
-                }
-            }
-        );
+
+        // // Remove selected from audio playlists
+        // $(".item.lib.playlist.audio").each(
+        //     function() {
+        //         if ($(this).hasClass("selected")) {
+        //             $(this).removeClass("selected");
+        //             $(this).addClass("highlighted");
+        //         }
+        //     }
+        // );
+
+        // Get the playlist
+        playlistObject = document.getElementById("ap-"+playlistLocation);
+        $(playlistObject).addClass("selected");
+        $(playlistObject).addClass("highlighted");
+        // Get the playlist group's expander
+        var playlistGroupAnchor = $(playlistObject).parent().parent().parent().children(".expander");
+        // Set the playlist group to expanded
+        $(playlistGroupAnchor).removeClass("collapsed").addClass("expanded");
+        $(playlistGroupAnchor).children("i").removeClass("fa-caret-right");
+        $(playlistGroupAnchor).children("i").addClass("fa-caret-down");
+        // Display the playlist
+        displayAudioPlaylist($(playlistObject).parent().parent());
+        // Add highlighted to playlist
+        $(playlistObject).parent().addClass("highlighted");
+
     } else {
         // Set the playing timeline title
         $(".playing-timeline").text(obj.audioName);
@@ -1778,7 +1831,6 @@ function triggerSlide(obj) {
         );
     }
 
-
     // Check if this is a media item
     if ($(obj).children("div").hasClass("media")) {
         // Remove selected from any previous slides
@@ -1789,10 +1841,22 @@ function triggerSlide(obj) {
         $(".media").removeClass("active");
         // Set clear slide to inactive
         $("#clear-slide").removeClass("activated");
-        // Set clear media to active
-        $("#clear-media").addClass("activated");
+        // If this is a video media object
+        if ($(obj).children("div").hasClass("video")) {
+            // Set clear media to active
+            $("#clear-media").addClass("activated");
+        } else {
+            // Set clear audio to active
+            $("#clear-audio").addClass("activated");
+        }
         // Empty the live preview area
         $('#live').empty();
+        // Get preview image src
+        var previewImage = $(obj).parent().children(".media-image").children("img");
+        // Set live preview image if available
+        if (previewImage.length > 0) {
+            $('#live').append('<img src="'+$(previewImage).attr("src")+'"/>');
+        }
         // Set the media element as active
         $(obj).children("div").addClass("active");
     }
@@ -2032,11 +2096,20 @@ function triggerNextSlide() {
 
 // Start Audio File Playback
 function triggerAudio(obj) {
+    // Get audio playlist item
     var location = ($(obj).children("div").attr("id"));
+    // Get audio playlist location
+    var playlistLocation = location.split(":")[0];
+    // If this is a playlist item
     if (location.charAt(0) == '0') {
+        // Start playing the audio playlist item
         remoteWebSocket.send('{"action":"audioStartCue","audioChildPath":"' + location + '"}');
+        // Remove selected from audio playlist items
         $("#audio-items").children("a").children("div").removeClass("selected");
+        // Remove highlighted from audio playlist items
         $("#audio-items").children("a").children("div").removeClass("highlighted");
+
+        
     }
 
     // Deselect all items across page and replace with highlighted if needed
@@ -2241,6 +2314,8 @@ function displayPlaylist(obj) {
                             data += '<a onclick="displayPresentation(this);"><div id="' + this.playlistItemLocation + '" class="item head"><div class="name">' + this.playlistItemName + '</div></div></a>'
                         } else if (this.playlistItemType == "playlistItemTypeVideo") {
                             data += '<a onclick="displayPresentation(this);"><div id="' + this.playlistItemLocation + '" class="item con pres"><img src="img/media.png" /><div class="name">' + this.playlistItemName + '</div></div></a>'
+                        } else if (this.playlistItemType == "playlistItemTypeAudio") {
+                            data += '<a onclick="displayPresentation(this);"><div id="' + this.playlistItemLocation + '" class="item con pres"><img src="img/clearaudio.png" /><div class="name">' + this.playlistItemName + '</div></div></a>'
                         } else if (this.playlistItemType == "playlistItemTypePresentation") {
                             // For each presentation in the playlist presentation array
                             $(playlistPresentationList).each(
@@ -2291,20 +2366,19 @@ function displayAudioPlaylist(obj) {
     // Reset the item count
     $("#right-count").empty();
     // Find the playlist in the array
-    $(audioPlaylistList).each(
-        function() {
-            if (this.playlistName == current) {
-
+    audioPlaylistList.forEach(
+        function(playlist) {
+            if (playlist.playlistName == current) {
                 // Get the new item count
-                if (this.playlist.length == 1) {
-                    $("#right-count").append((this.playlist).length + " Item");
+                if (playlist.playlist.length == 1) {
+                    $("#right-count").append((playlist.playlist).length + " Item");
                 } else {
-                    $("#right-count").append((this.playlist).length + " Items");
+                    $("#right-count").append((playlist.playlist).length + " Items");
                 }
                 // Add the presentations in the playlist
-                $(this.playlist).each(
-                    function() {
-                        data += '<a onclick="triggerAudio(this);"><div id="' + this.playlistItemLocation + '" class="item con aud"><img src="img/clearaudio.png" /><div class="name">' + this.playlistItemName + '</div></div></a>'
+                playlist.playlist.forEach(
+                    function(playlistItem) {
+                        data += '<a onclick="triggerAudio(this);"><div id="' + playlistItem.playlistItemLocation + '" class="item con aud"><img src="img/clearaudio.png" /><div class="name">' + playlistItem.playlistItemName + '</div></div></a>'
                     }
                 );
             }
@@ -2319,8 +2393,8 @@ function displayAudioPlaylist(obj) {
     deselectItems();
 
     // Remove selected and highlighted from playlists
-    $(obj).parent().children("a").children("div").removeClass("selected");
-    $(obj).parent().children("a").children("div").removeClass("highlighted");
+    $(".playlist.audio").removeClass("selected");
+    $(".playlist.audio").removeClass("highlighted");
     // Set the playlist as selected
     $(obj).children("div").addClass("selected");
 }
@@ -2391,26 +2465,21 @@ function displayPresentation(obj) {
                                 if (this.playlistItemLocation == location) {
                                     // Set the playlist location
                                     playlistLocation = currentPlaylist.playlistLocation
-                                        // Set the playlist location
+                                    // Set the playlist length
                                     playlistLength = currentPlaylist.playlist.length;
-                                    // Iterate through each playlist name
-                                    $(".playlist").children(".name").each(
-                                        function() {
-                                            // If the playlist's name matches the current playlist name
-                                            if (playlistName == $(this).text()) {
-                                                // Get the playlist group's expander
-                                                var playlistGroupAnchor = $(this).parent().parent().parent().children(".expander");
-                                                // Set the playlist group to expanded
-                                                $(playlistGroupAnchor).removeClass("collapsed").addClass("expanded");
-                                                $(playlistGroupAnchor).children("i").removeClass("fa-caret-right");
-                                                $(playlistGroupAnchor).children("i").addClass("fa-caret-down");
-                                                // Display the playlist
-                                                displayPlaylist($(this).parent().parent());
-                                                // Add highlighted to playlist
-                                                $(this).parent().addClass("highlighted");
-                                            }
-                                        }
-                                    );
+
+                                    playlistObject = document.getElementById("pp-"+playlistLocation);
+                                    // Get the playlist group's expander
+                                    var playlistGroupAnchor = $(playlistObject).parent().parent().parent().children(".expander");
+                                    console.log(playlistGroupAnchor);
+                                    // Set the playlist group to expanded
+                                    $(playlistGroupAnchor).removeClass("collapsed").addClass("expanded");
+                                    $(playlistGroupAnchor).children("i").removeClass("fa-caret-right");
+                                    $(playlistGroupAnchor).children("i").addClass("fa-caret-down");
+                                    // Display the playlist
+                                    displayPlaylist($(playlistObject).parent().parent());
+                                    // Add highlighted to playlist
+                                    $(playlistObject).parent().addClass("highlighted");
                                 }
                             }
                         );
@@ -2504,10 +2573,10 @@ function displayPresentation(obj) {
                     );
 
                     // Iterate through each media item in the playlist media list
-                    $(playlistMediaList).each(
-                        function() {
+                    playlistMediaList.forEach(
+                        function(playlistMedia) {
                             // If the presentation path matches the path of the selected presentation, set it as highlighted
-                            if (this.presentationPath == location) {
+                            if (playlistMedia.presentationPath == location) {
                                 // Iterate through each playlist item
                                 $("#playlist-items").children("a").each(
                                     function() {
@@ -2525,21 +2594,22 @@ function displayPresentation(obj) {
                                 );
                             }
                             // If this media item is part of the selected presentation's playlist
-                            if (this.presentationPath.split(":")[0] == playlistLocation) {
+                            if (playlistMedia.presentationPath.split(":")[0] == playlistLocation) {
                                 // Get the media item path
-                                var mediaPath = this.presentationPath;
+                                var mediaPath = playlistMedia.presentationPath;
                                 // If the media item is not already displayed
                                 if (document.getElementById("presentation." + mediaPath) == null) {
                                     // Get the index of the media item in the playlist
-                                    var mediaIndex = parseInt(this.presentationPath.split(":")[1]);
+                                    var mediaIndex = parseInt(playlistMedia.presentationPath.split(":")[1]);
                                     // Create the presentation container in the presentation data
                                     var mediaData = '<div id="presentation.' + mediaPath + '">' +
-                                        '<div class="presentation-header padded">' + this.presentation.presentationName + '<div class="presentation-controls">'+getPresentationDestination(this.presentation.presentationDestination)+'</div></div>' +
+                                        '<div class="presentation-header padded">' + playlistMedia.presentation.presentationName + '<div class="presentation-controls">'+getPresentationDestination(playlistMedia.presentation.presentationDestination)+'</div></div>' +
                                         '<div class="presentation-content padded">' +
-                                        '<div id="media.' + mediaPath + '" class="media-container "><a id="' + mediaPath + '" onclick="triggerSlide(this);"><div class="media"><i class="far fa-play-circle"></i></div><div class="media-name">' + this.presentation.presentationName + '</div></a></div>' +
+                                        '<div id="media.' + mediaPath + '" class="media-container "><div class="media-image">' + (playlistMedia.presentation.presentationItemType == "playlistItemTypeVideo"? (playlistMedia.presentation.presentationThumbnail == "" ? "" : '<img src="data:image/png;base64,' + playlistMedia.presentation.presentationThumbnail + '" draggable="false"/>' ): '<i class="fas fa-music"></i>') + '</div><a id="' + mediaPath + '" onclick="triggerSlide(this);"><div class="media ' + (playlistMedia.presentation.presentationItemType == "playlistItemTypeVideo"? "video" : "") + '"><i class="far fa-play-circle"></i></div></a><div class="media-name">' + playlistMedia.presentation.presentationName + '</div></div>' +
                                         '</div></div>';
                                     // Add the media data to the array
                                     data.push({ presentationIndex: mediaIndex, presentationData: mediaData });
+                                    
                                 }
                             }
                         }
@@ -2898,9 +2968,9 @@ function generateSlides(presentationSlideGroups, presentationPath) {
             var groupName = presentationSlideGroup.groupName;
             // Iterate through each slide in the slide group
             presentationSlideGroup.groupSlides.forEach(
-                function(groupSlide) {
+                function(groupSlide, index) {
                     // Add the slide to the slides data
-                    slidesData += '<div class="slide-sizer"><div id="slide' + count + '.' + presentationPath + '" class="slide-container ' + getEnabledValue(groupSlide.slideEnabled) + '"><a id="' + presentationPath + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-text">'+groupSlide.slideText.replace(/[\r\n\x0B\x0C\u0085\u2028\u2029]+/g, "<br>")+'</div><img src="data:image/png;base64,' + groupSlide.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + groupSlide.slideLabel + '</div></div></div></a></div></div>';
+                    slidesData += '<div class="slide-sizer"><div id="slide' + count + '.' + presentationPath + '" class="slide-container ' + getEnabledValue(groupSlide.slideEnabled) + '"><a id="' + presentationPath + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-text">'+groupSlide.slideText.replace(/[\r\n\x0B\x0C\u0085\u2028\u2029]+/g, "<br>")+'</div><img src="data:image/png;base64,' + groupSlide.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + (index == 0? groupName : "") + '</div><div class="slide-label">' + (serverIsWindows? groupSlide.slideLabel : "") + '</div></div></div></a></div></div>';
                     // Increase the slide count
                     count++;
                 }
