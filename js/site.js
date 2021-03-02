@@ -1,7 +1,7 @@
 // Variables
 
 // Connection
-var host = "172.16.101.32";
+var host = "10.1.1.33";
 var port = "50000";
 var pass = "control";
 var stagePass = "stage";
@@ -11,14 +11,12 @@ var continuousPlaylist = true;
 var retrieveEntireLibrary = false;
 var forceSlides = false;
 var followProPresenter = true;
-var advancedLiveDisplay = false;
 var useCookies = true;
 var mustAuthenticate = true;
 var changeHost = true;
 
 // Application
 var authenticated = false;
-var stageAuthenticated = false;
 var retryConnection = true;
 var libraryList = [];
 var playlistList = [];
@@ -30,13 +28,13 @@ var playlistPresentationList = [];
 var playlistMediaList = [];
 var libraryRequests = [];
 var playlistRequests = [];
+var refreshRequests = [];
 var audioRequests = [];
 var messageList = [];
 var initialPresentationLocation;
 var slideView = 1;
 var slideCols = 3;
 var wsUri;
-var wsStageUri = "ws://" + host + ":" + port;
 var resetTimeout;
 var refresh = true;
 var inputTyping = false;
@@ -65,16 +63,11 @@ function connect() {
     remoteWebSocket.onclose = function(evt) { onClose(evt) };
     remoteWebSocket.onmessage = function(evt) { onMessage(evt) };
     remoteWebSocket.onerror = function(evt) { onError(evt) };
-    // If advanced live display is enabled
-    if (advancedLiveDisplay) {
-        // Enable the stage display communication
-        connectStage();
-    }
 }
 
 function onOpen(evt) {
     if (!authenticated) {
-        remoteWebSocket.send('{"action":"authenticate","protocol":"700","password":"' + pass + '"}');
+        remoteWebSocket.send('{"action":"authenticate","protocol":"701","password":"' + pass + '"}');
     }
 }
 
@@ -252,18 +245,33 @@ function onMessage(evt) {
         // Create stage display screens
         createStageScreens(obj);
     } else if (obj.action == "presentationCurrent") {
-        // Create presentation
-        createPresentation(obj);
+        // If this presentation has images, process normally
+        if (obj.presentation.presentationSlideGroups[0].groupSlides[0].slideImage != "") {
+            // Create presentation
+            createPresentation(obj);
+        } else {
+            // Compare presentations
+            comparePresentations(obj);
+        }
+        
     } else if (obj.action == "presentationSlideIndex") {
         // Display the current ProPresenter presentation
         displayPresentation(obj);
     } else if (obj.action == "presentationTriggerIndex") {
         // Display the current ProPresenter presentation
         displayPresentation(obj);
-        // Set clear slide to active
-        $("#clear-slide").addClass("activated");
-        // Set clear all to active
-        $("#clear-all").addClass("activated");
+        // If the presentation is destined for the main output
+        if (obj.presentationDestination == 0) {
+            // Set clear slide to active
+            $("#clear-slide").addClass("activated");
+            // Set clear all to active
+            $("#clear-all").addClass("activated");
+        } else {
+            // Set clear announcements to active
+            $("#clear-announcements").addClass("activated");
+        }
+        // Request the presentation (text only) to check for changes
+        getCurrentPresentationNoImage();
     } else if (obj.action == "audioTriggered") {
         // Set the current song
         setAudioSong(obj);
@@ -308,20 +316,9 @@ function onMessage(evt) {
     } else if (obj.action == "clearAudio") {
         // Set clear audio
         setClearAudio();
-    }
-}
-
-function connectStage() {
-    stageWebSocket = new WebSocket(wsUri + "/stagedisplay");
-    stageWebSocket.onopen = function(evt) { onStageOpen(evt) };
-    stageWebSocket.onclose = function(evt) { onStageClose(evt) };
-    stageWebSocket.onmessage = function(evt) { onStageMessage(evt) };
-    stageWebSocket.onerror = function(evt) { onStageError(evt) };
-}
-
-function onStageOpen(evt) {
-    if (!stageAuthenticated) {
-        stageWebSocket.send('{"pwd":"' + stagePass + '","ptl":610,"acn":"ath"}');
+    } else if (obj.action == "clearAnnouncements") {
+        // Set clear announcements
+        setClearAnnouncements();
     }
 }
 
@@ -349,34 +346,7 @@ function onClose(evt) {
     }, 300000);
 }
 
-function onStageMessage(evt) {
-    var obj = JSON.parse(evt.data);
-
-    if (obj.acn == "ath" && obj.ath == true && stageAuthenticated == false) {
-        // Set as authenticated
-        stageAuthenticated = true;
-        // Request all stage display layouts
-        getStageDisplayLayouts();
-    } else if (obj.acn == "asl") {
-        processStageDisplayLayouts(obj);
-    }
-}
-
-function onStageError(evt) {
-    stageAuthenticated = false;
-    console.error('StageSocket encountered error: ', evt.message, 'Closing socket');
-    stageWebSocket.close();
-}
-
-function onStageClose(evt) {
-    stageAuthenticated = false;
-    // Retry connection every second
-    setTimeout(function() {
-        connectStage();
-    }, 1000);
-}
-
-//  End remoteWebSocket Functions
+//  End WebSocket Functions
 
 
 // Cookie Functions
@@ -546,7 +516,7 @@ function createLibrary(obj) {
 function createPlaylistGroup(obj) {
     var groupData = "";
     groupData += '<div class="playlist-group">' +
-        '<a onclick="togglePlaylistVisibility(this)" class="expander collapsed"><i class="collapser fas fa-caret-right"></i><div class="item lib group"><img src="img/playlistgroup.png" />' + obj.playlistName + '</div></a>';
+        '<a onclick="togglePlaylistVisibility(this)" class="expander collapsed"><i class="collapser fas fa-caret-right"></i><div class="item lib group '+getNestedOption(obj)+'"><img src="img/playlistgroup.png" />' + obj.playlistName + '</div></a>';
     $(obj.playlist).each(
         function() {
             if (this.playlistType == "playlistTypeGroup") {
@@ -561,7 +531,7 @@ function createPlaylistGroup(obj) {
 }
 
 function createPlaylist(obj) {
-    var playlistData = '<a class="display-playlist" onclick="displayPlaylist(this);"><div class="item lib playlist presentation"><img src="img/playlist.png"/><div class="name">' + obj.playlistName + '</div></div></a>';
+    var playlistData = '<a class="display-playlist" onclick="displayPlaylist(this);"><div class="item lib playlist presentation '+getNestedOption(obj)+'"><img src="img/playlist.png"/><div class="name">' + obj.playlistName + '</div></div></a>';
     playlistList.push(obj);
     obj.playlist.forEach(
         function(item, index) {
@@ -585,7 +555,7 @@ function createPlaylist(obj) {
 function createAudioPlaylistGroup(obj) {
     var groupData = "";
     groupData += '<div class="playlist-group">' +
-        '<a onclick="togglePlaylistVisibility(this)" class="expander collapsed"><i class="collapser fas fa-caret-right"></i><div class="item lib group"><img src="img/playlistgroup.png" />' + obj.playlistName + '</div></a>';
+        '<a onclick="togglePlaylistVisibility(this)" class="expander collapsed"><i class="collapser fas fa-caret-right"></i><div class="item lib group '+getNestedOption(obj)+'"><img src="img/playlistgroup.png" />' + obj.playlistName + '</div></a>';
     $(obj.playlist).each(
         function() {
             if (this.playlistType == "playlistTypeGroup") {
@@ -600,7 +570,7 @@ function createAudioPlaylistGroup(obj) {
 }
 
 function createAudioPlaylist(obj) {
-    var playlistData = '<a class="display-playlist" onclick="displayAudioPlaylist(this);"><div class="item lib playlist audio"><img src="img/audio.png"/><div class="name">' + obj.playlistName + '</div></div></a>';
+    var playlistData = '<a class="display-playlist" onclick="displayAudioPlaylist(this);"><div class="item lib playlist audio '+getNestedOption(obj)+'"><img src="img/audio.png"/><div class="name">' + obj.playlistName + '</div></div></a>';
     audioPlaylistList.push(obj);
     return playlistData;
 }
@@ -821,15 +791,13 @@ function createPresentationName(obj) {
 function createPresentation(obj) {
     // Variable to hold the correct index
     var count = 0;
-    // Variable to hold the unique status of the presentation
-    var unique = true;
     // Set the correct index for grouped slides
-    $(obj.presentation.presentationSlideGroups).each(
-        function() {
-            $(this.groupSlides).each(
-                function() {
+    obj.presentation.presentationSlideGroups.forEach(
+        function(presentationSlideGroup) {
+            presentationSlideGroup.groupSlides.forEach(
+                function(groupSlide) {
                     // Set the current count as the slide index
-                    this.slideIndex = count;
+                    groupSlide.slideIndex = count;
                     count++;
                 }
             );
@@ -837,16 +805,13 @@ function createPresentation(obj) {
     );
     // Add this presentation to either the playlist or library presentation list
     if (obj.presentationPath.charAt(0) == '0') {
+        // Get the presentation from the playlist presentation list 
+        item = playlistPresentationList.find(presentation => presentation.presentationPath == obj.presentationPath);
+        // If this is a playlist item request
         if (playlistRequests.includes(obj.presentationPath)) {
-            // Check if the presentation is unique and can be added in the array
-            $(playlistPresentationList).each(
-                function() {
-                    if (this.presentationPath == obj.presentationPath) {
-                        unique = false;
-                    }
-                }
-            );
-            if (unique) {
+            // Check if the presentation is unique and should be added to the end of the array
+            if (item == null) {
+                // Add presentation to end of array
                 playlistPresentationList.push(obj);
                 // Remove the request from the array
                 removeArrayValue(playlistRequests, obj.presentationPath);
@@ -859,6 +824,11 @@ function createPresentation(obj) {
                 // Fade out loading screen
                 $(".loading").fadeOut();
             }
+        } else if (refreshRequests.includes(obj.presentationPath)) {
+            // Replace presentation currently in array with updated presentation
+            replaceArrayValue(playlistPresentationList, item, obj);
+            // Refresh presentation if currently displayed
+            refreshPresentation(obj.presentationPath);
         } else {
             // Set the initial presentation location
             initialPresentationLocation = obj.presentationPath;
@@ -866,20 +836,22 @@ function createPresentation(obj) {
             getCurrentSlide();
         }
     } else {
+        // Get the presentation from the library presentation list 
+        item = libraryPresentationList.find(presentation => presentation.presentationPath == obj.presentationPath);
+        // If this is a library item request
         if (libraryRequests.includes(obj.presentationPath)) {
-            // Check if the presentation is unique and can be added in the array
-            $(libraryPresentationList).each(
-                function() {
-                    if (this.presentationPath == obj.presentationPath) {
-                        unique = false;
-                    }
-                }
-            );
-            if (unique) {
+            // Check if the presentation is unique and should be added to the end of the array
+            if (item == null) {
+                // Add presentation to end of array
                 libraryPresentationList.push(obj);
                 // Remove the request from the array
                 removeArrayValue(libraryRequests, obj.presentationPath);
             }
+        } else if (refreshRequests.includes(obj.presentationPath)) {
+            // Replace presentation currently in array with updated presentation
+            replaceArrayValue(libraryPresentationList, item, obj);
+            // Refresh presentation if currently displayed
+            refreshPresentation(obj.presentationPath);
         } else {
             // Set the initial presentation location
             initialPresentationLocation = obj.presentationPath;
@@ -914,8 +886,11 @@ function clearAll() {
 }
 
 function setClearAll() {
+    
     $('#live').empty();
-    $(".presentation-content").children(".selected").removeClass("selected");
+    // Remove selected from any previous slides
+    $(".slide-container").removeClass("selected");
+
     $("#clear-all").removeClass("activated");
     $("#clear-audio").removeClass("activated");
     $("#clear-messages").removeClass("activated");
@@ -937,6 +912,7 @@ function clearAudio() {
 function setClearAudio() {
     $("#clear-audio").removeClass("activated");
     $(".playing-audio").empty();
+    $(".playing-audio").prop('title', "");
     $("#audio-status").addClass("disabled");
     $("#audio-items").children("a").children("div").removeClass("highlighted");
     if ($(".icons a.activated").not("#clear-all").length < 1) {
@@ -969,6 +945,15 @@ function clearAnnouncements() {
     }
 }
 
+function setClearAnnouncements() {
+    $("#clear-announcements").removeClass("activated");
+    if ($(".icons a.activated").not("#clear-all").length < 1) {
+        $("#clear-all").removeClass("activated");
+    }
+    // Remove announcement selected from any previous slides
+    $(".slide-container").removeClass("announcement-selected");
+}
+
 function clearSlide() {
     $('#live').empty();
     remoteWebSocket.send('{"action":"clearText"}');
@@ -976,6 +961,8 @@ function clearSlide() {
     if ($(".icons a.activated").not("#clear-all").length < 1) {
         $("#clear-all").removeClass("activated");
     }
+    // Remove selected from any previous slides
+    $(".slide-container").removeClass("selected");
 }
 
 function clearMedia() {
@@ -992,14 +979,24 @@ function clearMedia() {
 
 // Set Data Functions
 
-function setCurrentSlide(index, location) {
+function setCurrentSlide(index, location, presentationDestination) {
     // Iterate over each slide number
     $(".slide-number").each(
         function() {
             // If this slide number and location match the requested slide
             if ($(this).text() == index && $(this).parent().parent().parent().attr("id") == location) {
-                // Set the slide as selected
-                $(this).parent().parent().parent().parent().addClass("selected");
+                if (presentationDestination != 1) {
+                    // Set the slide as selected
+                    $(this).parent().parent().parent().parent().addClass("selected");
+                    // Remove previously selected from any previous slides
+                    $(".slide-container").removeClass("previous-selection");
+                    // Set the slide as previously selected
+                    $(this).parent().parent().parent().parent().addClass("previous-selection");
+                } else {
+                    // Set the slide as selected
+                    $(this).parent().parent().parent().parent().addClass("announcement-selected");
+                }
+                
                 // If the slide is not currently visible
                 if (!isElementInViewport(document.getElementById("slide" + index + "." + location))) {
                     // Scroll to place the slide in view
@@ -1015,51 +1012,92 @@ function setCurrentSlide(index, location) {
             }
         }
     );
+    if (presentationDestination != 1) {
+        // Check if this is a playlist or library presentation
+        if (location.charAt(0) == '0') {
+            // Set the current live slide image
+            $(playlistPresentationList).each(
+                function() {
+                    if (this.presentationPath == location) {
+                        $(this.presentation.presentationSlideGroups).each(
+                            function() {
+                                $(this.groupSlides).each(
+                                    function() {
+                                        if (this.slideIndex == index - 1) {
+                                            var image = new Image();
+                                            image.src = 'data:image/png;base64,' + this.slideImage;
+                                            $('#live').empty();
+                                            $('#live').append(image);
+                                        }
+                                    }
+                                );
+                            }
+                        );
+                    }
+                }
+            );
+        } else {
+            // Set the current live slide image
+            $(libraryPresentationList).each(
+                function() {
+                    if (this.presentationPath == location) {
+                        $(this.presentation.presentationSlideGroups).each(
+                            function() {
+                                $(this.groupSlides).each(
+                                    function() {
+                                        if (this.slideIndex == index - 1) {
+                                            var image = new Image();
+                                            image.src = 'data:image/png;base64,' + this.slideImage;
+                                            $('#live').empty();
+                                            $('#live').append(image);
+                                        }
+                                    }
+                                );
+                            }
+                        );
+                    }
+                }
+            );
+        }
+    }
+}
+
+function setPresentationDestination(location, presentationDestination) {
     // Check if this is a playlist or library presentation
     if (location.charAt(0) == '0') {
-        // Set the current live slide image
+        // Iterate through each playlist presentation
         $(playlistPresentationList).each(
             function() {
                 if (this.presentationPath == location) {
-                    $(this.presentation.presentationSlideGroups).each(
-                        function() {
-                            $(this.groupSlides).each(
-                                function() {
-                                    if (this.slideIndex == index - 1) {
-                                        var image = new Image();
-                                        image.src = 'data:image/png;base64,' + this.slideImage;
-                                        $('#live').empty();
-                                        $('#live').append(image);
-                                    }
-                                }
-                            );
-                        }
-                    );
+                    // Set the new presentation destination
+                    this.presentationDestination = presentationDestination;
                 }
             }
         );
     } else {
-        // Set the current live slide image
+        // Iterate through each playlist presentation
         $(libraryPresentationList).each(
             function() {
                 if (this.presentationPath == location) {
-                    $(this.presentation.presentationSlideGroups).each(
-                        function() {
-                            $(this.groupSlides).each(
-                                function() {
-                                    if (this.slideIndex == index - 1) {
-                                        var image = new Image();
-                                        image.src = 'data:image/png;base64,' + this.slideImage;
-                                        $('#live').empty();
-                                        $('#live').append(image);
-                                    }
-                                }
-                            );
-                        }
-                    );
+                    // Set the new presentation destination
+                    this.presentationDestination = presentationDestination;
                 }
             }
         );
+    }
+    if (followProPresenter) {
+        // Get current presentation controls
+        presentationControls = $(document.getElementById("presentation."+location)).children(".presentation-header").children(".presentation-controls")[0];
+        // If the presentation does not have an announcement layer icon but is an announcement layer presentation
+        if (presentationControls?.childElementCount == 0 && presentationDestination == 1) {
+            // Add the announcement layer icon
+            presentationControls.innerHTML = getPresentationDestination(presentationDestination);
+        }
+        // If the presentation has an announcement layer icon but is not an announcement layer presentation
+        else if (presentationControls?.childElementCount == 1 && presentationDestination == 0) {
+            // Remove the announcement layer icon
+            presentationControls.innerHTML = "";
+        }
     }
 }
 
@@ -1070,7 +1108,12 @@ function setCurrentSlide(index, location) {
 
 function getCurrentPresentation() {
     // Send the request to ProPresenter
-    remoteWebSocket.send('{"action":"presentationCurrent", "presentationSlideQuality": 25}');
+    remoteWebSocket.send('{"action":"presentationCurrent", "presentationSlideQuality": "300"}');
+}
+
+function getCurrentPresentationNoImage() {
+    // Send the request to ProPresenter
+    remoteWebSocket.send('{"action":"presentationCurrent", "presentationSlideQuality": "0"}');
 }
 
 function getCurrentSlide() {
@@ -1105,7 +1148,7 @@ function getStageLayouts() {
 
 function getPresentation(location) {
     // Send the request to ProPresenter
-    remoteWebSocket.send('{"action": "presentationRequest","presentationPath": "' + location + '"}');
+    remoteWebSocket.send('{"action": "presentationRequest","presentationPath": "' + location + '", "presentationSlideQuality": "300"}');
 }
 
 function getLibrary() {
@@ -1382,6 +1425,7 @@ function setAudioStatus(obj) {
     } else {
         $("#clear-audio").removeClass("activated");
         $(".playing-audio").empty();
+        $(".playing-audio").prop('title', "");
         $("#audio-status").addClass("disabled");
         $("#audio-items").children("a").children("div").removeClass("highlighted");
         if ($(".icons a.activated").not("#clear-all").length < 1) {
@@ -1412,8 +1456,10 @@ function setAudioSong(obj) {
 
     // If this is an audio file
     if (isAudio) {
-        // Set the playing audio title
+        // Set the playing audio name
         $(".playing-audio").text(obj.audioName);
+        // Set the playing audio tooltip
+        $(".playing-audio").prop('title', obj.audioName+" - "+obj.audioArtist);
         // Remove the disabled class from audio status
         $("#audio-status").removeClass("disabled");
         // Set clear audio to active
@@ -1737,6 +1783,8 @@ function triggerSlide(obj) {
     if ($(obj).children("div").hasClass("media")) {
         // Remove selected from any previous slides
         $(".slide-container").removeClass("selected");
+        // Remove previously selected from any previous slides
+        $(".slide-container").removeClass("previous-selection");
         // Remove active from any previous media
         $(".media").removeClass("active");
         // Set clear slide to inactive
@@ -2156,8 +2204,8 @@ function displayLibrary(obj) {
     $(obj).parent().children("a").children("div").removeClass("selected");
     $(obj).parent().children("a").children("div").removeClass("highlighted");
     // Remove selected and highlighted from playlists
-    $(".playlists").children("div").children("div").children("a").children("div").removeClass("selected");
-    $(".playlists").children("div").children("div").children("a").children("div").removeClass("highlighted");
+    $(".playlists div").removeClass("selected");
+    $(".playlists div").removeClass("highlighted");
     // Set the library as selected
     $(obj).children("div").addClass("selected");
 }
@@ -2184,12 +2232,32 @@ function displayPlaylist(obj) {
                 // Add the presentations in the playlist
                 $(this.playlist).each(
                     function() {
+                        // Create a variable to store the playlist item location
+                        var playlistItemLocation = this.playlistItemLocation;
+                        // Create a variable to store the playlist item name
+                        var playlistItemName = this.playlistItemName;
+                        // Find the playlist item type
                         if (this.playlistItemType == "playlistItemTypeHeader") {
                             data += '<a onclick="displayPresentation(this);"><div id="' + this.playlistItemLocation + '" class="item head"><div class="name">' + this.playlistItemName + '</div></div></a>'
                         } else if (this.playlistItemType == "playlistItemTypeVideo") {
                             data += '<a onclick="displayPresentation(this);"><div id="' + this.playlistItemLocation + '" class="item con pres"><img src="img/media.png" /><div class="name">' + this.playlistItemName + '</div></div></a>'
                         } else if (this.playlistItemType == "playlistItemTypePresentation") {
-                            data += '<a onclick="displayPresentation(this);"><div id="' + this.playlistItemLocation + '" class="item con pres"><img src="img/presentation.png" /><div class="name">' + this.playlistItemName + '</div></div></a>'
+                            // For each presentation in the playlist presentation array
+                            $(playlistPresentationList).each(
+                                function() {
+                                    // If the presentation path matches the playlist item location
+                                    if (this.presentationPath == playlistItemLocation) {
+                                        // If the presentation destination is main output
+                                        if (this.presentation.presentationDestination != 1) {
+                                            data += '<a onclick="displayPresentation(this);"><div id="' + playlistItemLocation + '" class="item con pres"><img src="img/presentation.png" /><div class="name">' + playlistItemName + '</div></div></a>'
+                                        } 
+                                        // The presentation destination must be announcements layer
+                                        else {
+                                            data += '<a onclick="displayPresentation(this);"><div id="' + playlistItemLocation + '" class="item con pres"><img src="img/presentation.png" /><div class="name">' + playlistItemName + '</div>'+getPresentationDestination(1)+'</div></a>'
+                                        }
+                                    }
+                                }
+                            );
                         }
                     }
                 );
@@ -2206,11 +2274,11 @@ function displayPlaylist(obj) {
     $("#playlist-items").show();
 
     // Remove selected and highlighted from playlists
-    $(obj).parent().children("a").children("div").removeClass("selected");
-    $(obj).parent().children("a").children("div").removeClass("highlighted");
+    $(".playlists div.playlist").removeClass("selected");
+    $(".playlists div.playlist").removeClass("highlighted");
     // Remove selected and highlighted from libraries
-    $(".libraries").children("div").children("a").children("div").removeClass("selected");
-    $(".libraries").children("div").children("a").children("div").removeClass("highlighted");
+    $(".libraries div").removeClass("selected");
+    $(".libraries div").removeClass("highlighted");
     // Set the playlist as selected
     $(obj).children("div").addClass("selected");
 }
@@ -2386,29 +2454,10 @@ function displayPresentation(obj) {
                                     var presentationIndex = parseInt(this.presentationPath.split(":")[1]);
                                     // Create the presentation container in the presentation data
                                     var presentationData = '<div id="presentation.' + presentationPath + '" class="presentation">' +
-                                        '<div class="presentation-header padded">' + this.presentation.presentationName + '</div>' +
+                                        '<div class="presentation-header padded">' + this.presentation.presentationName + '<div class="presentation-controls">'+getPresentationDestination(this.presentation.presentationDestination)+'</div></div>' +
                                         '<div class="presentation-content padded">';
-                                    // Create a variable to hold the slide count
-                                    var count = 1;
-                                    // Iterate through each slide group in the presentation
-                                    $(this.presentation.presentationSlideGroups).each(
-                                        function() {
-                                            // Get the slide group color
-                                            var colorArray = this.groupColor.split(" ");
-                                            // Get the slide group name
-                                            var groupName = this.groupName;
-                                            // Iterate through each slide in the slide group
-                                            $(this.groupSlides).each(
-                                                function() {
-                                                    // Add the slide to the presentation data
-                                                    presentationData += '<div class="slide-sizer"><div id="slide' + count + '.' + presentationPath + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + presentationPath + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-text">'+this.slideText.replace(/[\r\n\x0B\x0C\u0085\u2028\u2029]+/g, "<br>")+'</div><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div></div>';
-                                                    // Increase the slide count
-                                                    count++;
-                                                }
-                                            );
-                                        }
-                                    );
-
+                                    // Generate & add the slides to the presentation data
+                                    presentationData += generateSlides(this.presentation.presentationSlideGroups, presentationPath);
                                     // Add the close tags to the presentation data
                                     presentationData += '</div></div>';
                                     // Add the presentation data to the array
@@ -2439,7 +2488,7 @@ function displayPresentation(obj) {
                             if (this.presentationPath.split(":")[0] == playlistLocation) {
                                 // Get the header path
                                 var headerPath = this.presentationPath;
-                                // If the header is already displayed
+                                // If the header is not already displayed
                                 if (document.getElementById("header." + headerPath) == null) {
                                     // Get the index of the header in the playlist
                                     var headerIndex = parseInt(this.presentationPath.split(":")[1]);
@@ -2479,13 +2528,13 @@ function displayPresentation(obj) {
                             if (this.presentationPath.split(":")[0] == playlistLocation) {
                                 // Get the media item path
                                 var mediaPath = this.presentationPath;
-                                // If the media item is already displayed
+                                // If the media item is not already displayed
                                 if (document.getElementById("presentation." + mediaPath) == null) {
                                     // Get the index of the media item in the playlist
                                     var mediaIndex = parseInt(this.presentationPath.split(":")[1]);
                                     // Create the presentation container in the presentation data
                                     var mediaData = '<div id="presentation.' + mediaPath + '">' +
-                                        '<div class="presentation-header padded">' + this.presentation.presentationName + '</div>' +
+                                        '<div class="presentation-header padded">' + this.presentation.presentationName + '<div class="presentation-controls">'+getPresentationDestination(this.presentation.presentationDestination)+'</div></div>' +
                                         '<div class="presentation-content padded">' +
                                         '<div id="media.' + mediaPath + '" class="media-container "><a id="' + mediaPath + '" onclick="triggerSlide(this);"><div class="media"><i class="far fa-play-circle"></i></div><div class="media-name">' + this.presentation.presentationName + '</div></a></div>' +
                                         '</div></div>';
@@ -2539,34 +2588,16 @@ function displayPresentation(obj) {
                             if (this.presentationPath == location) {
                                 // Get the presentation path
                                 var presentationPath = this.presentationPath;
-                                // If the presentation is already displayed
+                                // If the presentation is not already displayed
                                 if (document.getElementById("presentation." + presentationPath) == null) {
                                     // Get the index of the presentation in the playlist
                                     var presentationIndex = parseInt(this.presentationPath.split(":")[1]);
                                     // Create the presentation container in the presentation data
                                     var presentationData = '<div id="presentation.' + presentationPath + '" class="presentation">' +
-                                        '<div class="presentation-header padded">' + this.presentation.presentationName + '</div>' +
+                                        '<div class="presentation-header padded">' + this.presentation.presentationName + '<div class="presentation-controls">'+getPresentationDestination(this.presentation.presentationDestination)+'</div></div>' +
                                         '<div class="presentation-content padded">';
-                                    // Create a variable to hold the slide count
-                                    var count = 1;
-                                    // Iterate through each slide group in the presentation
-                                    $(this.presentation.presentationSlideGroups).each(
-                                        function() {
-                                            // Get the slide group color
-                                            var colorArray = this.groupColor.split(" ");
-                                            // Get the slide group name
-                                            var groupName = this.groupName;
-                                            // Iterate through each slide in the slide group
-                                            $(this.groupSlides).each(
-                                                function() {
-                                                    // Add the slide to the presentation data
-                                                    presentationData += '<div class="slide-sizer"><div id="slide' + count + '.' + presentationPath + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + presentationPath + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-text">'+this.slideText.replace(/[\r\n\x0B\x0C\u0085\u2028\u2029]+/g, "<br>")+'</div><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div></div>';
-                                                    // Increase the slide count
-                                                    count++;
-                                                }
-                                            );
-                                        }
-                                    );
+                                    // Generate & add the slides to the presentation data
+                                    presentationData += generateSlides(this.presentation.presentationSlideGroups, presentationPath);
                                     // Add the close tags to the presentation data
                                     presentationData += '</div></div>';
                                     // Empty the presentation content area
@@ -2666,33 +2697,14 @@ function displayPresentation(obj) {
                             );
                             // Get the presentation path
                             var presentationPath = this.presentationPath;
-                            // If the presentation is already displayed
+                            // If the presentation is not already displayed
                             if (document.getElementById("presentation." + presentationPath) == null) {
                                 // Create the presentation container in the presentation data
                                 var presentationData = '<div id="presentation.' + presentationPath + '" class="presentation">' +
-                                    '<div class="presentation-header padded">' + this.presentation.presentationName + '</div>' +
+                                    '<div class="presentation-header padded">' + this.presentation.presentationName + '<div class="presentation-controls">'+getPresentationDestination(this.presentation.presentationDestination)+'</div></div>' +
                                     '<div class="presentation-content padded">';
-                                // Create a variable to hold the slide count
-                                var count = 1;
-                                // Iterate through each slide group in the presentation
-                                $(this.presentation.presentationSlideGroups).each(
-                                    function() {
-                                        // Get the slide group color
-                                        var colorArray = this.groupColor.split(" ");
-                                        // Get the slide group name
-                                        var groupName = this.groupName;
-                                        // Iterate through each slide in the slide group
-                                        $(this.groupSlides).each(
-                                            function() {
-                                                // Add the slide to the presentation data
-                                                presentationData += '<div class="slide-sizer"><div id="slide' + count + '.' + location + '" class="slide-container ' + getEnabledValue(this.slideEnabled) + '"><a id="' + location + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-text">'+this.slideText.replace(/[\r\n\x0B\x0C\u0085\u2028\u2029]+/g, "<br>")+'</div><img src="data:image/png;base64,' + this.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + this.slideLabel + '</div></div></div></a></div></div>';
-                                                // Increase the slide count
-                                                count++;
-                                            }
-                                        );
-                                    }
-                                );
-
+                                // Generate & add the slides to the presentation data
+                                presentationData += generateSlides(this.presentation.presentationSlideGroups, presentationPath);
                                 // Add the close tags to the presentation data
                                 presentationData += '</div></div>';
                                 // Empty the presentation content area
@@ -2725,18 +2737,42 @@ function displayPresentation(obj) {
 
     // If the request is from ProPresenter
     if (propresenterRequest) {
-        // Remove selected from any previous slides
-        $(".slide-container").removeClass("selected");
+        if (obj.presentationDestination != 1) {
+            // Remove selected from any previous slides
+            $(".slide-container").removeClass("selected");
+        } else {
+            // Remove announcement selected from any previous slides
+            $(".slide-container").removeClass("announcement-selected");
+        }
         // Remove active from any previous media
         $(".media").removeClass("active");
         // Set the current slide
-        setCurrentSlide(parseInt(obj.slideIndex) + 1, location);
+        setCurrentSlide(parseInt(obj.slideIndex) + 1, location, obj.presentationDestination);
+        // Set Presentation Destination
+        setPresentationDestination(location, obj.presentationDestination);
         // If there is a slide index
         if (obj.slideIndex != "") {
-            // Set clear slide to active
-            $("#clear-slide").addClass("activated");
-            // Set clear all to active
-            $("#clear-all").addClass("activated");
+            // If this is destined for the main output
+            if (obj.presentationDestination == 0) {
+                // Set clear slide to active
+                $("#clear-slide").addClass("activated");
+                // Set clear all to active
+                $("#clear-all").addClass("activated");
+            }
+            // If this is destined for the announcements layer
+            else if (obj.presentationDestination == 1) {
+                // Set clear announcements to active
+                $("#clear-announcements").addClass("activated");
+                // Set clear all to active
+                $("#clear-all").addClass("activated");
+            }
+            // If the ProPresenter version does not support this feature
+            else {
+                // Set clear slide to active
+                $("#clear-slide").addClass("activated");
+                // Set clear all to active
+                $("#clear-all").addClass("activated");
+            }
         }
     } else {
         // If this is a header
@@ -2752,10 +2788,127 @@ function displayPresentation(obj) {
     }
 }
 
+function refreshPresentation(presentationPath) {
+    presentation = document.getElementById("presentation." + presentationPath)
+    // If the presentation is currently displayed
+    if (presentation != null) {
+        // Create variable to hold the stored presentation
+        var item;
+        // Check if the presentation is a playlist or a library presentation
+        if (presentationPath.charAt(0) == '0') {
+            // Get the presentation from the playlist presentation list 
+            item = playlistPresentationList.find(presentation => presentation.presentationPath == presentationPath);
+        } else {
+            // Get the presentation from the library presentation list 
+            item = libraryPresentationList.find(presentation => presentation.presentationPath == presentationPath);
+        }
+
+        presentationData = $(presentation).children(".presentation-content");
+        
+        // Remove all slides from the presentation
+        $(presentationData).empty();
+        // Generate and add the slides to the presentation data
+        $(presentationData).append(generateSlides(item.presentation.presentationSlideGroups, item.presentationPath));
+
+        // Set the slide view
+        setSlideView();
+
+        // Set the slide columns
+        setslideCols(slideCols);
+
+        // Get current slide
+        getCurrentSlide();
+    }
+}
+
 // End Page Display Functions
 
 
 // Utility Functions
+
+function comparePresentations(obj) {    
+    var currentSlides = [];
+    var savedSlides = [];
+
+    // Iterate through each slide group in the presentation
+    obj.presentation.presentationSlideGroups.forEach(
+        function(presentationSlideGroup) {
+            // Iterate through each slide in the slide group
+            presentationSlideGroup.groupSlides.forEach(
+                function (groupSlides) {
+                    currentSlides.push(presentationSlideGroup.groupName+"|"+presentationSlideGroup.groupColor+"|"+groupSlides.slideText+"|"+groupSlides.slideEnabled);
+                }
+            );
+        }
+    );
+
+    // Check if the presentation is a playlist or a library presentation
+    if (obj.presentationPath.charAt(0) == '0') {
+        // Get the presentation from the playlist presentation list 
+        item = playlistPresentationList.find(presentation => presentation.presentationPath == obj.presentationPath);
+        // Iterate through each slide group in the presentation
+        item.presentation.presentationSlideGroups.forEach(
+            function(presentationSlideGroup) {
+                // Iterate through each slide in the slide group
+                presentationSlideGroup.groupSlides.forEach(
+                    function (groupSlides) {
+                        savedSlides.push(presentationSlideGroup.groupName+"|"+presentationSlideGroup.groupColor+"|"+groupSlides.slideText+"|"+groupSlides.slideEnabled);
+                    }
+                );
+            }
+        );
+    } else {
+        // Get the presentation from the library presentation list 
+        item = libraryPresentationList.find(presentation => presentation.presentationPath == obj.presentationPath);
+        // Iterate through each slide group in the presentation
+        item.presentation.presentationSlideGroups.forEach(
+            function(presentationSlideGroup) {
+                // Iterate through each slide in the slide group
+                presentationSlideGroup.groupSlides.forEach(
+                    function (groupSlides) {
+                        savedSlides.push(presentationSlideGroup.groupName+"|"+presentationSlideGroup.groupColor+"|"+groupSlides.slideText+"|"+groupSlides.slideEnabled);
+                    }
+                );
+            }
+        );
+    }
+    // Detect changes between the saved and current presentation
+    if (currentSlides.length === savedSlides.length && currentSlides.every((v, i) => v === savedSlides[i])) {
+        // console.log("No Changes Detected");
+    } else {
+        console.log("Changes Detected");
+        // Add this item location to the requests array
+        refreshRequests.push(obj.presentationPath);
+        // Re-request the current presentation
+        getCurrentPresentation();
+    }
+}
+
+function generateSlides(presentationSlideGroups, presentationPath) {
+    // Create a variable to hold the slide count
+    var count = 1;
+    // Create a variable to hold the created slides
+    var slidesData = "";
+    // Iterate through each slide group in the presentation
+    presentationSlideGroups.forEach(
+        function(presentationSlideGroup) {
+            // Get the slide group color
+            var colorArray = presentationSlideGroup.groupColor.split(" ");
+            // Get the slide group name
+            var groupName = presentationSlideGroup.groupName;
+            // Iterate through each slide in the slide group
+            presentationSlideGroup.groupSlides.forEach(
+                function(groupSlide) {
+                    // Add the slide to the slides data
+                    slidesData += '<div class="slide-sizer"><div id="slide' + count + '.' + presentationPath + '" class="slide-container ' + getEnabledValue(groupSlide.slideEnabled) + '"><a id="' + presentationPath + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-text">'+groupSlide.slideText.replace(/[\r\n\x0B\x0C\u0085\u2028\u2029]+/g, "<br>")+'</div><img src="data:image/png;base64,' + groupSlide.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + groupSlide.slideLabel + '</div></div></div></a></div></div>';
+                    // Increase the slide count
+                    count++;
+                }
+            );
+        }
+    );
+    return slidesData;
+}
 
 function checkIOS() {
     var ua = window.navigator.userAgent;
@@ -2777,6 +2930,15 @@ function checkIOS() {
 
 function getRGBValue(int) {
     return Math.round(255 * int);
+}
+
+function getPresentationDestination(presentationDestination) {
+    switch (presentationDestination) {
+        case 1:
+            return '<img class="announcement-indicator" title="Announcements Layer" src="img/announcement.png"/>';
+        default:
+            return "";
+    }
 }
 
 function setSlideView(int) {
@@ -2945,6 +3107,19 @@ function getEnabledValue(enabled) {
     } else {
         return "disabled";
     }
+}
+
+function getNestedOption(obj){
+    if (obj.playlistLocation?.includes(".")) {
+        return "sub";
+    } else {
+        return "";
+    }
+}
+
+function replaceArrayValue(arr, a, b) {
+    var i = arr.findIndex((element) => element == a);
+    arr[i] = b;
 }
 
 function removeArrayValue(arr) {
