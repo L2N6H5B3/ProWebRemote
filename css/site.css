@@ -624,8 +624,6 @@ select {
         display: block;
         font-weight: bold;
         position: relative;
-        overflow: hidden;
-        height: 18px;
     }
     .slide .slide-text {
         min-height: 60px;
@@ -645,7 +643,7 @@ select {
     }
     .media {
         font-size: 90px;
-        padding: 10px 22px;
+        padding: 10px 22px 10px 20px;
         color: #868686;
         vertical-align: middle;
     }
@@ -657,7 +655,7 @@ select {
     }
     .media-image {
         vertical-align: middle;
-        padding: 0px 25px;
+        padding: 0px 0px 0px 16px;
     }
     .media-image img {
         width: 100px;
@@ -1703,7 +1701,7 @@ select {
     }
     .media {
         font-size: 90px;
-        padding: 10px 22px;
+        padding: 10px 22px 10px 20px;
         color: #868686;
         vertical-align: middle;
     }
@@ -1715,7 +1713,7 @@ select {
     }
     .media-image {
         vertical-align: middle;
-        padding: 0px 25px;
+        padding: 0px 0px 0px 16px;
     }
     .media-image img {
         width: 100px;
