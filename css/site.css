@@ -416,6 +416,7 @@ select {
     }
     .playlist-group {
         position: relative;
+        padding-left: 6px;
     }
     .item.con {
         font-size: 13px;
@@ -450,7 +451,7 @@ select {
     .item.lib {
         font-size: 13px;
         padding: 3px;
-        padding-left: 22px;
+        padding-left: 16px;
         position: relative;
         border: 1px solid #464646;
     }
@@ -462,8 +463,11 @@ select {
         background-color: #585858 !important;
         border-radius: 4px;
     }
-    .item.lib.sub {
-        padding-left: 28px;
+    .item.lib.group.sub {
+        padding-left: 16px;
+    }
+    .item.lib.playlist.sub {
+        padding-left: 22px;
     }
     .library.segment {
         height: calc(100% - 1px);
@@ -1473,7 +1477,7 @@ select {
             opacity: 0;
         }
     }
-    a.expander.collapsed~a.display-playlist {
+    a.expander.collapsed~a.display-playlist, a.expander.collapsed~div.playlist-group {
         display: none;
     }
 }
@@ -1528,6 +1532,7 @@ select {
     }
     .playlist-group {
         position: relative;
+        padding-left: 6px;
     }
     .item.con {
         font-size: 13px;
@@ -1562,7 +1567,7 @@ select {
     .item.lib {
         font-size: 13px;
         padding: 3px;
-        padding-left: 22px;
+        padding-left: 16px;
         position: relative;
         border: 1px solid #464646;
     }
@@ -1574,8 +1579,11 @@ select {
         background-color: #585858 !important;
         border-radius: 4px;
     }
-    .item.lib.sub {
-        padding-left: 28px;
+    .item.lib.group.sub {
+        padding-left: 16px;
+    }
+    .item.lib.playlist.sub {
+        padding-left: 22px;
     }
     .collapser {
         position: absolute;
