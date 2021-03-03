@@ -1,7 +1,7 @@
 // Variables
 
 // Connection
-var host = "10.1.1.63";
+var host = "10.1.1.33";
 var port = "50000";
 var pass = "control";
 
@@ -76,7 +76,7 @@ function onOpen() {
 
 function onMessage(evt) {
     var obj = JSON.parse(evt.data);
-    console.log(evt.data);
+    // console.log(evt.data);
 
     if (obj.action == "authenticate" && obj.authenticated == "1" && authenticated == false) {
         // If the data is stale
@@ -2027,9 +2027,12 @@ function triggerNextSlide() {
         var currentLocation = $(currentSlide).children("a").attr("id");
         // Get the current slide number
         var currentSlideNumber = parseInt($(currentSlide).find(".slide-number").text());
+        console.log(currentSlideNumber);
         // Get the total slide count
-        var totalSlideCount = parseInt($(currentSlide).parent("div").children("div").length);
-            // Check if this is a playlist or library presentation
+        var totalSlideCount = parseInt($(document.getElementById("presentation."+currentLocation)).children("div.presentation-content").children("div").length);
+        console.log();
+
+        // Check if this is a playlist or library presentation
         if (currentLocation.charAt(0) == '0') {
             var nextPresentation;
                 // Create variable to determine loop status
@@ -2058,7 +2061,7 @@ function triggerNextSlide() {
                     var currentPresentationNumber = parseInt(currentPresentationLocation.split(":")[1]);
                     // Get the total presentation count
                     var totalPresentationCount = parseInt($(currentPresentation).parent("div").children("div").length);
-                        // Create variable to determine loop status
+                    // Create variable to determine loop status
                     var presentationLoop = true;
                     // Loop until a presentation is found or the presentations are exhausted
                     while (presentationLoop) {
