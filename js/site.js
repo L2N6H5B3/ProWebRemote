@@ -2086,7 +2086,7 @@ function triggerNextSlide() {
                         }
                     }
                     // Stop the loop
-                    loop = false
+                    loop = false;
                 }
             }
         } else {
@@ -2994,10 +2994,9 @@ function comparePresentations(obj) {
             }
         );
     }
-    // Detect changes between the saved and current presentation
-    if (currentSlides.length === savedSlides.length && currentSlides.every((v, i) => v === savedSlides[i])) {
-        // console.log("No Changes Detected");
-    } else {
+    var hasChanged = presentationUpdated(currentSlides, savedSlides);
+    // If there are changes between the saved and current presentation
+    if (hasChanged || currentSlides.length != savedSlides.length) {
         console.log("Changes Detected");
         // Add this item location to the requests array
         refreshRequests.push(obj.presentationPath);
@@ -3030,6 +3029,18 @@ function generateSlides(presentationSlideGroups, presentationPath) {
         }
     );
     return slidesData;
+}
+
+function presentationUpdated(currentSlides, savedSlides) {
+    var hasChanged = false;
+    currentSlides.forEach(
+        function (value, index) {
+            if (value != savedSlides[index]){
+                hasChanged = true;
+            }
+        }
+    );
+    return hasChanged;
 }
 
 function checkIOS() {
