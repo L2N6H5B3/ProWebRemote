@@ -12,7 +12,7 @@ ProWebRemote is designed to pull in all Library Presentations, Playlist Presenta
 
 There are several features available under **Settings** (in the top right) to enhance the experience of ProWebRemote:
 * **Continuous Playlists** functions identically in ProWebRemote as it does in ProPresenter, allowing the entire playlist to scroll within the presentation slides area.
-* **Pull Entire Library On Load** allows ProWebRemote to retrieve the entire ibrary of presentations, rather than just retrieving the names of the presentations.  This feature will significantly speed up the usage of library presentations (this has no impact on playlist presentations as they are always retrieved), but may cause ProPresenter to crash if there are presentations with out-of-date cues attached.
+* **Pull Entire Library On Load** allows ProWebRemote to retrieve the entire ibrary of presentations, rather than just retrieving the names of the presentations.  This feature will significantly speed up the usage of library presentations (this has no impact on playlist presentations as they are always retrieved), but may cause ProPresenter to crash if there are a large amount of library presentations, or if there are presentations that have out-of-date cues.
 * **Force Next/Previous Slide** will force the slide progression of the current presentation if the previous presentation was from a different location (Library/Playlist), and the current presentation was selected remotely.  Without this feature enabled, ProPresenter will default to the previous presentation on next/previous slide.
 * **Save Browser Cookies** saves your preferences on the current device you're using as browser cookies.  If you disable this, ProWebRemote will default to the defined settings in `site.js`.  _**NOTE:** Save Browser Cookies does not work when launching ProWebRemote directly from the `index.html` file, due to a restriction with local files being allowed to use cookies._
 * **Restart ProWebRemote** is used to allow an easy refresh of the web app if features are not responding correctly.  Please note that this will remove any configuration settings if **Save Browser Cookies** is not enabled.
@@ -20,7 +20,6 @@ There are several features available under **Settings** (in the top right) to en
 ## Troubleshooting
 ProWebRemote is not connecting to ProPresenter 7
 * If the library or playlists don't match up (e.g. a presentation has been edited or the playlist has changed), use the small refresh icon at the top right of the libraries/playlists section to force a refresh.
-* ProWebRemote currently only supports ProPresenter 7 on macOS, due to protocol differences on ProPresenter 7 between macOS and Windows.
-* Features were mainly developed on the Chromium platform (Google Chrome / Chromium Open Source Project) and may not work correctly in other browsers.
+* Features were mainly developed on the Chromium platform (Google Chrome / Chromium Open Source Project) and may not work correctly in other browsers; though ProWebRemote has been tested on Safari on iOS 9.3.5.
 * ProWebRemote must be run from either the index.html file or hosted on a non-HTTPS server as ProPresenter 7 uses WebSocket (WS) and not WebSocketSecure (WSS) for remote communication. HTTPS only supports WSS, and will not run a WS connection due to security requirements.
 * Ensure that the password provided to ProWebRemote matches the Remote password in ProPresenter 7
