@@ -1,7 +1,7 @@
 // Variables
 
 // Connection
-var host = "172.16.101.32";
+var host = "10.1.1.33";
 var port = "50000";
 var pass = "control";
 var stagePass = "stage";
@@ -74,13 +74,13 @@ function connect() {
 
 function onOpen(evt) {
     if (!authenticated) {
-        remoteWebSocket.send('{"action":"authenticate","protocol":"700","password":"' + pass + '"}');
+        remoteWebSocket.send('{"action":"authenticate","protocol":"701","password":"' + pass + '"}');
     }
 }
 
 function onMessage(evt) {
     var obj = JSON.parse(evt.data);
-    // console.log("Message: " + evt.data);
+    console.log("Message: " + evt.data);
 
     if (obj.action == "authenticate" && obj.authenticated == "1" && authenticated == false) {
         // If the data is stale
