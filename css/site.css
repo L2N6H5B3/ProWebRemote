@@ -416,7 +416,7 @@ select {
     }
     .playlist-group {
         position: relative;
-        padding-bottom: 5px;
+        padding-left: 6px;
     }
     .item.con {
         font-size: 13px;
@@ -451,7 +451,7 @@ select {
     .item.lib {
         font-size: 13px;
         padding: 3px;
-        padding-left: 22px;
+        padding-left: 16px;
         position: relative;
         border: 1px solid #464646;
     }
@@ -463,8 +463,11 @@ select {
         background-color: #585858 !important;
         border-radius: 4px;
     }
-    .item.lib.playlist {
-        padding-left: 28px;
+    .item.lib.group.sub {
+        padding-left: 16px;
+    }
+    .item.lib.playlist.sub {
+        padding-left: 22px;
     }
     .library.segment {
         height: calc(100% - 1px);
@@ -505,6 +508,10 @@ select {
         height: 16px;
         vertical-align: text-bottom;
         margin-right: 6px;
+    }
+    .item img.announcement-indicator {
+        float: right;
+        margin-right: 0px;
     }
     .playlists {
         padding-bottom: 10px;
@@ -582,6 +589,13 @@ select {
         top: 0px;
         z-index: 1;
     }
+    .presentation-controls {
+        float: right;
+        margin: -2px -5px 0px 0px;
+    }
+    .presentation-controls img {
+        height: 18px;
+    }
     .presentation-content div {
         display: inline-block;
     }
@@ -610,8 +624,6 @@ select {
         display: block;
         font-weight: bold;
         position: relative;
-        overflow: hidden;
-        height: 18px;
     }
     .slide .slide-text {
         min-height: 60px;
@@ -631,7 +643,7 @@ select {
     }
     .media {
         font-size: 90px;
-        padding: 10px 22px;
+        padding: 10px 22px 10px 20px;
         color: #868686;
         vertical-align: middle;
     }
@@ -640,6 +652,18 @@ select {
     }
     .media i:active {
         color: #ffffff;
+    }
+    .media-image {
+        vertical-align: middle;
+        padding: 0px 0px 0px 16px;
+    }
+    .media-image img {
+        width: 100px;
+    }
+    .media-image i {
+        width: 100px;
+        font-size: 50px;
+        text-align: center;
     }
     .media-name {
         font-size: 14px;
@@ -672,8 +696,14 @@ select {
         margin: 1px 1px 1px 1px;
         width: calc(100% - 6px);
     }
+    .slide-container.previous-selection:not(.selected) a div.slide {
+        box-shadow: 0px 0px 2px 2px #195cad;
+    }
     .slide-container.selected {
         border: 2px solid #d4722b;
+    }
+    .slide-container.announcement-selected {
+        border: 2px solid #5aa146;
     }
     .slide-container.disabled .slide {
         opacity: 50%;
@@ -691,8 +721,10 @@ select {
     .slide-label {
         display: inline-block !important;
         background-color: initial !important;
-        position: absolute;
+        position: absolute !important;
         right: 0px;
+        padding-right: 4px !important;
+        text-shadow: 0px 0.5px 2px #000000;
     }
     .playback .content {
         height: 60px;
@@ -1443,7 +1475,7 @@ select {
             opacity: 0;
         }
     }
-    a.expander.collapsed~a.display-playlist {
+    a.expander.collapsed~a.display-playlist, a.expander.collapsed~div.playlist-group {
         display: none;
     }
 }
@@ -1498,7 +1530,7 @@ select {
     }
     .playlist-group {
         position: relative;
-        padding-bottom: 5px;
+        padding-left: 6px;
     }
     .item.con {
         font-size: 13px;
@@ -1533,7 +1565,7 @@ select {
     .item.lib {
         font-size: 13px;
         padding: 3px;
-        padding-left: 22px;
+        padding-left: 16px;
         position: relative;
         border: 1px solid #464646;
     }
@@ -1545,8 +1577,11 @@ select {
         background-color: #585858 !important;
         border-radius: 4px;
     }
-    .item.lib.playlist {
-        padding-left: 28px;
+    .item.lib.group.sub {
+        padding-left: 16px;
+    }
+    .item.lib.playlist.sub {
+        padding-left: 22px;
     }
     .collapser {
         position: absolute;
@@ -1666,7 +1701,7 @@ select {
     }
     .media {
         font-size: 90px;
-        padding: 10px 22px;
+        padding: 10px 22px 10px 20px;
         color: #868686;
         vertical-align: middle;
     }
@@ -1675,6 +1710,18 @@ select {
     }
     .media i:active {
         color: #ffffff;
+    }
+    .media-image {
+        vertical-align: middle;
+        padding: 0px 0px 0px 16px;
+    }
+    .media-image img {
+        width: 100px;
+    }
+    .media-image i {
+        width: 100px;
+        font-size: 50px;
+        text-align: center;
     }
     .media-name {
         font-size: 14px;
@@ -1701,8 +1748,14 @@ select {
         margin: 1px 1px 1px 1px;
         width: calc(100% - 6px);
     }
+    .slide-container.previous-selection:not(.selected) a div.slide {
+        box-shadow: 0px 0px 2px 2px #195cad;
+    }
     .slide-container.selected {
         border: 2px solid #d4722b;
+    }
+    .slide-container.announcement-selected {
+        border: 2px solid #5aa146;
     }
     .slide-container.disabled .slide {
         opacity: 50%;
@@ -1720,8 +1773,10 @@ select {
     .slide-label {
         display: inline-block !important;
         background-color: initial !important;
-        position: absolute;
+        position: absolute !important;
         right: 0px;
+        padding-right: 4px !important;
+        text-shadow: 0px 0.5px 2px #000000;
     }
     .playback .content {
         height: 60px;
@@ -2295,6 +2350,6 @@ select {
     .authenticate label {
         width: auto;
         display: block;
-        text-align: center;]
+        text-align: center;
     }
 }
