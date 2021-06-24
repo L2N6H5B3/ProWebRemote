@@ -1,7 +1,7 @@
 // Variables
 
 // Connection
-var host = "10.1.1.63";
+var host = "172.16.101.32";
 var port = "50000";
 var pass = "control";
 
@@ -76,6 +76,7 @@ function onOpen() {
 
 function onMessage(evt) {
     var obj = JSON.parse(evt.data);
+    console.log(obj);
     if (obj.action == "authenticate" && obj.authenticated == "1" && authenticated == false) {
         // If the data is stale
         if (refresh) {
@@ -100,8 +101,6 @@ function onMessage(evt) {
         $("#status").attr("class", "connected");
         // Prevent disconnect auto-refresh
         clearTimeout(resetTimeout);
-        // Start receiving clock times from ProPresenter
-        startReceivingClockData();
     } else if (obj.action == "libraryRequest") {
         // Check if this is a Windows ProPresenter instance
         if (obj.library[0].includes(":")) {
@@ -124,7 +123,7 @@ function onMessage(evt) {
         // Create a variable to hold the libraries
         data = "";
         // For each item in the libraries
-        obj.library.forEach(function(item) {
+        obj.library.forEach(function (item) {
             // Add the library if required
             data += createLibrary(item);
             // If set to only get names from ProPresenter libraries
@@ -189,7 +188,7 @@ function onMessage(evt) {
         data = "";
         // For each audio playlist
         $(obj.audioPlaylist).each(
-            function() {
+            function () {
                 // Check if this object is a audio playlist group or audio playlist
                 if (this.playlistType == "playlistTypeGroup") {
                     // Create a new audio playlist group
@@ -212,7 +211,7 @@ function onMessage(evt) {
         // Create a variable to hold the clocks
         data = "";
         // For each clock in the list
-        obj.clockInfo.forEach(function(item, index) {
+        obj.clockInfo.forEach(function (item, index) {
             // Create the clock
             data += createClock(item, index);
         });
@@ -230,7 +229,7 @@ function onMessage(evt) {
         // Create a variable to hold the messages
         data = "";
         // For each message in the list
-        obj.messages.forEach(function(item, index) {
+        obj.messages.forEach(function (item, index) {
             // Create message
             data += createMessage(item, index);
             // Add the message to the message list
@@ -253,14 +252,15 @@ function onMessage(evt) {
         createStageScreens(obj);
     } else if (obj.action == "presentationCurrent") {
         // If this presentation has images, process normally
-        if (obj.presentation.presentationSlideGroups[0].groupSlides[0].slideImage != "") {
-            // Create presentation
-            createPresentation(obj);
+        if (obj.presentation.presentationSlideGroups.length > 0) {
+            if (obj.presentation.presentationSlideGroups[0].groupSlides[0].slideImage != "") {
+                // Create presentation
+                createPresentation(obj);
+            }
         } else {
             // Compare presentations
             comparePresentations(obj);
         }
-
     } else if (obj.action == "presentationSlideIndex") {
         // Check if the slide index is not -1
         if (obj.slideIndex != -1) {
@@ -283,7 +283,7 @@ function onMessage(evt) {
             $("#clear-all").addClass("activated");
         }
         if (serverIsWindows) {
-            if (obj.presentationPath.charAt(0) == '0') {
+            if (!isNaN(obj.presentationPath.charAt(0))) {
                 console.log("IsPlaylistTrigger");
                 playlistTriggerIndex = true;
             } else {
@@ -355,13 +355,13 @@ function onClose() {
     // If retry connection is enabled
     if (retryConnection) {
         // Retry connection every second
-        setTimeout(function() {
+        setTimeout(function () {
             connect();
         }, 1000);
     }
 
     // Refresh library after 5 minutes of disconnection
-    resetTimeout = setTimeout(function() {
+    resetTimeout = setTimeout(function () {
         refresh = true;
     }, 300000);
 }
@@ -487,9 +487,9 @@ function setSlideViewCookie(int) {
 function getSlideColsCookie() {
     if (checkCookie("slideCols") && useCookies) {
         slideCols = parseInt(getCookie("slideCols"));
-        document.getElementById("slide-cols").value = (parseInt(document.getElementById("slide-cols").max)+1) - parseInt(getCookie("slideCols"));
+        document.getElementById("slide-cols").value = (parseInt(document.getElementById("slide-cols").max) + 1) - parseInt(getCookie("slideCols"));
     } else {
-        document.getElementById("slide-cols").value = (parseInt(document.getElementById("slide-cols").max)+1) - slideCols;
+        document.getElementById("slide-cols").value = (parseInt(document.getElementById("slide-cols").max) + 1) - slideCols;
     }
 }
 
@@ -512,13 +512,13 @@ function createLibrary(obj) {
     // Variable to hold the data of the library
     var libraryData = "";
     // Iterate through each item in the split path to retrieve the library name
-    pathSplit.forEach(function(item, index) {
+    pathSplit.forEach(function (item, index) {
         if (item == "Libraries") {
             libraryName = pathSplit[index + 1];
         }
     });
     // Check if the library is unique and can be added in the array
-    libraryList.forEach(function(item) {
+    libraryList.forEach(function (item) {
         if (item == libraryName) {
             unique = false;
         }
@@ -536,9 +536,9 @@ function createLibrary(obj) {
 function createPlaylistGroup(obj) {
     var groupData = "";
     groupData += '<div class="playlist-group">' +
-        '<a id="pp-expander-'+obj.playlistLocation+'" onclick="togglePlaylistVisibility(this)" class="expander collapsed"><i class="collapser '+getNested(obj)+' fas fa-caret-right"></i><div class="item lib group '+getNested(obj)+'"><img src="img/playlistgroup.png" />' + obj.playlistName + '</div></a>';
+        '<a id="pp-expander-' + obj.playlistLocation + '" onclick="togglePlaylistVisibility(this)" class="expander collapsed"><i class="collapser ' + getNested(obj) + ' fas fa-caret-right"></i><div class="item lib group ' + getNested(obj) + '"><img src="img/playlistgroup.png" />' + obj.playlistName + '</div></a>';
     $(obj.playlist).each(
-        function() {
+        function () {
             if (this.playlistType == "playlistTypeGroup") {
                 groupData += createPlaylistGroup(this);
             } else if (this.playlistType == "playlistTypePlaylist") {
@@ -551,10 +551,10 @@ function createPlaylistGroup(obj) {
 }
 
 function createPlaylist(obj) {
-    var playlistData = '<a class="display-playlist" onclick="displayPlaylist(this);"><div class="item lib playlist presentation '+getNested(obj)+'"><img src="img/playlist.png"/><div class="name" id="pp-'+obj.playlistLocation+'">' + obj.playlistName + '</div></div></a>';
+    var playlistData = '<a class="display-playlist" onclick="displayPlaylist(this);"><div class="item lib playlist presentation ' + getNested(obj) + '"><img src="img/playlist.png"/><div class="name" id="pp-' + obj.playlistLocation + '">' + obj.playlistName + '</div></div></a>';
     playlistList.push(obj);
     obj.playlist.forEach(
-        function(item) {
+        function (item) {
             if (item.playlistItemType == "playlistItemTypeHeader") {
                 var playlistHeader = { presentationPath: item.playlistItemLocation, presentation: { presentationName: item.playlistItemName } };
                 playlistHeaderList.push(playlistHeader);
@@ -566,7 +566,7 @@ function createPlaylist(obj) {
                 playlistMediaList.push(playlistAudio);
             } else {
                 // Add this playlist item location to the requests array
-                playlistRequests.push({name:item.playlistItemName, location:item.playlistItemLocation});
+                playlistRequests.push({ name: item.playlistItemName, location: item.playlistItemLocation });
                 // Get the presentation in the playlist from ProPresenter
                 getPresentation(item.playlistItemLocation);
             }
@@ -578,9 +578,9 @@ function createPlaylist(obj) {
 function createAudioPlaylistGroup(obj) {
     var groupData = "";
     groupData += '<div class="playlist-group">' +
-        '<a id="ap-expander-'+obj.playlistLocation+'" onclick="togglePlaylistVisibility(this)" class="expander collapsed"><i class="collapser '+getNested(obj)+' fas fa-caret-right"></i><div class="item lib group '+getNested(obj)+'"><img src="img/playlistgroup.png" />' + obj.playlistName + '</div></a>';
+        '<a id="ap-expander-' + obj.playlistLocation + '" onclick="togglePlaylistVisibility(this)" class="expander collapsed"><i class="collapser ' + getNested(obj) + ' fas fa-caret-right"></i><div class="item lib group ' + getNested(obj) + '"><img src="img/playlistgroup.png" />' + obj.playlistName + '</div></a>';
     $(obj.playlist).each(
-        function() {
+        function () {
             if (this.playlistType == "playlistTypeGroup") {
                 groupData += createAudioPlaylistGroup(this);
             } else if (this.playlistType == "playlistTypePlaylist") {
@@ -593,7 +593,7 @@ function createAudioPlaylistGroup(obj) {
 }
 
 function createAudioPlaylist(obj) {
-    var playlistData = '<a class="display-playlist" onclick="displayAudioPlaylist(this);"><div class="item lib playlist audio '+getNested(obj)+'"><img src="img/audio.png"/><div class="name" id="ap-'+obj.playlistLocation+'">' + obj.playlistName + '</div></div></a>';
+    var playlistData = '<a class="display-playlist" onclick="displayAudioPlaylist(this);"><div class="item lib playlist audio ' + getNested(obj) + '"><img src="img/audio.png"/><div class="name" id="ap-' + obj.playlistLocation + '">' + obj.playlistName + '</div></div></a>';
     audioPlaylistList.push(obj);
     return playlistData;
 }
@@ -662,15 +662,15 @@ function createMessage(obj, messageIndex) {
     var messageData;
     if (messageIndex == 0) {
         messageData = '<a onclick="displayMessage(this);">' +
-            '<div id="message.'+messageIndex+'" class="message-info selected">' +
-            '<div class="message-name">'+obj.messageTitle+'</div>' +
+            '<div id="message.' + messageIndex + '" class="message-info selected">' +
+            '<div class="message-name">' + obj.messageTitle + '</div>' +
             '<a onclick="hideMessage(this);"><div class="message-clear"><i class="fas fa-times-circle"></i></div></a>' +
             '</div>' +
             '</a>';
     } else {
         messageData = '<a onclick="displayMessage(this);">' +
-            '<div id="message.'+messageIndex+'" class="message-info">' +
-            '<div class="message-name">'+obj.messageTitle+'</div>' +
+            '<div id="message.' + messageIndex + '" class="message-info">' +
+            '<div class="message-name">' + obj.messageTitle + '</div>' +
             '<a onclick="hideMessage(this);"><div class="message-clear"><i class="fas fa-times-circle"></i></div></a>' +
             '</div>' +
             '</a>';
@@ -689,13 +689,13 @@ function createMessageComponents(index) {
         '<div class="attribute-data">';
     // Iterate through the message components
     messageComponents.forEach(
-        function(item) {
+        function (item) {
             // If this is a data entry element
             if (item.startsWith("${")) {
                 // If this component is a timer
                 if (item.endsWith("TIMER}")) {
                     // Create a variable to hold the timer name
-                    var timerName = item.replace("${","").replace(": TIMER}","");
+                    var timerName = item.replace("${", "").replace(": TIMER}", "");
                     // Create a variable to hold the timer index
                     var timerIndex;
                     // Iterate through all available timers
@@ -707,16 +707,16 @@ function createMessageComponents(index) {
                         }
                     );
 
-                    var clockDuration = $("#clock-"+timerIndex+"-start").val();
-                    var clockEndTime = $("#clock-"+timerIndex+"-time").val();
-                    var clockTime = $("#clock-"+timerIndex+"-currentTime").text();
+                    var clockDuration = $("#clock-" + timerIndex + "-start").val();
+                    var clockEndTime = $("#clock-" + timerIndex + "-time").val();
+                    var clockTime = $("#clock-" + timerIndex + "-currentTime").text();
 
                     var clockType;
                     var clockTypePreview;
-                    if ($("#clock-"+timerIndex).hasClass("type-0")) {
+                    if ($("#clock-" + timerIndex).hasClass("type-0")) {
                         clockType = 0;
                         clockTypePreview = clockDuration;
-                    } else if ($("#clock-"+timerIndex).hasClass("type-1")) {
+                    } else if ($("#clock-" + timerIndex).hasClass("type-1")) {
                         clockType = 1;
                         clockTypePreview = "00:00:00";
                     } else {
@@ -724,34 +724,34 @@ function createMessageComponents(index) {
                         clockTypePreview = clockDuration;
                     }
 
-                    var clockOverrun = document.getElementById("clock-"+timerIndex+"-overrun").checked;
+                    var clockOverrun = document.getElementById("clock-" + timerIndex + "-overrun").checked;
                     // Add the message component data
                     messageComponentData += '<div class="message-attribute timer">' +
-                        '<div class="attribute-name">'+timerName+'</div>' +
-                        '<div id="messageclock-'+timerIndex+'" class="message-timer-container type-'+clockType+'">' +
-                        '<div id="messageclock-'+timerIndex+'-type" class="timer-type collapse-hide">'+createClockTypeOptions(clockType, timerIndex)+'</div>' +
-                        '<div class="timer-timeOptions collapse-hide type-0"><div><div class="element-title">Duration</div><input id="messageclock-'+timerIndex+ '-duration" onchange="updateMessagePreview(this); updateMessageClock('+timerIndex+');" type="text" class="text-input" value="'+clockDuration+'"/></div></div>' +
-                        '<div class="timer-timeOptions collapse-hide type-1"><div><div class="element-title">Time</div><input id="messageclock-'+timerIndex+ '-time" onchange="updateMessagePreview(this); updateMessageClock('+timerIndex+');" type="text" class="text-input" value="'+clockEndTime+'"/></div><div><div class="element-title">Format</div><select id="messageclock-' + timerIndex + '-format" onchange="updateMessageClock(' + timerIndex + ');" class="text-input">' + createClockFormatOptions(parseInt($("#clock-"+timerIndex+"-format").val())) + '</select></div></div>' +
-                        '<div class="timer-timeOptions collapse-hide type-2"><div><div class="element-title">Start</div><input id="messageclock-'+timerIndex+ '-start" onchange="updateMessagePreview(this); updateMessageClock('+timerIndex+');" type="text" class="text-input" value="'+ clockDuration+'"/></div><div><div class="element-title">End</div><input id="messageclock-' + timerIndex + '-end" onchange="updateMessageClock(' + timerIndex + ');" type="text" class="text-input" placeholder="No Limit" value="' + clockEndTime + '"/></div></div>' +
-                        '<div class="timer-overrun collapse-hide"><input id="messageclock-' + timerIndex + '-overrun" onchange="updateMessageClock('+timerIndex+');" type="checkbox" class="checkbox text-input" '+getClockOverrun(clockOverrun)+'/><div>Overrun</div></div>' +
-                        '<div class="message-timer-controls"><div class="timer-reset"><a onclick="resetClock('+timerIndex+');"><div class="option-button"><img src="img/reset.png" /></div></a></div>' +
-                        '<div id="messageclock-'+timerIndex+'-currentTime" class="timer-currentTime">'+clockTime+'</div>' +
-                        '<div class="timer-state"><a onclick="toggleClockState('+timerIndex+');"><div id="messageclock-'+timerIndex+'-state" class="option-button"><i class="fas fa-play"></i></div></a></div></div></div>' +
+                        '<div class="attribute-name">' + timerName + '</div>' +
+                        '<div id="messageclock-' + timerIndex + '" class="message-timer-container type-' + clockType + '">' +
+                        '<div id="messageclock-' + timerIndex + '-type" class="timer-type collapse-hide">' + createClockTypeOptions(clockType, timerIndex) + '</div>' +
+                        '<div class="timer-timeOptions collapse-hide type-0"><div><div class="element-title">Duration</div><input id="messageclock-' + timerIndex + '-duration" onchange="updateMessagePreview(this); updateMessageClock(' + timerIndex + ');" type="text" class="text-input" value="' + clockDuration + '"/></div></div>' +
+                        '<div class="timer-timeOptions collapse-hide type-1"><div><div class="element-title">Time</div><input id="messageclock-' + timerIndex + '-time" onchange="updateMessagePreview(this); updateMessageClock(' + timerIndex + ');" type="text" class="text-input" value="' + clockEndTime + '"/></div><div><div class="element-title">Format</div><select id="messageclock-' + timerIndex + '-format" onchange="updateMessageClock(' + timerIndex + ');" class="text-input">' + createClockFormatOptions(parseInt($("#clock-" + timerIndex + "-format").val())) + '</select></div></div>' +
+                        '<div class="timer-timeOptions collapse-hide type-2"><div><div class="element-title">Start</div><input id="messageclock-' + timerIndex + '-start" onchange="updateMessagePreview(this); updateMessageClock(' + timerIndex + ');" type="text" class="text-input" value="' + clockDuration + '"/></div><div><div class="element-title">End</div><input id="messageclock-' + timerIndex + '-end" onchange="updateMessageClock(' + timerIndex + ');" type="text" class="text-input" placeholder="No Limit" value="' + clockEndTime + '"/></div></div>' +
+                        '<div class="timer-overrun collapse-hide"><input id="messageclock-' + timerIndex + '-overrun" onchange="updateMessageClock(' + timerIndex + ');" type="checkbox" class="checkbox text-input" ' + getClockOverrun(clockOverrun) + '/><div>Overrun</div></div>' +
+                        '<div class="message-timer-controls"><div class="timer-reset"><a onclick="resetClock(' + timerIndex + ');"><div class="option-button"><img src="img/reset.png" /></div></a></div>' +
+                        '<div id="messageclock-' + timerIndex + '-currentTime" class="timer-currentTime">' + clockTime + '</div>' +
+                        '<div class="timer-state"><a onclick="toggleClockState(' + timerIndex + ');"><div id="messageclock-' + timerIndex + '-state" class="option-button"><i class="fas fa-play"></i></div></a></div></div></div>' +
                         '</div>';
                     // Add the message Preview data
-                    messagePreviewData += '<div id="preview.'+item.replace("${","").replace(": TIMER}","")+'" class="attribute-item">'+clockTypePreview+'</div>';
+                    messagePreviewData += '<div id="preview.' + item.replace("${", "").replace(": TIMER}", "") + '" class="attribute-item">' + clockTypePreview + '</div>';
                 } else {
                     // Add the message component data
                     messageComponentData += '<div class="message-attribute">' +
-                        '<div class="attribute-name">'+item.replace("${","").replace("}","")+'</div>' +
+                        '<div class="attribute-name">' + item.replace("${", "").replace("}", "") + '</div>' +
                         '<input onchange="updateMessagePreview(this)" class="text-input attribute-data" />' +
                         '</div>';
                     // Add the message Preview data
-                    messagePreviewData += '<div id="preview.'+item.replace("${","").replace("}","")+'" class="attribute-item">'+item.replace("${","[").replace("TIMER}","]").replace("}","]")+'</div>';
+                    messagePreviewData += '<div id="preview.' + item.replace("${", "").replace("}", "") + '" class="attribute-item">' + item.replace("${", "[").replace("TIMER}", "]").replace("}", "]") + '</div>';
                 }
             } else {
                 // Add the message Preview data
-                messagePreviewData += '<div class="attribute-item">'+item+'</div>';
+                messagePreviewData += '<div class="attribute-item">' + item + '</div>';
             }
         }
     );
@@ -763,11 +763,11 @@ function createMessageComponents(index) {
 function createStageScreens(obj) {
     var screenData = "";
     obj.stageScreens.forEach(
-        function(item) {
+        function (item) {
             var selectedLayout = item.stageLayoutSelectedLayoutUUID;
             screenData += '<div class="stage-screen"><div class="screen-name">' + item.stageScreenName + '</div><div class="stage-layout"><select onchange="setStageLayout(this)" name="stage-layout" id="' + item.stageScreenUUID + '">';
             obj.stageLayouts.forEach(
-                function(item) {
+                function (item) {
                     if (item.stageLayoutUUID == selectedLayout) {
                         screenData += '<option value="' + item.stageLayoutUUID + '" selected>' + item.stageLayoutName + '</option>';
                     } else {
@@ -790,13 +790,13 @@ function createPresentationName(obj) {
     // Variable to hold the name of the presentation, retrieved from the presentation path
     var presentationName = "";
     // Iterate through each item in the split path to retrieve the library name
-    pathSplit.forEach(function(item, index) {
+    pathSplit.forEach(function (item, index) {
         if (item == "Libraries") {
             presentationName = pathSplit[index + 2].replace(".pro", "");
         }
     });
     // Check if the presentation is unique and can be added in the array
-    libraryPresentationNameList.forEach(function(item) {
+    libraryPresentationNameList.forEach(function (item) {
         if (item.presentationName == presentationName) {
             unique = false;
         }
@@ -837,9 +837,9 @@ function createPresentation(obj) {
 
     // Set the correct index for grouped slides
     obj.presentation.presentationSlideGroups.forEach(
-        function(presentationSlideGroup) {
+        function (presentationSlideGroup) {
             presentationSlideGroup.groupSlides.forEach(
-                function(groupSlide) {
+                function (groupSlide) {
                     // Set the current count as the slide index
                     groupSlide.slideIndex = count;
                     count++;
@@ -850,7 +850,7 @@ function createPresentation(obj) {
     // Create variable to hold presentation item
     var item;
     // Add this presentation to either the playlist or library presentation list
-    if (obj.presentationPath.charAt(0) == '0') {
+    if (!isNaN(obj.presentationPath.charAt(0))) {
         // Get the presentation from the playlist presentation list
         item = findPresentationByTopPath(playlistPresentationList, obj.presentationPath);
 
@@ -933,11 +933,10 @@ function clearAll() {
 }
 
 function setClearAll() {
-
     $('#live').empty();
     // Remove selected from any previous slides
     $(".slide-container").removeClass("selected");
-
+    // Reset clear buttons
     $("#clear-all").removeClass("activated");
     $("#clear-audio").removeClass("activated");
     $("#clear-messages").removeClass("activated");
@@ -949,7 +948,7 @@ function setClearAll() {
     $(".current").empty();
     $("#audio-status").addClass("disabled");
     $("#audio-items").children("a").children("div").removeClass("highlighted");
-
+    // Reset playback controls
     $("#audio-status").removeClass("fa-pause");
     $("#audio-status").addClass("fa-play").addClass("disabled");
 }
@@ -1033,7 +1032,7 @@ function clearMedia() {
 function setCurrentSlide(index, location, presentationDestination) {
     // Iterate over each slide number
     $(".slide-number").each(
-        function() {
+        function () {
             // If this slide number and location match the requested slide
             if ($(this).text() == index && $(this).parent().parent().parent().attr("id") == location) {
                 if (presentationDestination != 1) {
@@ -1065,15 +1064,15 @@ function setCurrentSlide(index, location, presentationDestination) {
     );
     if (presentationDestination != 1) {
         // Check if this is a playlist or library presentation
-        if (location.charAt(0) == '0') {
+        if (!isNaN(location.charAt(0))) {
             // Set the current live slide image
             $(playlistPresentationList).each(
-                function() {
+                function () {
                     if (this.presentationPath == location) {
                         $(this.presentation.presentationSlideGroups).each(
-                            function() {
+                            function () {
                                 $(this.groupSlides).each(
-                                    function() {
+                                    function () {
                                         if (this.slideIndex == index - 1) {
                                             var image = new Image();
                                             image.src = 'data:image/png;base64,' + this.slideImage;
@@ -1090,12 +1089,12 @@ function setCurrentSlide(index, location, presentationDestination) {
         } else {
             // Set the current live slide image
             $(libraryPresentationList).each(
-                function() {
+                function () {
                     if (this.presentationPath == location) {
                         $(this.presentation.presentationSlideGroups).each(
-                            function() {
+                            function () {
                                 $(this.groupSlides).each(
-                                    function() {
+                                    function () {
                                         if (this.slideIndex == index - 1) {
                                             var image = new Image();
                                             image.src = 'data:image/png;base64,' + this.slideImage;
@@ -1115,10 +1114,10 @@ function setCurrentSlide(index, location, presentationDestination) {
 
 function setPresentationDestination(location, presentationDestination) {
     // Check if this is a playlist or library presentation
-    if (location.charAt(0) == '0') {
+    if (!isNaN(location.charAt(0))) {
         // Iterate through each playlist presentation
         $(playlistPresentationList).each(
-            function() {
+            function () {
                 if (this.presentationPath == location) {
                     // Set the new presentation destination
                     this.presentationDestination = presentationDestination;
@@ -1128,7 +1127,7 @@ function setPresentationDestination(location, presentationDestination) {
     } else {
         // Iterate through each playlist presentation
         $(libraryPresentationList).each(
-            function() {
+            function () {
                 if (this.presentationPath == location) {
                     // Set the new presentation destination
                     this.presentationDestination = presentationDestination;
@@ -1138,7 +1137,7 @@ function setPresentationDestination(location, presentationDestination) {
     }
     if (followProPresenter) {
         // Get current presentation controls
-        var presentationControls = $(document.getElementById("presentation."+location)).children(".presentation-header").children(".presentation-controls")[0];
+        var presentationControls = $(document.getElementById("presentation." + location)).children(".presentation-header").children(".presentation-controls")[0];
         // If current presentation exists
         if (presentationControls != null) {
             // If the presentation does not have an announcement layer icon but is an announcement layer presentation
@@ -1333,9 +1332,9 @@ function expandTypeList(obj) {
     // Show the dropdown
     $(obj).parent("div").children(".type-dropdown").show();
     // Create a element click handler to allow the opening of the custom dropdown
-    window.addEventListener('click', function(e) {
+    window.addEventListener('click', function (e) {
         // If the clicked element is contained within the dropdown
-        if (document.getElementById(obj.parentNode.id).contains(e.target)) {} else {
+        if (document.getElementById(obj.parentNode.id).contains(e.target)) { } else {
             // Hide the dropdown
             $(obj).parent("div").children(".type-dropdown").hide();
         }
@@ -1419,27 +1418,27 @@ function updateMessagePreview(obj) {
         // Get the timer index
         var timerIndex = parseInt($(".message-timer-container").attr("id").split("-")[1]);
         // Get the timer type
-        var timerType = parseInt($("#messageclock-"+timerIndex+"-type").children("a").attr("id"));
+        var timerType = parseInt($("#messageclock-" + timerIndex + "-type").children("a").attr("id"));
         // Get the timer data
-        switch(timerType){
+        switch (timerType) {
             case 0:
-                previewElementData = document.getElementById("messageclock-"+timerIndex+"-duration").value;
+                previewElementData = document.getElementById("messageclock-" + timerIndex + "-duration").value;
                 break;
             case 1:
                 previewElementData = "00:00:00";
                 break;
             case 2:
-                previewElementData = document.getElementById("messageclock-"+timerIndex+"-start").value;
+                previewElementData = document.getElementById("messageclock-" + timerIndex + "-start").value;
                 break;
         }
     }
     // Check if the field is empty
     if (previewElementData == "") {
         // Add the name placeholder
-        document.getElementById("preview."+previewElementName).innerHTML = "["+previewElementName+"]";
+        document.getElementById("preview." + previewElementName).innerHTML = "[" + previewElementName + "]";
     } else {
         // Add the data
-        document.getElementById("preview."+previewElementName).innerHTML = previewElementData;
+        document.getElementById("preview." + previewElementName).innerHTML = previewElementData;
     }
 }
 
@@ -1495,10 +1494,10 @@ function setAudioSong(obj) {
     var playlistItemLocation;
     // Iterate through each audio playlist
     audioPlaylistList.forEach(
-        function(playlist) {
+        function (playlist) {
             // Iterate through each audio item
             playlist.playlist.forEach(
-                function(playlistItem) {
+                function (playlistItem) {
                     // If the audio item name matches the current playing item
                     if (playlistItem.playlistItemName == obj.audioName) {
                         // Set the current playing item as audio
@@ -1516,7 +1515,7 @@ function setAudioSong(obj) {
         // Set the playing audio name
         $(".playing-audio").text(obj.audioName);
         // Set the playing audio tooltip
-        $(".playing-audio").prop('title', obj.audioName+" - "+obj.audioArtist);
+        $(".playing-audio").prop('title', obj.audioName + " - " + obj.audioArtist);
 
         // Remove the disabled class from audio status
         $("#audio-status").removeClass("disabled");
@@ -1542,9 +1541,9 @@ function setAudioSong(obj) {
         );
 
         // Get the playlist object
-        var playlistObject = document.getElementById("ap-"+playlistLocation);
+        var playlistObject = document.getElementById("ap-" + playlistLocation);
         // Get the playlist nesting structure
-        var nesting = playlistLocation.replace(".0","").split(".");
+        var nesting = playlistLocation.replace(".0", "").split(".");
         // Iterate through each level
         nesting.forEach(
             function (value, index) {
@@ -1554,10 +1553,10 @@ function setAudioSong(obj) {
                 if (index > 0) {
                     // Add the previous levels
                     for (var i = 0; i < index; i++) {
-                        playlistLevel += "."+nesting[i];
+                        playlistLevel += "." + nesting[i];
                     }
                 }
-                var expander = document.getElementById("ap-expander-"+playlistLevel);
+                var expander = document.getElementById("ap-expander-" + playlistLevel);
                 // Set the playlist group to expanded
                 $(expander).removeClass("collapsed").addClass("expanded");
                 $(expander).children("i").removeClass("fa-caret-right");
@@ -1575,7 +1574,7 @@ function setAudioSong(obj) {
         $(playlistObject).parent().addClass("highlighted");
 
         $(".item.con.aud").each(
-            function() {
+            function () {
                 if ($(this).attr("id") == playlistItemLocation) {
                     $(this).addClass("selected");
                 }
@@ -1608,17 +1607,17 @@ function showMessage() {
                 // Get the timer index
                 var timerIndex = parseInt($(".message-timer-container").attr("id").split("-")[1]);
                 // Get the timer type
-                var timerType = parseInt($("#messageclock-"+timerIndex+"-type").children("a").attr("id"));
+                var timerType = parseInt($("#messageclock-" + timerIndex + "-type").children("a").attr("id"));
                 // Get the timer data
-                switch(timerType){
+                switch (timerType) {
                     case 0:
-                        previewElementData = document.getElementById("messageclock-"+timerIndex+"-duration").value;
+                        previewElementData = document.getElementById("messageclock-" + timerIndex + "-duration").value;
                         break;
                     case 1:
                         previewElementData = "00:00:00";
                         break;
                     case 2:
-                        previewElementData = document.getElementById("messageclock-"+timerIndex+"-start").value;
+                        previewElementData = document.getElementById("messageclock-" + timerIndex + "-start").value;
                         break;
                 }
             }
@@ -1628,7 +1627,7 @@ function showMessage() {
         }
     );
     // Send the request to ProPresenter
-    remoteWebSocket.send('{"action":"messageSend","messageIndex":'+messageIndex+',"messageKeys":'+JSON.stringify(messageKeys)+',"messageValues":'+JSON.stringify(messageValues)+'}');
+    remoteWebSocket.send('{"action":"messageSend","messageIndex":' + messageIndex + ',"messageKeys":' + JSON.stringify(messageKeys) + ',"messageValues":' + JSON.stringify(messageValues) + '}');
     // Set clear messages to active
     $("#clear-messages").addClass("activated");
     // Set clear all to active
@@ -1640,7 +1639,7 @@ function showMessage() {
 function hideMessage(obj) {
     var messageIndex = $(obj).parent().attr("id").split(".")[1];
     // Set the request to ProPresenter
-    remoteWebSocket.send('{"action":"messageHide","messageIndex",'+messageIndex+'}');
+    remoteWebSocket.send('{"action":"messageHide","messageIndex",' + messageIndex + '}');
 }
 
 function clearStageMessage() {
@@ -1665,7 +1664,7 @@ function setStageLayout(obj) {
 function deselectItems() {
     // Remove selected from any other playlist item in both presentations and audio
     $(".item.con").each(
-        function() {
+        function () {
             if ($(this).hasClass("selected")) {
                 $(this).removeClass("selected");
                 $(this).addClass("highlighted");
@@ -1722,7 +1721,7 @@ function setMessagesClockOverrun(obj) {
 
 function setMessagesClockTimes(obj) {
     obj.clockTimes.forEach(
-        function(item, index) {
+        function (item, index) {
             document.getElementById("clock-" + index + "-currentTime").innerHTML = getClockSmallFormat(item);
         }
     );
@@ -1765,13 +1764,13 @@ function setClockType(obj) {
     // Set the current element as selected
     $(obj).children("div").addClass("selected");
     // Set the parent div ID to the type
-    $("#clock-"+clockIndex+"-type").children("a").attr("id", type.split("-")[1]);
+    $("#clock-" + clockIndex + "-type").children("a").attr("id", type.split("-")[1]);
     // Check if a message clock exists with this id
-    if ($("#messageclock-"+clockIndex+"-type") != null) {
+    if ($("#messageclock-" + clockIndex + "-type") != null) {
         // Set the parent div ID to the type
-        $("#messageclock-"+clockIndex+"-type").children("a").attr("id", type.split("-")[1]);
+        $("#messageclock-" + clockIndex + "-type").children("a").attr("id", type.split("-")[1]);
         // Update the message preview
-        updateMessagePreview($("#messageclock-"+clockIndex));
+        updateMessagePreview($("#messageclock-" + clockIndex));
     }
     // Show options specific to the clock type
     $(obj).parent().parent().parent().removeClass(types).addClass(type);
@@ -1810,7 +1809,7 @@ function setClockOverrun(obj) {
 
 function setClockTimes(obj) {
     obj.clockTimes.forEach(
-        function(item, index) {
+        function (item, index) {
             document.getElementById("clock-" + index + "-currentTime").innerHTML = getClockSmallFormat(item);
             if (document.getElementById("messageclock-" + index + "-currentTime") != null) {
                 document.getElementById("messageclock-" + index + "-currentTime").innerHTML = getClockSmallFormat(item);
@@ -1834,7 +1833,7 @@ function triggerSlide(obj) {
     // Get the slide index
     var index = $(obj).children("div").children("div").children(".slide-number").text() - 1;
     // Check if this is a playlist or library presentation
-    if (location.charAt(0) == '0') {
+    if (!isNaN(location.charAt(0))) {
         // Sent the request to ProPresenter
         remoteWebSocket.send('{"action":"presentationTriggerIndex","slideIndex":"' + index + '","presentationPath":"' + location + '"}');
         // Check if we should follow ProPresenter
@@ -1860,7 +1859,7 @@ function triggerSlide(obj) {
     if (followProPresenter) {
         // Iterate through each item in the library / playlist area
         $(".item.con.pres").each(
-            function() {
+            function () {
                 // If the current item matches the slide presentation location
                 if ($(this).attr("id") == location) {
                     // Highlight the current item
@@ -1894,7 +1893,7 @@ function triggerSlide(obj) {
         var previewImage = $(obj).parent().children(".media-image").children("img");
         // Set live preview image if available
         if (previewImage.length > 0) {
-            $('#live').append('<img src="'+$(previewImage).attr("src")+'"/>');
+            $('#live').append('<img src="' + $(previewImage).attr("src") + '"/>');
         }
         // Set the media element as active
         $(obj).children("div").addClass("active");
@@ -2028,12 +2027,12 @@ function triggerNextSlide() {
         var currentSlideNumber = parseInt($(currentSlide).find(".slide-number").text());
         console.log(currentSlideNumber);
         // Get the total slide count
-        var totalSlideCount = parseInt($(document.getElementById("presentation."+currentLocation)).children("div.presentation-content").children("div").length);
+        var totalSlideCount = parseInt($(document.getElementById("presentation." + currentLocation)).children("div.presentation-content").children("div").length);
         // Create variable to determine loop status
         var loop = true;
 
         // Check if this is a playlist or library presentation
-        if (currentLocation.charAt(0) == '0') {
+        if (!isNaN(currentLocation.charAt(0))) {
             var nextPresentation;
             // Set variable to determine loop status
             loop = true;
@@ -2156,7 +2155,7 @@ function triggerAudio(obj) {
     // Get audio playlist location
     var playlistLocation = location.split(":")[0];
     // If this is a playlist item
-    if (location.charAt(0) == '0') {
+    if (!isNaN(location.charAt(0))) {
         // Start playing the audio playlist item
         remoteWebSocket.send('{"action":"audioStartCue","audioChildPath":"' + location + '"}');
         // Remove selected from audio playlist items
@@ -2172,7 +2171,7 @@ function triggerAudio(obj) {
 
     // Remove selected from audio playlists
     $(".item.lib.playlist.audio").each(
-        function() {
+        function () {
             if ($(this).hasClass("selected")) {
                 $(this).removeClass("selected");
                 $(this).addClass("highlighted");
@@ -2277,11 +2276,11 @@ function displayLibrary(obj) {
         // Sort the presentations in the library by name
         libraryPresentationNameList.sort(SortPresentationByName);
         // For each Presentation Name in the array
-        libraryPresentationNameList.forEach(function(item) {
+        libraryPresentationNameList.forEach(function (item) {
             // Variable to hold the split string of the presentation path
             var pathSplit = item.presentationPath.split("/");
             // Iterate through each item in the split path to retrieve the library name
-            pathSplit.forEach(function(element, index) {
+            pathSplit.forEach(function (element, index) {
                 if (element == "Libraries") {
                     // If this presentation is from this library, add the data
                     if (pathSplit[index + 1] == current) {
@@ -2300,11 +2299,11 @@ function displayLibrary(obj) {
         // Sort the presentations in the library by name
         libraryPresentationList.sort(SortPresentationByName);
         // For each Presentation in the array
-        libraryPresentationList.forEach(function(item) {
+        libraryPresentationList.forEach(function (item) {
             // Variable to hold the split string of the presentation path
             var pathSplit = item.presentationPath.split("/");
             // Iterate through each item in the split path to retrieve the library name
-            pathSplit.forEach(function(element, index) {
+            pathSplit.forEach(function (element, index) {
                 if (element == "Libraries") {
                     // If this presentation is from this library, add the data
                     if (pathSplit[index + 1] == current) {
@@ -2340,7 +2339,7 @@ function displayPlaylist(obj) {
     playlistPresentationList.sort(SortPresentationByPath);
     // Find the playlist in the array
     $(playlistList).each(
-        function() {
+        function () {
             if (this.playlistName == current) {
                 // Reset the item count
                 $("#left-count").empty();
@@ -2352,7 +2351,7 @@ function displayPlaylist(obj) {
                 }
                 // Add the presentations in the playlist
                 $(this.playlist).each(
-                    function() {
+                    function () {
                         // Create a variable to store the playlist item location
                         var playlistItemLocation = this.playlistItemLocation;
                         // Create a variable to store the playlist item name
@@ -2367,7 +2366,7 @@ function displayPlaylist(obj) {
                         } else if (this.playlistItemType == "playlistItemTypePresentation") {
                             // For each presentation in the playlist presentation array
                             $(playlistPresentationList).each(
-                                function() {
+                                function () {
                                     // If the presentation path matches the playlist item location
                                     if (this.presentationPath == playlistItemLocation) {
                                         // If the presentation destination is main output
@@ -2376,7 +2375,7 @@ function displayPlaylist(obj) {
                                         }
                                         // The presentation destination must be announcements layer
                                         else {
-                                            data += '<a onclick="displayPresentation(this);"><div id="' + playlistItemLocation + '" class="item con pres"><img src="img/presentation.png" /><div class="name">' + playlistItemName + '</div>'+getPresentationDestination(1)+'</div></a>';
+                                            data += '<a onclick="displayPresentation(this);"><div id="' + playlistItemLocation + '" class="item con pres"><img src="img/presentation.png" /><div class="name">' + playlistItemName + '</div>' + getPresentationDestination(1) + '</div></a>';
                                         }
                                     }
                                 }
@@ -2415,7 +2414,7 @@ function displayAudioPlaylist(obj) {
     $("#right-count").empty();
     // Find the playlist in the array
     audioPlaylistList.forEach(
-        function(currentPlaylist) {
+        function (currentPlaylist) {
             if (currentPlaylist.playlistName == current) {
                 // Get the new item count
                 if (currentPlaylist.playlist.length == 1) {
@@ -2425,7 +2424,7 @@ function displayAudioPlaylist(obj) {
                 }
                 // Add the presentations in the playlist
                 currentPlaylist.playlist.forEach(
-                    function(playlistItem) {
+                    function (playlistItem) {
                         data += '<a onclick="triggerAudio(this);"><div id="' + playlistItem.playlistItemLocation + '" class="item con aud"><img src="img/clearaudio.png" /><div class="name">' + playlistItem.playlistItemName + '</div></div></a>';
                     }
                 );
@@ -2495,26 +2494,26 @@ function displayPresentation(obj) {
             // Set a previous presentation request
             previousPresentationRequest = true;
             // Check if the presentation is a playlist or a library presentation
-            if (location.charAt(0) == '0') {
+            if (!isNaN(location.charAt(0))) {
                 // Create a variable to hold the playlist location
                 var playlistLocation = "";
                 // Create a variable to hold the playlist length
                 var playlistLength = "";
                 // Iterate through each playlist in the array
                 playlistList.forEach(
-                    function(currentPlaylist) {
+                    function (currentPlaylist) {
                         // Iterate through each element in the playlist
                         currentPlaylist.playlist.forEach(
-                            function(playlistItem) {
+                            function (playlistItem) {
                                 if (playlistItem.playlistItemLocation == location) {
                                     // Set the playlist location
                                     playlistLocation = currentPlaylist.playlistLocation;
                                     // Set the playlist length
                                     playlistLength = currentPlaylist.playlist.length;
                                     // Get the playlist object
-                                    var playlistObject = document.getElementById("pp-"+playlistLocation);
+                                    var playlistObject = document.getElementById("pp-" + playlistLocation);
                                     // Get the playlist nesting structure
-                                    var nesting = playlistLocation.replace(".0","").split(".");
+                                    var nesting = playlistLocation.replace(".0", "").split(".");
                                     // Iterate through each level
                                     nesting.forEach(
                                         function (value, index) {
@@ -2524,10 +2523,10 @@ function displayPresentation(obj) {
                                             if (index > 0) {
                                                 // Add the previous levels
                                                 for (var i = 0; i < index; i++) {
-                                                    playlistLevel += "."+nesting[i];
+                                                    playlistLevel += "." + nesting[i];
                                                 }
                                             }
-                                            var expander = document.getElementById("pp-expander-"+playlistLevel);
+                                            var expander = document.getElementById("pp-expander-" + playlistLevel);
                                             // Set the playlist group to expanded
                                             $(expander).removeClass("collapsed").addClass("expanded");
                                             $(expander).children("i").removeClass("fa-caret-right");
@@ -2550,13 +2549,13 @@ function displayPresentation(obj) {
 
                     // For each Presentation in the playlist presentation array
                     $(playlistPresentationList).each(
-                        function() {
+                        function () {
 
                             // If the presentation path matches the path of the selected presentation, set it as highlighted
                             if (this.presentationPath == location) {
                                 // Iterate through each playlist item
                                 $("#playlist-items").children("a").each(
-                                    function() {
+                                    function () {
                                         // If this presentation path matches the selected presentation's presentation path
                                         if ($(this).children("div").attr("id") == location) {
                                             if (propresenterRequest && obj.slideIndex.toString() != "") {
@@ -2582,7 +2581,7 @@ function displayPresentation(obj) {
                                     var presentationIndex = parseInt(this.presentationPath.split(":")[1]);
                                     // Create the presentation container in the presentation data
                                     var presentationData = '<div id="presentation.' + presentationPath + '" class="presentation">' +
-                                        '<div class="presentation-header padded">' + this.presentation.presentationName + '<div class="presentation-controls">'+getPresentationDestination(this.presentation.presentationDestination)+'</div></div>' +
+                                        '<div class="presentation-header padded">' + this.presentation.presentationName + '<div class="presentation-controls">' + getPresentationDestination(this.presentation.presentationDestination) + '</div></div>' +
                                         '<div class="presentation-content padded">';
                                     // Generate & add the slides to the presentation data
                                     presentationData += generateSlides(this.presentation.presentationSlideGroups, presentationPath);
@@ -2598,12 +2597,12 @@ function displayPresentation(obj) {
 
                     // Iterate through each header in the playlist header list
                     $(playlistHeaderList).each(
-                        function() {
+                        function () {
                             // If the presentation path matches the path of the selected presentation, set it as highlighted
                             if (this.presentationPath == location) {
                                 // Iterate through each playlist item
                                 $("#playlist-items").children("a").each(
-                                    function() {
+                                    function () {
                                         // If this presentation path matches the selected presentation's presentation path
                                         if ($(this).children("div").attr("id") == location) {
                                             // Set the presentation as selected
@@ -2633,12 +2632,12 @@ function displayPresentation(obj) {
 
                     // Iterate through each media item in the playlist media list
                     playlistMediaList.forEach(
-                        function(playlistMedia) {
+                        function (playlistMedia) {
                             // If the presentation path matches the path of the selected presentation, set it as highlighted
                             if (playlistMedia.presentationPath == location) {
                                 // Iterate through each playlist item
                                 $("#playlist-items").children("a").each(
-                                    function() {
+                                    function () {
                                         // If this presentation path matches the selected presentation's presentation path
                                         if ($(this).children("div").attr("id") == location) {
                                             if (propresenterRequest && obj.slideIndex.toString() != "") {
@@ -2662,7 +2661,7 @@ function displayPresentation(obj) {
                                     var mediaIndex = parseInt(playlistMedia.presentationPath.split(":")[1]);
                                     // Create the presentation container in the presentation data
                                     var mediaData = '<div id="presentation.' + mediaPath + '">' +
-                                        '<div class="presentation-header padded">' + playlistMedia.presentation.presentationName + '<div class="presentation-controls">'+getPresentationDestination(playlistMedia.presentation.presentationDestination)+'</div></div>' +
+                                        '<div class="presentation-header padded">' + playlistMedia.presentation.presentationName + '<div class="presentation-controls">' + getPresentationDestination(playlistMedia.presentation.presentationDestination) + '</div></div>' +
                                         '<div class="presentation-content padded">' +
                                         '<div id="media.' + mediaPath + '" class="media-container "><div class="media-image">' + getMediaIcon(playlistMedia) + '</div><a id="' + mediaPath + '" onclick="triggerSlide(this);"><div class="media ' + getMediaType(playlistMedia) + '"><i class="far fa-play-circle"></i></div></a><div class="media-name">' + playlistMedia.presentation.presentationName + '</div></div>' +
                                         '</div></div>';
@@ -2681,7 +2680,7 @@ function displayPresentation(obj) {
                         $("#presentations").empty();
                         // For each presentation in the presentation data array
                         data.forEach(
-                            function(item) {
+                            function (item) {
                                 // Add the presentation data to the presentations section
                                 $("#presentations").append(item.presentationData);
                             }
@@ -2692,13 +2691,13 @@ function displayPresentation(obj) {
 
                     // For each Presentation in the playlist presentation array
                     $(playlistPresentationList).each(
-                        function() {
+                        function () {
 
                             // If the presentation path matches the path of the selected presentation, set it as highlighted
                             if (this.presentationPath == location) {
                                 // Iterate through each playlist item
                                 $("#playlist-items").children("a").each(
-                                    function() {
+                                    function () {
                                         // If this presentation path matches the selected presentation's presentation path
                                         if ($(this).children("div").attr("id") == location) {
                                             if (propresenterRequest && obj.slideIndex.toString() != "") {
@@ -2723,7 +2722,7 @@ function displayPresentation(obj) {
                                     var presentationIndex = parseInt(this.presentationPath.split(":")[1]);
                                     // Create the presentation container in the presentation data
                                     var presentationData = '<div id="presentation.' + presentationPath + '" class="presentation">' +
-                                        '<div class="presentation-header padded">' + this.presentation.presentationName + '<div class="presentation-controls">'+getPresentationDestination(this.presentation.presentationDestination)+'</div></div>' +
+                                        '<div class="presentation-header padded">' + this.presentation.presentationName + '<div class="presentation-controls">' + getPresentationDestination(this.presentation.presentationDestination) + '</div></div>' +
                                         '<div class="presentation-content padded">';
                                     // Generate & add the slides to the presentation data
                                     presentationData += generateSlides(this.presentation.presentationSlideGroups, presentationPath);
@@ -2744,19 +2743,19 @@ function displayPresentation(obj) {
                 var library;
                 // Iterate through each library
                 $(".libraries").children("div").children("a").each(
-                    function() {
+                    function () {
                         var libraryName = $(this).text();
                         // Split the string of the presentation path
                         var pathSplit = location.split("/");
                         // Iterate through each item in the split path to retrieve the library name
                         pathSplit.forEach(
-                            function(pathElement, index) {
+                            function (pathElement, index) {
                                 if (pathElement == "Libraries") {
                                     // If this presentation is from this library
                                     if (pathSplit[index + 1] == libraryName) {
                                         // Highlight the library
                                         $(".library").children(".name").each(
-                                            function() {
+                                            function () {
                                                 if (libraryName == $(this).text()) {
                                                     // Display the library
                                                     displayLibrary($(this).parent().parent());
@@ -2778,7 +2777,7 @@ function displayPresentation(obj) {
                     var retrieve = true;
                     // Check if the presentation currently exists in the list
                     libraryPresentationList.forEach(
-                        function(item) {
+                        function (item) {
                             // If the presentation exists
                             if (item.presentationPath == location) {
                                 // Do not retrieve it
@@ -2806,12 +2805,12 @@ function displayPresentation(obj) {
 
                 // For each Presentation in the array
                 $(libraryPresentationList).each(
-                    function() {
+                    function () {
                         // If the presentation path matches the path of the selected presentation, set it as highlighted
                         if (this.presentationPath == location) {
                             // Iterate through each library item
                             $("#library-items").children("a").each(
-                                function() {
+                                function () {
                                     // If this presentation path matches the selected presentation's presentation path
                                     if ($(this).children("div").attr("id") == location) {
                                         if (propresenterRequest && obj.slideIndex.toString() != "") {
@@ -2830,7 +2829,7 @@ function displayPresentation(obj) {
                             if (document.getElementById("presentation." + presentationPath) == null) {
                                 // Create the presentation container in the presentation data
                                 var presentationData = '<div id="presentation.' + presentationPath + '" class="presentation">' +
-                                    '<div class="presentation-header padded">' + this.presentation.presentationName + '<div class="presentation-controls">'+getPresentationDestination(this.presentation.presentationDestination)+'</div></div>' +
+                                    '<div class="presentation-header padded">' + this.presentation.presentationName + '<div class="presentation-controls">' + getPresentationDestination(this.presentation.presentationDestination) + '</div></div>' +
                                     '<div class="presentation-content padded">';
                                 // Generate & add the slides to the presentation data
                                 presentationData += generateSlides(this.presentation.presentationSlideGroups, presentationPath);
@@ -2917,7 +2916,7 @@ function refreshPresentation(presentationPath) {
         // Create variable to hold the stored presentation
         var item;
         // Check if the presentation is a playlist or a library presentation
-        if (presentationPath.charAt(0) == '0') {
+        if (!isNaN(presentationPath.charAt(0))) {
             // Get the presentation from the playlist presentation list
             item = findPresentationByTopPath(playlistPresentationList, presentationPath);
         } else {
@@ -2954,11 +2953,11 @@ function comparePresentations(obj) {
 
     // Iterate through each slide group in the presentation
     obj.presentation.presentationSlideGroups.forEach(
-        function(presentationSlideGroup) {
+        function (presentationSlideGroup) {
             // Iterate through each slide in the slide group
             presentationSlideGroup.groupSlides.forEach(
                 function (groupSlides) {
-                    currentSlides.push(presentationSlideGroup.groupName+"|"+presentationSlideGroup.groupColor+"|"+groupSlides.slideText+"|"+groupSlides.slideEnabled);
+                    currentSlides.push(presentationSlideGroup.groupName + "|" + presentationSlideGroup.groupColor + "|" + groupSlides.slideText + "|" + groupSlides.slideEnabled);
                 }
             );
         }
@@ -2966,16 +2965,16 @@ function comparePresentations(obj) {
     // Create variable to hold presentation item
     var item;
     // Check if the presentation is a playlist or a library presentation
-    if (obj.presentationPath.charAt(0) == '0') {
+    if (!isNaN(obj.presentationPath.charAt(0))) {
         // Get the presentation from the playlist presentation list
         item = findPresentationByTopPath(playlistPresentationList, obj.presentationPath);
         // Iterate through each slide group in the presentation
         item.presentation.presentationSlideGroups.forEach(
-            function(presentationSlideGroup) {
+            function (presentationSlideGroup) {
                 // Iterate through each slide in the slide group
                 presentationSlideGroup.groupSlides.forEach(
                     function (groupSlides) {
-                        savedSlides.push(presentationSlideGroup.groupName+"|"+presentationSlideGroup.groupColor+"|"+groupSlides.slideText+"|"+groupSlides.slideEnabled);
+                        savedSlides.push(presentationSlideGroup.groupName + "|" + presentationSlideGroup.groupColor + "|" + groupSlides.slideText + "|" + groupSlides.slideEnabled);
                     }
                 );
             }
@@ -2985,11 +2984,11 @@ function comparePresentations(obj) {
         item = findPresentationByTopPath(libraryPresentationList, obj.presentationPath);
         // Iterate through each slide group in the presentation
         item.presentation.presentationSlideGroups.forEach(
-            function(presentationSlideGroup) {
+            function (presentationSlideGroup) {
                 // Iterate through each slide in the slide group
                 presentationSlideGroup.groupSlides.forEach(
                     function (groupSlides) {
-                        savedSlides.push(presentationSlideGroup.groupName+"|"+presentationSlideGroup.groupColor+"|"+groupSlides.slideText+"|"+groupSlides.slideEnabled);
+                        savedSlides.push(presentationSlideGroup.groupName + "|" + presentationSlideGroup.groupColor + "|" + groupSlides.slideText + "|" + groupSlides.slideEnabled);
                     }
                 );
             }
@@ -3012,14 +3011,14 @@ function generateSlides(presentationSlideGroups, presentationPath) {
     var slidesData = "";
     // Iterate through each slide group in the presentation
     presentationSlideGroups.forEach(
-        function(presentationSlideGroup) {
+        function (presentationSlideGroup) {
             // Get the slide group color
             var colorArray = presentationSlideGroup.groupColor.split(" ");
             // Get the slide group name
             var groupName = presentationSlideGroup.groupName;
             // Iterate through each slide in the slide group
             presentationSlideGroup.groupSlides.forEach(
-                function(groupSlide, index) {
+                function (groupSlide, index) {
                     // Add the slide to the slides data
                     slidesData += '<div class="slide-sizer"><div id="slide' + count + '.' + presentationPath + '" class="slide-container ' + getEnabledValue(groupSlide.slideEnabled) + '"><a id="' + presentationPath + '" onclick="triggerSlide(this);"><div class="slide" style="border-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-text">' + getSlideText(groupSlide.slideText) + '</div><img src="data:image/png;base64,' + groupSlide.slideImage + '" draggable="false"/><div class="slide-info" style="background-color: rgb(' + getRGBValue(colorArray[0]) + ',' + getRGBValue(colorArray[1]) + ',' + getRGBValue(colorArray[2]) + ');"><div class="slide-number">' + count + '</div><div class="slide-name">' + getSlideName(index, groupName) + '</div><div class="slide-label">' + getSlideLabel(groupSlide.slideLabel, groupName) + '</div></div></div></a></div></div>';
                     // Increase the slide count
@@ -3035,7 +3034,7 @@ function presentationUpdated(currentSlides, savedSlides) {
     var hasChanged = false;
     currentSlides.forEach(
         function (value, index) {
-            if (value != savedSlides[index]){
+            if (value != savedSlides[index]) {
                 hasChanged = true;
             }
         }
@@ -3111,7 +3110,7 @@ function setSlideView(int) {
         // Remove all view types
         $(".slide-display").removeClass(types);
         // Add this view type
-        $(".slide-display").addClass("view-"+int);
+        $(".slide-display").addClass("view-" + int);
         // Set the slide view
         slideView = int;
         // Set the slide view cookie
@@ -3119,7 +3118,7 @@ function setSlideView(int) {
     }
 
     // Show the correct slide view
-    switch(slideView) {
+    switch (slideView) {
         case 1:
             // Show the grid view
             $(".slide").addClass("imgView").removeClass("txtView");
@@ -3133,7 +3132,7 @@ function setSlideView(int) {
 
 function setslideCols(int) {
     // Set the style attribute on slide-sizer
-    $(".slide-sizer").attr("style", "width: calc(100% / "+int+")");
+    $(".slide-sizer").attr("style", "width: calc(100% / " + int + ")");
 }
 
 function SortPresentationByName(a, b) {
@@ -3194,7 +3193,7 @@ function getClockEndTimeFormat(obj) {
 function clockMilisecondsCountdown(obj) {
     var ms = parseInt($(obj).text().split(".")[1]);
     var millisecondCount = setInterval(
-        function() {
+        function () {
             if (ms > 0) {
                 ms -= 1;
             } else {
@@ -3210,7 +3209,7 @@ function clockMilisecondsCountdown(obj) {
         10
     );
     setTimeout(
-        function() {
+        function () {
             clearInterval(millisecondCount);
         },
         1000
@@ -3225,7 +3224,7 @@ function webMessages() {
 function preventInputInterference() {
     // When an input is in focus
     $("input").focus(
-        function() {
+        function () {
             // Set input typing as active
             inputTyping = true;
 
@@ -3237,7 +3236,7 @@ function preventInputInterference() {
     );
     // When an input is out of focus
     $("input").focusout(
-        function() {
+        function () {
             // Set input typing as inactive
             inputTyping = false;
 
@@ -3291,7 +3290,7 @@ function getSlideLabel(slideLabel, groupLabel) {
     }
 }
 
-function getNested(obj){
+function getNested(obj) {
     if (obj.playlistLocation != null) {
         if (obj.playlistLocation.includes(".")) {
             return "sub";
@@ -3437,7 +3436,7 @@ function initialise() {
     getSlideColsCookie();
 
     // Add listener for action keys
-    window.addEventListener('keydown', function(e) {
+    window.addEventListener('keydown', function (e) {
         console.log(e);
         if (!inputTyping) {
             // When spacebar or right arrow is detected
@@ -3520,9 +3519,9 @@ function initialise() {
 
     // Add listener for slide columns slider
     document.getElementById("slide-cols").addEventListener('input',
-        function(s) {
+        function (s) {
             // Get slide columns
-            slideCols = (parseInt(document.getElementById("slide-cols").max)+1) - parseInt(this.value);
+            slideCols = (parseInt(document.getElementById("slide-cols").max) + 1) - parseInt(this.value);
             // Set slide columns
             setslideCols(slideCols);
             // Set slide columns cookie
@@ -3532,7 +3531,7 @@ function initialise() {
 }
 
 // When document is ready
-$(document).ready(function() {
+$(document).ready(function () {
     initialise();
     // If user must authenticate
     if (mustAuthenticate) {
