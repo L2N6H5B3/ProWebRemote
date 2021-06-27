@@ -42,6 +42,8 @@ var inputTyping = false;
 var stageMessageTyping = false;
 var presentationDisplayRequest = [];
 var previousPresentationRequest = false;
+var mustAuthenticate = true;
+var changeHost = true;
 
 // End Variables
 
