@@ -11,8 +11,6 @@ var retrieveEntireLibrary = false;
 var forceSlides = false;
 var followProPresenter = true;
 var useCookies = true;
-var mustAuthenticate = true;
-var changeHost = true;
 
 // Application
 var authenticated = false;
@@ -3440,7 +3438,7 @@ function initialise() {
         console.log(e);
         if (!inputTyping) {
             // When spacebar or right arrow is detected
-            if (e.code == "Space" || e.code == "RIghtArrow" && e.target == document.body) {
+            if (e.code == "Space" || e.code == "RightArrow" && e.target == document.body) {
                 // Prevent the default action
                 e.preventDefault();
                 if (forceSlides) {

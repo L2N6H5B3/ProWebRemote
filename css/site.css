@@ -664,6 +664,9 @@ select {
     .slide .slide-info {
         white-space: nowrap;
     }
+    .slide-info {
+        width: 100%;
+    }
     .slide-sizer {
         width: calc(calc(100% - 2px) / 3);
     }
@@ -755,6 +758,11 @@ select {
         right: 0px;
         padding-right: 4px !important;
         text-shadow: 0px 0.5px 2px #000000;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 60%;
+        text-align: right;
     }
     .playback .content {
         height: 60px;
@@ -1807,6 +1815,11 @@ select {
         right: 0px;
         padding-right: 4px !important;
         text-shadow: 0px 0.5px 2px #000000;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 77%;
+        text-align: right;
     }
     .playback .content {
         height: 60px;
