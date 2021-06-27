@@ -1694,8 +1694,6 @@ function startAllClocks() {
     remoteWebSocket.send('{"action":"clockStartAll"}');
 }
 
-
-// DELETE!!!
 function startReceivingClockData() {
     // Send the start receiving clock times command
     remoteWebSocket.send('{"action":"clockStartSendingCurrentTime"}');
@@ -1735,8 +1733,6 @@ function setMessagesClockState(obj) {
         document.getElementById("clock-" + obj.clockIndex + "-state").innerHTML = "Start";
     }
 }
-// DELETE!!!
-
 
 function resetClock(index) {
     // Start receiving clock times from ProPresenter
@@ -3535,11 +3531,15 @@ $(document).ready(function () {
     initialise();
     // If user must authenticate
     if (mustAuthenticate) {
+        // If the user is allowed to update the host
         if (changeHost) {
+            // Show the host change container
             $(".host-container").show();
         }
+        // Update login elements with stored values
         document.getElementById("host").value = host;
         document.getElementById("password").value = pass;
+        // Add listener to host field
         document.getElementById("host").addEventListener('keypress',
             function (e) {
                 if (e.key === 'Enter') {
@@ -3547,6 +3547,7 @@ $(document).ready(function () {
                 }
             }
         );
+        // Add listener to password field
         document.getElementById("password").addEventListener('keypress',
             function (e) {
                 if (e.key === 'Enter') {
@@ -3554,8 +3555,10 @@ $(document).ready(function () {
                 }
             }
         );
+        // Show the login screen
         $("#authenticate").show();
     } else {
+        // Initiate connection to ProPresenter
         connect();
     }
 });
