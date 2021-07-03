@@ -11,6 +11,8 @@ var retrieveEntireLibrary = false;
 var forceSlides = false;
 var followProPresenter = true;
 var useCookies = true;
+var mustAuthenticate = true;
+var changeHost = true;
 
 // Application
 var authenticated = false;
@@ -42,8 +44,6 @@ var inputTyping = false;
 var stageMessageTyping = false;
 var presentationDisplayRequest = [];
 var previousPresentationRequest = false;
-var mustAuthenticate = true;
-var changeHost = true;
 
 // End Variables
 
