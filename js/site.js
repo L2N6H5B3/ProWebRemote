@@ -1,10 +1,3 @@
-// Variables
-
-// Connection
-var host = "localhost";
-var port = "50000";
-var pass = "test";
-
 // User Preference
 var continuousPlaylist = true;
 var retrieveEntireLibrary = false;
