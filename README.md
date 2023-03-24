@@ -5,7 +5,7 @@ ProWebRemote is a pure HTML/CSS/JS remote control application for ProPresenter 7
 
 ## Installation
 ProWebRemote can be either run directly from `index.html` or can be hosted on a webserver that does not use HTTPS.
-Ensure that prior to running that the _IP_, _Port_, and _Password_ have been changed in `site.js`, located in the `js/` folder. 
+Ensure that prior to running that the _IP_, _Port_, and _Password_ have been changed in `config.js`, located in the `js/` folder. 
 
 ## Usage
 ProWebRemote is designed to pull in all Library Presentations, Playlist Presentations, Audio Playlists, Timers, and Messages from ProPresenter 7 upon launch.  While the interface is not 100% identical to ProPresenter 7, the general design is close enough to understand and utilise with no extra learning required.
