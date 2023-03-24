@@ -1,10 +1,3 @@
-// Variables
-
-// Connection
-var host = "172.16.101.32";
-var port = "50000";
-var pass = "control";
-
 // User Preference
 var continuousPlaylist = true;
 var retrieveEntireLibrary = false;
@@ -3009,7 +3002,11 @@ function generateSlides(presentationSlideGroups, presentationPath) {
     presentationSlideGroups.forEach(
         function (presentationSlideGroup) {
             // Get the slide group color
-            var colorArray = presentationSlideGroup.groupColor.split(" ");
+            if(presentationSlideGroup.groupColor){
+                 var colorArray = presentationSlideGroup.groupColor.split(" ");
+             }else{
+                 var colorArray = new Array();
+             }
             // Get the slide group name
             var groupName = presentationSlideGroup.groupName;
             // Iterate through each slide in the slide group
