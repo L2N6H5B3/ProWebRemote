@@ -3433,7 +3433,7 @@ function initialise() {
         console.log(e);
         if (!inputTyping) {
             // When spacebar or right arrow is detected
-            if (e.code == "Space" || e.code == "RightArrow" && e.target == document.body) {
+            if (e.code == "Space" || e.code == "RightArrow" || e.code == "ArrowRight" && e.target == document.body) {
                 // Prevent the default action
                 e.preventDefault();
                 if (forceSlides) {
@@ -3444,7 +3444,7 @@ function initialise() {
                 }
             }
             // When left arrow is detected
-            if (e.code == "LeftArrow" && e.target == document.body) {
+            if ((e.code == "LeftArrow" || e.code == "ArrowLeft") && e.target == document.body) {
                 // Prevent the default action
                 e.preventDefault();
                 if (forceSlides) {
