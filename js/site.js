@@ -551,6 +551,9 @@ function createPlaylist(obj) {
             if (item.playlistItemType == "playlistItemTypeHeader") {
                 var playlistHeader = { presentationPath: item.playlistItemLocation, presentation: { presentationName: item.playlistItemName } };
                 playlistHeaderList.push(playlistHeader);
+            } else if (item.playlistItemType == "playlistItemTypePlaceholder") {
+                var playlistPlaceholder = { presentationPath: item.playlistItemLocation, presentation: { presentationName: item.playlistItemName } };
+                playlistHeaderList.push(playlistPlaceholder);
             } else if (item.playlistItemType == "playlistItemTypeVideo") {
                 var playlistVideo = { presentationPath: item.playlistItemLocation, presentation: { presentationName: item.playlistItemName, presentationItemType: item.playlistItemType, presentationThumbnail: item.playlistItemThumbnail } };
                 playlistMediaList.push(playlistVideo);
