@@ -5,7 +5,7 @@ var forceSlides = false;
 var followProPresenter = true;
 var useCookies = true;
 var mustAuthenticate = true;
-var changeHost = true;
+var changeHost = false;
 
 // Application
 var authenticated = false;
@@ -52,8 +52,9 @@ function connect() {
     $("#connecting-loader").fadeIn();
     // Show disconnected status
     $("#status").attr("class", "disconnected");
-    // Set WebSocket uri
-    wsUri = "ws://" + host + ":" + port;
+    // Set WebSocket uri - use wss:// only if page is loaded over https://
+    var wsProtocol = (window.location.protocol === "https:") ? "wss://" : "ws://";
+    wsUri = wsProtocol + host + ":" + port;
     remoteWebSocket = new WebSocket(wsUri + "/remote");
     remoteWebSocket.onopen = function () { onOpen(); };
     remoteWebSocket.onclose = function () { onClose(); };
@@ -68,7 +69,15 @@ function onOpen() {
 }
 
 function onMessage(evt) {
-    var obj = JSON.parse(evt.data);
+    // Ignore empty messages
+    if (!evt.data || evt.data.trim() === "") {
+        return;
+    }
+    try {
+        var obj = JSON.parse(evt.data);
+    } catch (e) {
+        return;
+    }
     console.log(obj);
     if (obj.action == "authenticate" && obj.authenticated == "1" && authenticated == false) {
         // If the data is stale
@@ -245,12 +254,12 @@ function onMessage(evt) {
         createStageScreens(obj);
     } else if (obj.action == "presentationCurrent") {
         // If this presentation has images, process normally
-        if (obj.presentation.presentationSlideGroups.length > 0) {
+        if (obj.presentation && obj.presentation.presentationSlideGroups && obj.presentation.presentationSlideGroups.length > 0) {
             if (obj.presentation.presentationSlideGroups[0].groupSlides[0].slideImage != "") {
                 // Create presentation
                 createPresentation(obj);
             }
-        } else {
+        } else if (obj.presentation) {
             // Compare presentations
             comparePresentations(obj);
         }
@@ -551,6 +560,9 @@ function createPlaylist(obj) {
             if (item.playlistItemType == "playlistItemTypeHeader") {
                 var playlistHeader = { presentationPath: item.playlistItemLocation, presentation: { presentationName: item.playlistItemName } };
                 playlistHeaderList.push(playlistHeader);
+            } else if (item.playlistItemType == "playlistItemTypePlaceholder") {
+                var playlistPlaceholder = { presentationPath: item.playlistItemLocation, presentation: { presentationName: item.playlistItemName } };
+                playlistHeaderList.push(playlistPlaceholder);
             } else if (item.playlistItemType == "playlistItemTypeVideo") {
                 var playlistVideo = { presentationPath: item.playlistItemLocation, presentation: { presentationName: item.playlistItemName, presentationItemType: item.playlistItemType, presentationThumbnail: item.playlistItemThumbnail } };
                 playlistMediaList.push(playlistVideo);
@@ -3275,7 +3287,7 @@ function getSlideLabel(slideLabel, groupLabel) {
     if (serverIsWindows) {
         return slideLabel;
     } else {
-        if (slideLabel != groupLabel) {
+        if (slideLabel != null && slideLabel !== undefined && slideLabel != groupLabel) {
             return slideLabel;
         } else {
             return "";
